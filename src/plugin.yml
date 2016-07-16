@@ -1,0 +1,23 @@
+name: Locket
+main: org.soraworld.locket.Locket
+author: Himmelt
+softdepend: [WorldGuard, Residence, Towny, Factions]
+version: 1.7.10-0.0.1
+description: >
+             Locket is a chest protection plugin for Bukkit.
+commands:
+   Locket:
+      permission: Locket.command
+      usage: |
+         /lock
+      aliases: [lock, locket]
+permissions:
+   Locket.command:
+      description: Command permission for Locket
+      default: true
+   Locket.lock:
+      description: Basic lock permission
+      default: true
+   Locket.edit:
+      description: Edit sign permission
+      default: true

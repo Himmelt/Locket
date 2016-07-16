@@ -1,0 +1,46 @@
+# 配置文件
+---
+# 默认语言文件
+language-file: lang_en_us.yml
+# 爆炸保护
+explosion-protection: true
+# 漏斗、矿车
+block-hopper-minecart: true
+# 干涉放置,比如双开门
+block-interfere-placement: true
+# 物品传输-保护进
+block-item-transfer-in: false
+# 物品传输-保护出
+block-item-transfer-out: true
+---
+# 私有标记
+private-signs:
+  - "[Private]"
+  - "[private]"
+# 更多人标记
+more-signs:
+  - "[More Users]"
+  - "[more users]"
+# 所有人标记
+everyone-signs:
+  - "[Everyone]"
+  - "[everyone]"
+# 时间标记
+timer-signs:
+  - "[Timer:@]"
+  - "[timer:@]"
+# 名称前缀
+name-prefix:
+  - ""
+# 保护对象列表
+lockables:
+  - CHEST
+  - TRAPPED_CHEST
+  - FURNACE
+  - BURNING_FURNACE
+  - HOPPER
+  - BREWING_STAND
+  - DIAMOND_BLOCK
+  - WOODEN_DOOR
+  - IRON_DOOR_BLOCK
+  - IRON_DOOR_BLOCK
