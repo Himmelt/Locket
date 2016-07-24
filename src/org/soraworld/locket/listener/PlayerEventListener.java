@@ -56,10 +56,10 @@ public class PlayerEventListener implements Listener {
                     } else if (!locked && LocketAPI.isOwnerUpDownLockedDoor(block, player)) {
                         Utils.removeASign(player);
                         Utils.sendMessages(player, Config.getLang("additional-sign-added-quick"));
-                        Utils.putSignOn(block, blockface, Config.getDefaultAdditionalString(), "");
+                        Utils.putSignOn(block, blockface, Config.getDefaultMoreString(), "");
                     } else if (LocketAPI.isOwner(block, player)) {
                         Utils.removeASign(player);
-                        Utils.putSignOn(block, blockface, Config.getDefaultAdditionalString(), "");
+                        Utils.putSignOn(block, blockface, Config.getDefaultMoreString(), "");
                         Utils.sendMessages(player, Config.getLang("additional-sign-added-quick"));
                     } else {
                         Utils.sendMessages(player, Config.getLang("cannot-lock-quick"));
@@ -76,7 +76,7 @@ public class PlayerEventListener implements Listener {
             Block block = event.getClickedBlock();
             Player player = event.getPlayer();
             if (!player.hasPermission("locket.edit")) return;
-            if (LocketAPI.isOwnerOfSign(block, player) || (LocketAPI.isLockSignOrAdditionalSign(block) && player.hasPermission("locket.edit.admin"))) {
+            if (LocketAPI.isOwnerOfSign(block, player) || (LocketAPI.isLockOrMoreSign(block) && player.hasPermission("locket.edit.admin"))) {
                 Utils.selectSign(player, block);
                 Utils.sendMessages(player, Config.getLang("sign-selected"));
             }

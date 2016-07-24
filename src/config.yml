@@ -1,5 +1,6 @@
-# 配置文件
----
+# ========================================
+#                配置文件
+# ========================================
 # 默认语言文件
 language-file: lang_en_us.yml
 # 爆炸保护
@@ -12,26 +13,10 @@ block-interfere-placement: true
 block-item-transfer-in: false
 # 物品传输-保护出
 block-item-transfer-out: true
----
 # 私有标记
-private-signs:
-  - "[Private]"
-  - "[private]"
+private-sign: [Private]
 # 更多人标记
-more-signs:
-  - "[More Users]"
-  - "[more users]"
-# 所有人标记
-everyone-signs:
-  - "[Everyone]"
-  - "[everyone]"
-# 时间标记
-timer-signs:
-  - "[Timer:@]"
-  - "[timer:@]"
-# 名称前缀
-name-prefix:
-  - ""
+more-sign: [More Users]
 # 保护对象列表
 lockables:
   - CHEST
@@ -42,5 +27,4 @@ lockables:
   - BREWING_STAND
   - DIAMOND_BLOCK
   - WOODEN_DOOR
-  - IRON_DOOR_BLOCK
   - IRON_DOOR_BLOCK

@@ -7,7 +7,6 @@ import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.soraworld.locket.api.LocketAPI;
 import org.soraworld.locket.config.Config;
@@ -18,17 +17,9 @@ import org.soraworld.locket.util.Utils;
 
 public class Locket extends JavaPlugin {
 
-    private static Plugin plugin;
-
-    public static Plugin getPlugin() {
-        return plugin;
-    }
-
     @Override
     public void onLoad() {
-        plugin = this;
         new Logger(this);// 初始化日志
-        Logger.info("Locket is loading!");
     }
 
     @Override
@@ -41,12 +32,6 @@ public class Locket extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new InventoryEventListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerEventListener(), this);
         getServer().getPluginManager().registerEvents(new WorldEventListener(), this);
-        Logger.info("Locket is loaded!");
-    }
-
-    @Override
-    public void onDisable() {
-        Logger.info("Locket is unloaded!");
     }
 
     @Override
@@ -100,7 +85,7 @@ public class Locket extends JavaPlugin {
                                     Utils.sendMessages(player, Config.getLang("line-is-too-long"));
                                     return true;
                                 }
-                                if (LocketAPI.isLockSign(block)) {
+                                if (LocketAPI.isLockSigned(block)) {
                                     switch (args[0]) {
                                         case "1":
                                             Utils.sendMessages(player, Config.getLang("cannot-change-this-line"));
@@ -116,7 +101,7 @@ public class Locket extends JavaPlugin {
                                             Utils.sendMessages(player, Config.getLang("sign-changed"));
                                             break;
                                     }
-                                } else if (LocketAPI.isAdditionalSign(block)) {
+                                } else if (LocketAPI.isMoreSigned(block)) {
                                     switch (args[0]) {
                                         case "1":
                                             Utils.sendMessages(player, Config.getLang("cannot-change-this-line"));

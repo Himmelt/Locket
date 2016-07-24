@@ -20,22 +20,20 @@ public class Depend {
     protected static Plugin residence = null;
     protected static Plugin towny = null;
     protected static Plugin factions = null;
-    private static Plugin plugin;
 
     public Depend(Plugin _plugin) {
-        plugin = _plugin;
-        Plugin worldGuardPlugin = plugin.getServer().getPluginManager().getPlugin("WorldGuard");
+        Plugin worldGuardPlugin = _plugin.getServer().getPluginManager().getPlugin("WorldGuard");
         if (worldGuardPlugin == null || !(worldGuardPlugin instanceof WorldGuardPlugin)) {
             worldGuard = null;
         } else {
             worldGuard = (WorldGuardPlugin) worldGuardPlugin;
         }
         // Residence
-        residence = plugin.getServer().getPluginManager().getPlugin("Residence");
+        residence = _plugin.getServer().getPluginManager().getPlugin("Residence");
         // Towny
-        towny = plugin.getServer().getPluginManager().getPlugin("Towny");
+        towny = _plugin.getServer().getPluginManager().getPlugin("Towny");
         // Factions
-        factions = plugin.getServer().getPluginManager().getPlugin("Factions");
+        factions = _plugin.getServer().getPluginManager().getPlugin("Factions");
     }
 
 

@@ -20,11 +20,9 @@ public class Config {
     private static FileConfiguration langFile;
 
     private static Set<Material> lockables = new HashSet<>();
-    private static Set<String> privateSigns = new HashSet<>();
-    private static Set<String> moreSigns = new HashSet<>();
 
     private static String defaultPrivateSign = "[Private]";
-    private static String defaultMoresSign = "[More Users]";
+    private static String defaultMoreSign = "[More Users]";
 
     private static boolean blockInterferePlacement = true;// 干涉放置,比如放置双开门,大箱子,漏斗之类的
     private static boolean blockItemTransferIn = false;
@@ -35,6 +33,7 @@ public class Config {
 
     public Config(Plugin _plugin) {
         plugin = _plugin;
+        reload();
     }
 
     @SuppressWarnings("deprecation")
@@ -45,19 +44,14 @@ public class Config {
         String langName = configFile.getString("language-file", "lang_en_us.yml");
         langFile = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), langName));
 
+        defaultPrivateSign = ChatColor.translateAlternateColorCodes('&', configFile.getString("private-sign"));
+        defaultMoreSign = ChatColor.translateAlternateColorCodes('&', configFile.getString("more-sign"));
+
         blockInterferePlacement = configFile.getBoolean("block-interfere-placement", true);
         blockItemTransferIn = configFile.getBoolean("block-item-transfer-in", false);
         blockItemTransferOut = configFile.getBoolean("block-item-transfer-out", true);
         explosionProtection = configFile.getBoolean("explosion-protection", true);
         blockHopperMinecart = configFile.getBoolean("block-hopper-minecart", true);
-
-        List<String> privateSignList = configFile.getStringList("private-signs");
-        List<String> moreSignList = configFile.getStringList("more-signs");
-
-        privateSigns = new HashSet<>(privateSignList);
-        moreSigns = new HashSet<>(moreSignList);
-        defaultPrivateSign = privateSignList.get(0);
-        defaultMoresSign = moreSignList.get(0);
 
         // 配置清单里的物品
         List<String> unprocessedItems = configFile.getStringList("lockables");
@@ -100,7 +94,7 @@ public class Config {
     }
 
     public static void initConfigFiles() {
-        String[] langFiles = {"lang_zh_cn.yml", "lang_en_us.yml"};
+        String[] langFiles = {"lang_en_us.yml", "lang_zh_cn.yml"};
         for (String filename : langFiles) {
             File _file = new File(plugin.getDataFolder(), filename);
             if (!_file.exists()) {
@@ -134,11 +128,11 @@ public class Config {
     }
 
     public static boolean isPrivateSignString(String message) {
-        return privateSigns.contains(message);
+        return defaultPrivateSign.equals(message);
     }
 
     public static boolean isMoreSign(String message) {
-        return moreSigns.contains(message);
+        return defaultMoreSign.equals(message);
     }
 
     public static boolean isExplosionProtection() {
@@ -150,8 +144,8 @@ public class Config {
         return defaultPrivateSign;
     }
 
-    public static String getDefaultAdditionalString() {
-        return defaultMoresSign;
+    public static String getDefaultMoreString() {
+        return defaultMoreSign;
     }
 
 }

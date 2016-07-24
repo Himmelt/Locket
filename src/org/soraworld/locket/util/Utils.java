@@ -2,8 +2,6 @@ package org.soraworld.locket.util;
 
 /* Created by Himmelt on 2016/7/15.*/
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -11,7 +9,6 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.soraworld.locket.log.Logger;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,7 +16,6 @@ import java.util.Map;
 import java.util.Set;
 
 public class Utils {
-    public static final String usernamePattern = "^[a-zA-Z0-9_]*$";
 
     private static Map<Player, Block> selectedSign = new HashMap<>();
     private static Set<Player> notified = new HashSet<>();
@@ -98,14 +94,6 @@ public class Utils {
         }
     }
 
-    public static void updateLineByPlayer(Block block, int line, Player player) {
-        setSignLine(block, line, player.getName() + "#" + player.getUniqueId().toString());
-    }
-
-    public static boolean isUserName(String text) {
-        return text.length() < 17 && text.length() > 2 && text.matches(usernamePattern);
-    }
-
     public static boolean isUsernameUuidLine(String text) {
         if (text.contains("#")) {
             String[] splits = text.split("#", 2);
@@ -130,24 +118,6 @@ public class Utils {
         } else {
             return text.equals(player.getName());
         }
-    }
-
-    public static String getSignLineFromUnknown(String json) {
-        try { // 1.8-
-            JsonObject line = new JsonParser().parse(json).getAsJsonObject();
-            return line.get("extra").getAsJsonArray().get(0).getAsString();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            Logger.info(ex.toString());
-        }
-        try { // 1.9+
-            JsonObject line = new JsonParser().parse(json).getAsJsonObject();
-            return line.get("extra").getAsJsonArray().get(0).getAsJsonObject().get("text").getAsString();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            Logger.info(ex.toString());
-        }
-        return json;
     }
 
 }

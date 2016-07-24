@@ -147,14 +147,14 @@ public class LocketAPI {
     }
 
     public static boolean isProtected(Block block) {
-        return (isLockSign(block) || isLocked(block) || isUpDownLockedDoor(block));
+        return (isLockSigned(block) || isLocked(block) || isUpDownLockedDoor(block));
     }
 
     public static boolean isLockedSingleBlock(Block block, BlockFace exempt) {
         for (BlockFace blockface : newsFaces) {
             if (blockface == exempt) continue;
             Block relativeBlock = block.getRelative(blockface);
-            if (isLockSign(relativeBlock) && (((org.bukkit.material.Sign) relativeBlock.getState().getData()).getFacing() == blockface)) {
+            if (isLockSigned(relativeBlock) && (((org.bukkit.material.Sign) relativeBlock.getState().getData()).getFacing() == blockface)) {
                 return true;
             }
         }
@@ -166,7 +166,7 @@ public class LocketAPI {
         for (BlockFace blockface : newsFaces) {
             if (blockface == exempt) continue;
             Block relativeBlock = block.getRelative(blockface);
-            if (isLockSign(relativeBlock) && (((org.bukkit.material.Sign) relativeBlock.getState().getData()).getFacing() == blockface)) {
+            if (isLockSigned(relativeBlock) && (((org.bukkit.material.Sign) relativeBlock.getState().getData()).getFacing() == blockface)) {
                 if (isOwnerOnSign(relativeBlock, player)) {
                     return true;
                 }
@@ -180,7 +180,7 @@ public class LocketAPI {
         for (BlockFace blockface : newsFaces) {
             if (blockface == exempt) continue;
             Block relativeBlock = block.getRelative(blockface);
-            if (isLockSignOrAdditionalSign(relativeBlock) && (((org.bukkit.material.Sign) relativeBlock.getState().getData()).getFacing() == blockface)) {
+            if (isLockOrMoreSign(relativeBlock) && (((org.bukkit.material.Sign) relativeBlock.getState().getData()).getFacing() == blockface)) {
                 if (isUserOnSign(relativeBlock, player)) {
                     return true;
                 }
@@ -320,31 +320,31 @@ public class LocketAPI {
         return block.getType() == Material.WALL_SIGN;
     }
 
-    public static boolean isLockSign(Block block) {
+    public static boolean isLockSigned(Block block) {
         return isSign(block) && isLockString(((Sign) block.getState()).getLine(0));
     }
 
-    public static boolean isAdditionalSign(Block block) {
-        return isSign(block) && isAdditionalString(((Sign) block.getState()).getLine(0));
+    public static boolean isMoreSigned(Block block) {
+        return isSign(block) && isMoreString(((Sign) block.getState()).getLine(0));
     }
 
-    public static boolean isLockSignOrAdditionalSign(Block block) {
+    public static boolean isLockOrMoreSign(Block block) {
         if (isSign(block)) {
             String line = ((Sign) block.getState()).getLine(0);
-            return isLockStringOrAdditionalString(line);
+            return isLockOrMoreString(line);
         } else {
             return false;
         }
     }
 
     public static boolean isOwnerOnSign(Block block, Player player) {
-        // Requires isLockSign
+        // Requires isLockSigned
         String[] lines = ((Sign) block.getState()).getLines();
         return Utils.isPlayerOnLine(player, lines[1]);
     }
 
     public static boolean isUserOnSign(Block block, Player player) {
-        // Requires (isLockSign or isAdditionalSign)
+        // Requires (isLockSigned or isMoreSigned)
         String[] lines = ((Sign) block.getState()).getLines();
         // Normal
         for (int i = 1; i < 4; i++) {
@@ -384,12 +384,12 @@ public class LocketAPI {
         return Config.isPrivateSignString(line);
     }
 
-    public static boolean isAdditionalString(String line) {
+    public static boolean isMoreString(String line) {
         return Config.isMoreSign(line);
     }
 
-    public static boolean isLockStringOrAdditionalString(String line) {
-        return isLockString(line) || isAdditionalString(line);
+    public static boolean isLockOrMoreString(String line) {
+        return isLockString(line) || isMoreString(line);
     }
 
     public static Block getAttachedBlock(Block sign) {

@@ -48,7 +48,7 @@ public class BlockEventListener implements Listener {
         Block block = event.getBlock();
         Player player = event.getPlayer();
         if (player.hasPermission("locket.admin.break")) return;
-        if (LocketAPI.isLockSign(block)) {
+        if (LocketAPI.isLockSigned(block)) {
             if (LocketAPI.isOwnerOfSign(block, player)) {
                 Utils.sendMessages(player, Config.getLang("break-own-lock-sign"));
                 // Remove additional signs?
@@ -56,7 +56,7 @@ public class BlockEventListener implements Listener {
                 Utils.sendMessages(player, Config.getLang("cannot-break-this-lock-sign"));
                 event.setCancelled(true);
             }
-        } else if (LocketAPI.isAdditionalSign(block)) {
+        } else if (LocketAPI.isMoreSigned(block)) {
             if (LocketAPI.isOwnerOfSign(block, player)) {
                 Utils.sendMessages(player, Config.getLang("break-own-additional-sign"));
             } else if (!LocketAPI.isProtected(LocketAPI.getAttachedBlock(block))) {
@@ -115,13 +115,13 @@ public class BlockEventListener implements Listener {
         String topline = event.getLine(0);
         Player player = event.getPlayer();
         if (!player.hasPermission("locket.lock")) {
-            if (LocketAPI.isLockString(topline) || LocketAPI.isAdditionalString(topline)) {
+            if (LocketAPI.isLockString(topline) || LocketAPI.isMoreString(topline)) {
                 event.setLine(0, Config.getLang("sign-error"));
                 Utils.sendMessages(player, Config.getLang("cannot-lock-manual"));
             }
             return;
         }
-        if (LocketAPI.isLockString(topline) || LocketAPI.isAdditionalString(topline)) {
+        if (LocketAPI.isLockString(topline) || LocketAPI.isMoreString(topline)) {
             Block block = LocketAPI.getAttachedBlock(event.getBlock());
             if (LocketAPI.isLockable(block)) {
                 // 检查其他插件保护
