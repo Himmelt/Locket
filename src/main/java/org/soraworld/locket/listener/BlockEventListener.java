@@ -1,31 +1,38 @@
 package org.soraworld.locket.listener;
 
-/* Created by Himmelt on 2016/7/16.*/
-
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.soraworld.locket.api.LocketAPI;
 import org.soraworld.locket.config.Config;
 import org.soraworld.locket.depend.Depend;
 import org.soraworld.locket.util.Utils;
+import org.spongepowered.api.block.BlockSnapshot;
+import org.spongepowered.api.data.Transaction;
+import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.Order;
+import org.spongepowered.api.event.block.ChangeBlockEvent;
+import org.spongepowered.api.event.filter.cause.First;
+import org.spongepowered.api.text.Text;
 
-public class BlockEventListener implements Listener {
+import java.util.List;
 
-    // Protect block from interfere block
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onAttemptPlaceInterfereBlocks(BlockPlaceEvent event) {
-        if (event.isCancelled()) return;
-        Block block = event.getBlock();
-        Player player = event.getPlayer();
-        if (player.hasPermission("locket.admin.interfere")) return;
-        if (LocketAPI.mayInterfere(block, player)) {
-            Utils.sendMessages(player, Config.getLang("cannot-interfere-with-others"));
-            event.setCancelled(true);
+public class BlockEventListener {
+
+    @Listener(order = Order.FIRST)
+    public void onBlockPlace(ChangeBlockEvent.Place event, @First Player player) {
+        List<Transaction<BlockSnapshot>> transactions = event.getTransactions();
+        if (!transactions.isEmpty()) {
+            BlockSnapshot origin = transactions.get(0).getOriginal();
+            BlockSnapshot target = transactions.get(0).getFinal();
+            if (player.hasPermission("locket.admin.interfere")) return;
+            if (LocketAPI.mayInterfere(origin, player)) {
+                player.sendMessage(Text.of("cannot-interfere-with-others"));
+                event.setCancelled(true);
+            }
         }
     }
 

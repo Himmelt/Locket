@@ -6,7 +6,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.Plugin;
+import org.soraworld.locket.Locket;
 import org.soraworld.locket.log.Logger;
 
 import java.io.File;
@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Set;
 
 public class Config {
-    private static Plugin plugin;
+    private Locket locket;
     private static FileConfiguration langFile;
 
     private static Set<Material> lockables = new HashSet<>();
@@ -31,18 +31,18 @@ public class Config {
 
     private static boolean blockHopperMinecart = true;//漏斗矿车
 
-    public Config(Plugin _plugin) {
-        plugin = _plugin;
+    public Config(Locket locket) {
+        this.locket = locket;
         reload();
     }
 
     @SuppressWarnings("deprecation")
     public static void reload() {
-        plugin.saveDefaultConfig();
+        locket.saveDefaultConfig();
         initConfigFiles();
-        FileConfiguration configFile = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "config.yml"));
+        FileConfiguration configFile = YamlConfiguration.loadConfiguration(new File(locket.getDataFolder(), "config.yml"));
         String langName = configFile.getString("language-file", "lang_en_us.yml");
-        langFile = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), langName));
+        langFile = YamlConfiguration.loadConfiguration(new File(locket.getDataFolder(), langName));
 
         defaultPrivateSign = ChatColor.translateAlternateColorCodes('&', configFile.getString("private-sign"));
         defaultMoreSign = ChatColor.translateAlternateColorCodes('&', configFile.getString("more-sign"));
@@ -96,9 +96,9 @@ public class Config {
     public static void initConfigFiles() {
         String[] langFiles = {"lang_en_us.yml", "lang_zh_cn.yml"};
         for (String filename : langFiles) {
-            File _file = new File(plugin.getDataFolder(), filename);
+            File _file = new File(locket.getDataFolder(), filename);
             if (!_file.exists()) {
-                plugin.saveResource(filename, false);
+                locket.saveResource(filename, false);
             }
         }
     }

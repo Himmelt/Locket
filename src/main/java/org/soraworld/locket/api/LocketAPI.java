@@ -1,19 +1,15 @@
 package org.soraworld.locket.api;
 
-/* Created by Himmelt on 2016/7/15.*/
-
-import org.bukkit.Effect;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.Sign;
-import org.bukkit.entity.Player;
-import org.bukkit.material.MaterialData;
-import org.bukkit.material.Openable;
 import org.soraworld.locket.config.Config;
 import org.soraworld.locket.depend.Depend;
+import org.soraworld.locket.util.BlockFace;
+import org.soraworld.locket.util.DoorType;
 import org.soraworld.locket.util.Utils;
+import org.spongepowered.api.block.BlockSnapshot;
+import org.spongepowered.api.block.BlockType;
+import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.entity.living.player.Player;
 
 public class LocketAPI {
 
@@ -177,10 +173,10 @@ public class LocketAPI {
 
     public static boolean isUserSingleBlock(Block block, BlockFace exempt, Player player) {
         // Requires isLocked
-        for (BlockFace blockface : newsFaces) {
-            if (blockface == exempt) continue;
-            Block relativeBlock = block.getRelative(blockface);
-            if (isLockOrMoreSign(relativeBlock) && (((org.bukkit.material.Sign) relativeBlock.getState().getData()).getFacing() == blockface)) {
+        for (BlockFace face : newsFaces) {
+            if (face == exempt) continue;
+            Block relativeBlock = block.getRelative(face);
+            if (isLockOrMoreSign(relativeBlock) && (((org.bukkit.material.Sign) relativeBlock.getState().getData()).getFacing() == face)) {
                 if (isUserOnSign(relativeBlock, player)) {
                     return true;
                 }
@@ -189,9 +185,9 @@ public class LocketAPI {
         return false;
     }
 
-    public static boolean isOwnerOfSign(Block block, Player player) {
+    public static boolean isOwnerOfSign(Sign sign, Player player) {
         // Requires isSign
-        Block protectedBlock = getAttachedBlock(block);
+        Block protectedBlock = getAttachedBlock(sign);
         // Normal situation, that block is just locked by an adjacent sign
         if (isOwner(protectedBlock, player)) return true;
         // Situation where double door's block
@@ -236,8 +232,46 @@ public class LocketAPI {
         return false;
     }
 
-    public static boolean mayInterfere(Block block, Player player) {
-        // if LEFT may interfere RIGHT
+    public static boolean mayInterfere(BlockSnapshot block, Player player) {
+        BlockType type = block.getState().getType();
+        // DOOR
+        if (type == BlockTypes.WOODEN_DOOR || type == BlockTypes.ACACIA_DOOR || type == BlockTypes.IRON_DOOR || type == BlockTypes.BIRCH_DOOR) {
+            for (BlockFace face : newsFaces) {
+                BlockType newType = block.getLocation().get().getBlockRelative(face.get()).getBlockType();
+                switch (DoorType.resolve(newType)) {
+                    case WOODEN_DOOR:
+                    case BIRCH_DOOR:
+                    case ACACIA_DOOR:
+                    case JUNGLE_DOOR:
+                    case SPRUCE_DOOR:
+                    case DARK_OAK_DOOR:
+                    case IRON_DOOR:
+                        if (isLocked(newBlock) && !isOwner(newBlock, player)) {
+                            return true;
+                        }
+                    default:
+                        break;
+                }
+            }
+            Block newBlock2 = block.getRelative(BlockFace.UP, 2);
+            switch (newBlock2.getType()) {
+                default:
+                    if (isLocked(newBlock2) && !isOwner(newBlock2, player)) {
+                        return true;
+                    }
+                    break;
+            }
+            Block newBlock3 = block.getRelative(BlockFace.DOWN, 1);
+            switch (newBlock3.getType()) {
+                default:
+                    if (isLocked(newBlock3) && !isOwner(newBlock3, player)) {
+                        return true;
+                    }
+                    break;
+            }
+            break;
+        }
+
         switch (block.getType()) {
             case WOODEN_DOOR:
             case IRON_DOOR_BLOCK:
@@ -254,24 +288,8 @@ public class LocketAPI {
                     }
                 }
                 // Temp workaround bad code for checking up and down signs
-                Block newBlock2 = block.getRelative(BlockFace.UP, 2);
-                switch (newBlock2.getType()) {
-                    default:
-                        if (isLocked(newBlock2) && !isOwner(newBlock2, player)) {
-                            return true;
-                        }
-                        break;
-                }
-                Block newBlock3 = block.getRelative(BlockFace.DOWN, 1);
-                switch (newBlock3.getType()) {
-                    default:
-                        if (isLocked(newBlock3) && !isOwner(newBlock3, player)) {
-                            return true;
-                        }
-                        break;
-                }
-                break;
-            // End temp workaround bad code for checking up and down signs
+
+                // End temp workaround bad code for checking up and down signs
             case CHEST:
             case TRAPPED_CHEST:
             case WALL_SIGN:

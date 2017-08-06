@@ -1,0 +1,51 @@
+buildscript {
+    repositories {
+        maven {
+            url 'http://localhost/nexus/content/groups/public/'
+        }
+        jcenter()
+        maven {
+            name = 'gradle-plugins'
+            url = 'https://plugins.gradle.org/m2'
+        }
+        maven {
+            name = 'sponge'
+            url = 'https://repo.spongepowered.org/maven'
+        }
+        maven {
+            name = 'forge'
+            url = 'http://files.minecraftforge.net/maven'
+        }
+        maven {
+            name = 'spigotmc-repo'
+            url = 'https://hub.spigotmc.org/nexus/content/groups/public/'
+        }
+        dependencies {
+            classpath "com.github.jengelman.gradle.plugins:shadow:2.0.1"
+        }
+    }
+}
+
+plugins {
+    id 'org.spongepowered.plugin' version '0.8.1'
+    id 'com.github.johnrengelman.shadow' version '2.0.1'
+}
+
+group 'org.soraworld'
+version '1.0.4'
+description = 'Locket Plugin'
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+//shadowJar {
+//    dependencies {
+//        include(dependency('org.mindrot:jbcrypt:0.4'))
+//        include(dependency('com.sun.mail:javax.mail:1.6.0'))
+//    }
+//}
+
+dependencies {
+    compile 'org.spongepowered:spongeapi:6.1.0-SNAPSHOT'
+}
