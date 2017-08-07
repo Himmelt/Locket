@@ -6,22 +6,29 @@ import org.soraworld.locket.util.BlockFace;
 import org.soraworld.locket.util.DoorType;
 import org.soraworld.locket.util.Utils;
 import org.spongepowered.api.block.BlockSnapshot;
+import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.util.Direction;
+import org.spongepowered.api.world.Location;
 
 public class LocketAPI {
 
     public static BlockFace[] newsFaces = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
     public static BlockFace[] allFaces = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN};
 
-    public static boolean isLocked(Block block) {
-        switch (block.getType()) {
+    public static boolean isLocked(Location location) {
+        BlockType type = location.getBlockType();
+        if (DoorType.resolve(type) != DoorType.INVALID) {
+
+        }
+        switch () {
             // Double Doors
             case WOODEN_DOOR:
             case IRON_DOOR_BLOCK:
-                Block[] doors = getDoors(block);
+                Block[] doors = getDoors(location);
                 if (doors == null) return false;
                 for (BlockFace doorFace : newsFaces) {
                     Block relative0 = doors[0].getRelative(doorFace), relative1 = doors[1].getRelative(doorFace);
@@ -44,15 +51,15 @@ public class LocketAPI {
             case TRAPPED_CHEST:
                 // Check second chest sign
                 for (BlockFace chestFace : newsFaces) {
-                    Block relativeChest = block.getRelative(chestFace);
-                    if (relativeChest.getType() == block.getType()) {
+                    Block relativeChest = location.getRelative(chestFace);
+                    if (relativeChest.getType() == location.getType()) {
                         if (isLockedSingleBlock(relativeChest, chestFace.getOppositeFace())) return true;
                     }
                 }
                 // Don't break here
                 // Everything else (First block of container check goes here)
             default:
-                if (isLockedSingleBlock(block, null)) return true;
+                if (isLockedSingleBlock(location, null)) return true;
                 break;
         }
         return false;
@@ -196,40 +203,21 @@ public class LocketAPI {
         return false;
     }
 
-    public static boolean isLockable(Block block) {
-        Material material = block.getType();
-        //Bad blocks
-        switch (material) {
-            case SIGN:
-            case WALL_SIGN:
-            case SIGN_POST:
-                return false;
-            default:
-                break;
-        }
-        if (Config.isLockable(material)) {
-            // Directly lockable
+    public static boolean isLockable(Location location) {
+        BlockType type = location.getBlockType();
+        if (type == BlockTypes.WALL_SIGN || type == BlockTypes.STANDING_SIGN) return false;
+        if (Config.isLockable(type)) {
             return true;
         } else {
-            // Indirectly lockable
-            Block blockUp = block.getRelative(BlockFace.UP);
-            if (blockUp != null && isUpDownAlsoLockableBlock(blockUp)) return true;
-            Block blockDown = block.getRelative(BlockFace.DOWN);
-            return blockDown != null && isUpDownAlsoLockableBlock(blockDown);
+            BlockType typeUp = location.getRelative(Direction.UP).getBlockType();
+            if (isUpDownAlsoLockableBlock(typeUp)) return true;
+            BlockType typeDown = location.getRelative(Direction.DOWN).getBlockType();
+            if (isUpDownAlsoLockableBlock(typeDown)) return true;
         }
     }
 
-    public static boolean isUpDownAlsoLockableBlock(Block block) {
-        if (Config.isLockable(block.getType())) {
-            switch (block.getType()) {
-                case WOODEN_DOOR:
-                case IRON_DOOR_BLOCK:
-                    return true;
-                default:
-                    return false;
-            }
-        }
-        return false;
+    public static boolean isUpDownAlsoLockableBlock(BlockType type) {
+        return DoorType.resolve(type) != DoorType.INVALID;
     }
 
     public static boolean mayInterfere(BlockSnapshot block, Player player) {

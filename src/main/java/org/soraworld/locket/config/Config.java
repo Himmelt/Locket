@@ -8,6 +8,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.soraworld.locket.Locket;
 import org.soraworld.locket.log.Logger;
+import org.spongepowered.api.block.BlockType;
 
 import java.io.File;
 import java.util.Collections;
@@ -19,7 +20,7 @@ public class Config {
     private Locket locket;
     private static FileConfiguration langFile;
 
-    private static Set<Material> lockables = new HashSet<>();
+    private static HashSet<BlockType> lockables = new HashSet<>();
 
     private static String defaultPrivateSign = "[Private]";
     private static String defaultMoreSign = "[More Users]";
@@ -123,8 +124,8 @@ public class Config {
         return ChatColor.translateAlternateColorCodes('&', langFile.getString(path, ""));
     }
 
-    public static boolean isLockable(Material material) {
-        return lockables.contains(material);
+    public static boolean isLockable(BlockType type) {
+        return lockables.contains(type);
     }
 
     public static boolean isPrivateSignString(String message) {

@@ -1,19 +1,9 @@
 package org.soraworld.locket.depend;
 
-/* Created by Himmelt on 2016/7/15.*/
-
-import com.bekvon.bukkit.residence.Residence;
-import com.massivecraft.factions.entity.BoardColl;
-import com.massivecraft.factions.entity.Faction;
-import com.massivecraft.factions.entity.MPlayer;
-import com.massivecraft.massivecore.ps.PS;
-import com.palmergames.bukkit.towny.object.*;
-import com.palmergames.bukkit.towny.utils.PlayerCacheUtil;
-import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
-import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.soraworld.locket.log.Logger;
+import org.spongepowered.api.block.BlockSnapshot;
+import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.world.Location;
 
 public class Depend {
     protected static WorldGuardPlugin worldGuard = null;
@@ -37,9 +27,8 @@ public class Depend {
     }
 
 
-    @SuppressWarnings("deprecation")
-    public static boolean isProtectedFrom(Block block, Player player) {
-        if (worldGuard != null) {
+    public static boolean isProtectedFrom(Location location, Player player) {
+        /*if (worldGuard != null) {
             if (!worldGuard.canBuild(player, block)) return true;
         }
         if (residence != null) {
@@ -78,7 +67,7 @@ public class Depend {
                 e.printStackTrace();
                 Logger.info(e.toString());
             }
-        }
+        }*/
         return false;
     }
 
