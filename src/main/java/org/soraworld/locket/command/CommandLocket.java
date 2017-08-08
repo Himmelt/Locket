@@ -22,7 +22,7 @@ public class CommandLocket implements CommandExecutor {
             Text text = args.<Text>getOne("name").orElse(Text.of(""));
             if (sign == null) {
                 player.sendMessage(Text.of("no-sign-selected"));
-            } else if (!(player.hasPermission("locket.edit.admin") || LocketAPI.isOwnerOfSign(sign, player))) {
+            } else if (!(player.hasPermission("locket.edit.admin") || LocketAPI.isOwnerOfSign(sign.getLocation(), player))) {
                 player.sendMessage(Text.of("sign-need-reselect"));
             } else if (SignUtil.canLock(sign)) {
                 switch (line) {

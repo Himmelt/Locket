@@ -1,14 +1,15 @@
 package org.soraworld.locket.util;
 
-/* Created by Himmelt on 2016/7/15.*/
-
-import org.bukkit.GameMode;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.block.Sign;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
+import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.command.CommandSource;
+import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.event.cause.Cause;
+import org.spongepowered.api.event.cause.NamedCause;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.util.Direction;
+import org.spongepowered.api.world.BlockChangeFlag;
+import org.spongepowered.api.world.Location;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,18 +18,16 @@ import java.util.Set;
 
 public class Utils {
 
-    private static Map<Player, Block> selectedSign = new HashMap<>();
+    private static Map<Player, Location> selectedSign = new HashMap<>();
     private static Set<Player> notified = new HashSet<>();
 
-    // Helper functions
-    @SuppressWarnings("deprecation")
-    public static void putSignOn(Block block, BlockFace blockface, String line1, String line2) {
-        Block newSign = block.getRelative(blockface);
-        newSign.setType(Material.WALL_SIGN);
+    public static void putSignOn(Player player, Location location, Direction face) {
+        Location newSign = location.getRelative(face);
+        newSign.setBlockType(BlockTypes.WALL_SIGN, BlockChangeFlag.NEIGHBOR, Cause.of(NamedCause.source(player))).setType(Material.WALL_SIGN);
         byte data;
         // So this part is pretty much a Bukkit bug:
         // Signs' rotation is not correct with bukkit's set facing, below is the workaround.
-        switch (blockface) {
+        switch (face) {
             case NORTH:
                 data = 2;
                 break;
@@ -76,13 +75,13 @@ public class Utils {
         return selectedSign.get(player);
     }
 
-    public static void selectSign(Player player, Block block) {
+    public static void selectSign(Player player, Location block) {
         selectedSign.put(player, block);
     }
 
-    public static void sendMessages(CommandSender sender, String messages) {
+    public static void sendMessages(CommandSource sender, String messages) {
         if (messages == null || messages.equals("")) return;
-        sender.sendMessage(messages);
+        sender.sendMessage(Text.of(messages));
     }
 
     public static boolean shouldNotify(Player player) {

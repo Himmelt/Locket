@@ -23,7 +23,6 @@ public class Locket {
         Sponge.getEventManager().registerListeners(this, new InventoryEventListener());
         Sponge.getEventManager().registerListeners(this, new PlayerEventListener());
         Sponge.getEventManager().registerListeners(this, new WorldEventListener());
-
     }
 
 }
