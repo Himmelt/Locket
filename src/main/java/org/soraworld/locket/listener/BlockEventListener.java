@@ -1,10 +1,5 @@
 package org.soraworld.locket.listener;
 
-import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.block.*;
 import org.soraworld.locket.api.LocketAPI;
 import org.soraworld.locket.config.Config;
 import org.soraworld.locket.depend.Depend;

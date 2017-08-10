@@ -6,7 +6,6 @@ import org.soraworld.locket.util.BlockFace;
 import org.soraworld.locket.util.DoorType;
 import org.soraworld.locket.util.Utils;
 import org.spongepowered.api.block.BlockSnapshot;
-import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -22,132 +21,109 @@ public class LocketAPI {
     public static BlockFace[] newsFaces = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
     public static BlockFace[] allFaces = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN};
 
-    public static boolean isLocked(Location location) {
+    public static boolean isLocked(Location<World> location) {
         BlockType type = location.getBlockType();
         if (DoorType.resolve(type) != DoorType.INVALID) {
-
-        }
-        switch () {
-            // Double Doors
-            case WOODEN_DOOR:
-            case IRON_DOOR_BLOCK:
-                Block[] doors = getDoors(location);
-                if (doors == null) return false;
-                for (BlockFace doorFace : newsFaces) {
-                    Block relative0 = doors[0].getRelative(doorFace), relative1 = doors[1].getRelative(doorFace);
-                    if (relative0.getBlockType() == doors[0].getBlockType() && relative1.getBlockType() == doors[1].getBlockType()) {
-                        if (isLockedSingleBlock(relative1.getRelative(BlockFace.UP), doorFace.getOppositeFace()))
-                            return true;
-                        if (isLockedSingleBlock(relative1, doorFace.getOppositeFace())) return true;
-                        if (isLockedSingleBlock(relative0, doorFace.getOppositeFace())) return true;
-                        if (isLockedSingleBlock(relative0.getRelative(BlockFace.DOWN), doorFace.getOppositeFace()))
-                            return true;
-                    }
+            Location<World>[] doors = getDoors(location);
+            if (doors == null) return false;
+            for (BlockFace doorFace : newsFaces) {
+                Location<World> relative0 = doors[0].getRelative(doorFace.get()), relative1 = doors[1].getRelative(doorFace.get());
+                if (relative0.getBlockType() == doors[0].getBlockType() && relative1.getBlockType() == doors[1].getBlockType()) {
+                    if (isLockedSingleBlock(relative1.getRelative(Direction.UP), doorFace.getOppositeFace()))
+                        return true;
+                    if (isLockedSingleBlock(relative1, doorFace.getOppositeFace())) return true;
+                    if (isLockedSingleBlock(relative0, doorFace.getOppositeFace())) return true;
+                    if (isLockedSingleBlock(relative0.getRelative(Direction.DOWN), doorFace.getOppositeFace()))
+                        return true;
                 }
-                if (isLockedSingleBlock(doors[1].getRelative(BlockFace.UP), null)) return true;
-                if (isLockedSingleBlock(doors[1], null)) return true;
-                if (isLockedSingleBlock(doors[0], null)) return true;
-                if (isLockedSingleBlock(doors[0].getRelative(BlockFace.DOWN), null)) return true;
-                break;
-            // Chests (Second block only)
-            case CHEST:
-            case TRAPPED_CHEST:
-                // Check second chest sign
-                for (BlockFace chestFace : newsFaces) {
-                    Block relativeChest = location.getRelative(chestFace);
-                    if (relativeChest.getBlockType() == location.getBlockType()) {
-                        if (isLockedSingleBlock(relativeChest, chestFace.getOppositeFace())) return true;
-                    }
+            }
+            if (isLockedSingleBlock(doors[1].getRelative(Direction.UP), null)) return true;
+            if (isLockedSingleBlock(doors[1], null)) return true;
+            if (isLockedSingleBlock(doors[0], null)) return true;
+            if (isLockedSingleBlock(doors[0].getRelative(Direction.DOWN), null)) return true;
+        } else if (type == BlockTypes.CHEST || type == BlockTypes.TRAPPED_CHEST) {
+            // Check second chest sign
+            for (BlockFace chestFace : newsFaces) {
+                Location<World> relativeChest = location.getRelative(chestFace.get());
+                if (relativeChest.getBlockType() == location.getBlockType()) {
+                    if (isLockedSingleBlock(relativeChest, chestFace.getOppositeFace())) return true;
                 }
-                // Don't break here
-                // Everything else (First block of container check goes here)
-            default:
-                if (isLockedSingleBlock(location, null)) return true;
-                break;
+            }
+            // Don't break here
+            // Everything else (First block of container check goes here)
+        } else {
+            if (isLockedSingleBlock(location, null)) return true;
         }
         return false;
     }
 
-    public static boolean isOwner(Location block, Player player) {
-        switch (block.getBlockType()) {
-            // Double Doors
-            case WOODEN_DOOR:
-            case IRON_DOOR_BLOCK:
-                Block[] doors = getDoors(block);
-                if (doors == null) return false;
-                for (BlockFace doorFace : newsFaces) {
-                    Block relative0 = doors[0].getRelative(doorFace), relative1 = doors[1].getRelative(doorFace);
-                    if (relative0.getBlockType() == doors[0].getBlockType() && relative1.getBlockType() == doors[1].getBlockType()) {
-                        if (isOwnerSingleBlock(relative1.getRelative(BlockFace.UP), doorFace.getOppositeFace(), player))
-                            return true;
-                        if (isOwnerSingleBlock(relative1, doorFace.getOppositeFace(), player)) return true;
-                        if (isOwnerSingleBlock(relative0, doorFace.getOppositeFace(), player)) return true;
-                        if (isOwnerSingleBlock(relative0.getRelative(BlockFace.DOWN), doorFace.getOppositeFace(), player))
-                            return true;
-                    }
+    public static boolean isOwner(Location<World> block, Player player) {
+        if (DoorType.isDoor(block)) {
+            Location<World>[] doors = getDoors(block);
+            if (doors == null) return false;
+            for (BlockFace doorFace : newsFaces) {
+                Location<World> relative0 = doors[0].getRelative(doorFace.get()), relative1 = doors[1].getRelative(doorFace.get());
+                if (relative0.getBlockType() == doors[0].getBlockType() && relative1.getBlockType() == doors[1].getBlockType()) {
+                    if (isOwnerSingleBlock(relative1.getRelative(Direction.UP), doorFace.getOppositeFace(), player))
+                        return true;
+                    if (isOwnerSingleBlock(relative1, doorFace.getOppositeFace(), player)) return true;
+                    if (isOwnerSingleBlock(relative0, doorFace.getOppositeFace(), player)) return true;
+                    if (isOwnerSingleBlock(relative0.getRelative(Direction.DOWN), doorFace.getOppositeFace(), player))
+                        return true;
                 }
-                if (isOwnerSingleBlock(doors[1].getRelative(BlockFace.UP), null, player)) return true;
-                if (isOwnerSingleBlock(doors[1], null, player)) return true;
-                if (isOwnerSingleBlock(doors[0], null, player)) return true;
-                if (isOwnerSingleBlock(doors[0].getRelative(BlockFace.DOWN), null, player)) return true;
-                break;
-            // Chests (Second block only)
-            case CHEST:
-            case TRAPPED_CHEST:
-                // Check second chest sign
-                for (BlockFace chestFace : newsFaces) {
-                    Block relativeChest = block.getRelative(chestFace);
-                    if (relativeChest.getBlockType() == block.getBlockType()) {
-                        if (isOwnerSingleBlock(relativeChest, chestFace.getOppositeFace(), player)) return true;
-                    }
+            }
+            if (isOwnerSingleBlock(doors[1].getRelative(Direction.UP), null, player)) return true;
+            if (isOwnerSingleBlock(doors[1], null, player)) return true;
+            if (isOwnerSingleBlock(doors[0], null, player)) return true;
+            if (isOwnerSingleBlock(doors[0].getRelative(Direction.DOWN), null, player)) return true;
+        } else if (block.getBlockType() == BlockTypes.CHEST || block.getBlockType() == BlockTypes.TRAPPED_CHEST) {
+            // Check second chest sign
+            for (BlockFace chestFace : newsFaces) {
+                Location<World> relativeChest = block.getRelative(chestFace.get());
+                if (relativeChest.getBlockType() == block.getBlockType()) {
+                    if (isOwnerSingleBlock(relativeChest, chestFace.getOppositeFace(), player)) return true;
                 }
-                // Don't break here
-                // Everything else (First block of container check goes here)
-            default:
-                if (isOwnerSingleBlock(block, null, player)) return true;
-                break;
+            }
+            // Don't break here
+            // Everything else (First block of container check goes here)
+        } else {
+            if (isOwnerSingleBlock(block, null, player)) return true;
         }
         return false;
     }
 
-    public static boolean isUser(Location block, Player player) {
-        switch (block.getBlockType()) {
-            // Double Doors
-            case WOODEN_DOOR:
-            case IRON_DOOR_BLOCK:
-                Block[] doors = getDoors(block);
-                if (doors == null) return false;
-                for (BlockFace doorFace : newsFaces) {
-                    Block relative0 = doors[0].getRelative(doorFace), relative1 = doors[1].getRelative(doorFace);
-                    if (relative0.getBlockType() == doors[0].getBlockType() && relative1.getBlockType() == doors[1].getBlockType()) {
-                        if (isUserSingleBlock(relative1.getRelative(BlockFace.UP), doorFace.getOppositeFace(), player))
-                            return true;
-                        if (isUserSingleBlock(relative1, doorFace.getOppositeFace(), player)) return true;
-                        if (isUserSingleBlock(relative0, doorFace.getOppositeFace(), player)) return true;
-                        if (isUserSingleBlock(relative0.getRelative(BlockFace.DOWN), doorFace.getOppositeFace(), player))
-                            return true;
-                    }
+    public static boolean isUser(Location<World> block, Player player) {
+        // Double Doors
+        if (DoorType.isDoor(block)) {
+            Location<World>[] doors = getDoors(block);
+            if (doors == null) return false;
+            for (BlockFace doorFace : newsFaces) {
+                Location<World> relative0 = doors[0].getRelative(doorFace.get()), relative1 = doors[1].getRelative(doorFace.get());
+                if (relative0.getBlockType() == doors[0].getBlockType() && relative1.getBlockType() == doors[1].getBlockType()) {
+                    if (isUserSingleBlock(relative1.getRelative(Direction.UP), doorFace.getOppositeFace(), player))
+                        return true;
+                    if (isUserSingleBlock(relative1, doorFace.getOppositeFace(), player)) return true;
+                    if (isUserSingleBlock(relative0, doorFace.getOppositeFace(), player)) return true;
+                    if (isUserSingleBlock(relative0.getRelative(Direction.DOWN), doorFace.getOppositeFace(), player))
+                        return true;
                 }
-                if (isUserSingleBlock(doors[1].getRelative(BlockFace.UP), null, player)) return true;
-                if (isUserSingleBlock(doors[1], null, player)) return true;
-                if (isUserSingleBlock(doors[0], null, player)) return true;
-                if (isUserSingleBlock(doors[0].getRelative(BlockFace.DOWN), null, player)) return true;
-                break;
-            // Chests (Second block only)
-            case CHEST:
-            case TRAPPED_CHEST:
-                // Check second chest sign
-                for (BlockFace chestFace : newsFaces) {
-                    Block relativeChest = block.getRelative(chestFace);
-                    if (relativeChest.getBlockType() == block.getBlockType()) {
-                        if (isUserSingleBlock(relativeChest, chestFace.getOppositeFace(), player)) return true;
-                    }
+            }
+            if (isUserSingleBlock(doors[1].getRelative(Direction.UP), null, player)) return true;
+            if (isUserSingleBlock(doors[1], null, player)) return true;
+            if (isUserSingleBlock(doors[0], null, player)) return true;
+            if (isUserSingleBlock(doors[0].getRelative(Direction.DOWN), null, player)) return true;
+        } else if (block.getBlockType() == BlockTypes.CHEST || block.getBlockType() == BlockTypes.TRAPPED_CHEST) {
+            // Check second chest sign
+            for (BlockFace chestFace : newsFaces) {
+                Location<World> relativeChest = block.getRelative(chestFace.get());
+                if (relativeChest.getBlockType() == block.getBlockType()) {
+                    if (isUserSingleBlock(relativeChest, chestFace.getOppositeFace(), player)) return true;
                 }
-                // Don't break here
-                // Everything else (First block of container check goes here)
-            default:
-                if (isUserSingleBlock(block, null, player)) return true;
-                break;
+            }
+            // Don't break here
+            // Everything else (First block of container check goes here)
+        } else {
+            if (isUserSingleBlock(block, null, player)) return true;
         }
         return false;
     }
@@ -159,8 +135,8 @@ public class LocketAPI {
     public static boolean isLockedSingleBlock(Location<World> block, BlockFace exempt) {
         for (BlockFace blockface : newsFaces) {
             if (blockface == exempt) continue;
-            Block relativeBlock = block.getRelative(blockface);
-            if (isLockSigned(relativeBlock) && (((org.bukkit.material.Sign) relativeBlock.getState().getData()).getFacing() == blockface)) {
+            Location<World> relativeBlock = block.getRelative(blockface.get());
+            if (isLockSigned(relativeBlock) && block.getBlock().get(Keys.DIRECTION).orElse(Direction.NONE) == blockface.get()) {
                 return true;
             }
         }
@@ -171,8 +147,8 @@ public class LocketAPI {
         // Requires isLocked
         for (BlockFace blockface : newsFaces) {
             if (blockface == exempt) continue;
-            Block relativeBlock = block.getRelative(blockface);
-            if (isLockSigned(relativeBlock) && (((org.bukkit.material.Sign) relativeBlock.getState().getData()).getFacing() == blockface)) {
+            Location<World> relativeBlock = block.getRelative(blockface.get());
+            if (isLockSigned(relativeBlock) && block.getBlock().get(Keys.DIRECTION).orElse(Direction.NONE) == blockface.get()) {
                 if (isOwnerOnSign(relativeBlock, player)) {
                     return true;
                 }
@@ -185,8 +161,8 @@ public class LocketAPI {
         // Requires isLocked
         for (BlockFace face : newsFaces) {
             if (face == exempt) continue;
-            Block relativeBlock = block.getRelative(face);
-            if (isLockOrMoreSign(relativeBlock) && (((org.bukkit.material.Sign) relativeBlock.getState().getData()).getFacing() == face)) {
+            Location<World> relativeBlock = block.getRelative(face.get());
+            if (isLockOrMoreSign(relativeBlock) && block.getBlock().get(Keys.DIRECTION).orElse(Direction.NONE) == face.get()) {
                 if (isUserOnSign(relativeBlock, player)) {
                     return true;
                 }
@@ -195,9 +171,9 @@ public class LocketAPI {
         return false;
     }
 
-    public static boolean isOwnerOfSign(Location sign, Player player) {
+    public static boolean isOwnerOfSign(Location<World> sign, Player player) {
         // Requires isSign
-        Location protectedBlock = getAttachedBlock(sign);
+        Location<World> protectedBlock = getAttachedBlock(sign);
         // Normal situation, that block is just locked by an adjacent sign
         if (isOwner(protectedBlock, player)) return true;
         // Situation where double door's block
@@ -217,6 +193,7 @@ public class LocketAPI {
             BlockType typeDown = location.getRelative(Direction.DOWN).getBlockType();
             if (isUpDownAlsoLockableBlock(typeDown)) return true;
         }
+        return false;
     }
 
     public static boolean isUpDownAlsoLockableBlock(BlockType type) {
@@ -224,11 +201,12 @@ public class LocketAPI {
     }
 
     public static boolean mayInterfere(BlockSnapshot block, Player player) {
-        BlockType type = block.getState().getBlockType();
+        BlockType type = block.getState().getType();
         // DOOR
         if (type == BlockTypes.WOODEN_DOOR || type == BlockTypes.ACACIA_DOOR || type == BlockTypes.IRON_DOOR || type == BlockTypes.BIRCH_DOOR) {
             for (BlockFace face : newsFaces) {
-                BlockType newType = block.getLocation().get().getBlockRelative(face.get()).getBlockType();
+                Location<World> newBlock = block.getLocation().get().getBlockRelative(face.get());
+                BlockType newType = newBlock.getBlockType();
                 switch (DoorType.resolve(newType)) {
                     case WOODEN_DOOR:
                     case BIRCH_DOOR:
@@ -244,83 +222,12 @@ public class LocketAPI {
                         break;
                 }
             }
-            Block newBlock2 = block.getRelative(BlockFace.UP, 2);
-            switch (newBlock2.getBlockType()) {
-                default:
-                    if (isLocked(newBlock2) && !isOwner(newBlock2, player)) {
-                        return true;
-                    }
-                    break;
+            Location<World> newBlock2 = block.getLocation().get().getBlockRelative(Direction.UP);
+            Location<World> newBlock3 = block.getLocation().get().getBlockRelative(Direction.DOWN);
+            ;
+            if (isLocked(newBlock3) && !isOwner(newBlock3, player)) {
+                return true;
             }
-            Block newBlock3 = block.getRelative(BlockFace.DOWN, 1);
-            switch (newBlock3.getBlockType()) {
-                default:
-                    if (isLocked(newBlock3) && !isOwner(newBlock3, player)) {
-                        return true;
-                    }
-                    break;
-            }
-            break;
-        }
-
-        switch (block.getBlockType()) {
-            case WOODEN_DOOR:
-            case IRON_DOOR_BLOCK:
-                for (BlockFace blockface : newsFaces) {
-                    Block newBlock = block.getRelative(blockface);
-                    switch (newBlock.getBlockType()) {
-                        case WOODEN_DOOR:
-                        case IRON_DOOR_BLOCK:
-                            if (isLocked(newBlock) && !isOwner(newBlock, player)) {
-                                return true;
-                            }
-                        default:
-                            break;
-                    }
-                }
-                // Temp workaround bad code for checking up and down signs
-
-                // End temp workaround bad code for checking up and down signs
-            case CHEST:
-            case TRAPPED_CHEST:
-            case WALL_SIGN:
-            case SIGN_POST:
-                for (BlockFace blockface : allFaces) {
-                    Block newBlock = block.getRelative(blockface);
-                    switch (newBlock.getBlockType()) {
-                        case CHEST:
-                        case TRAPPED_CHEST:
-                            if (isLockedSingleBlock(newBlock, null) && !isOwnerSingleBlock(newBlock, null, player)) {
-                                return true;
-                            }
-                        default:
-                            break;
-                    }
-                }
-                break;
-            // This is extra interfere block
-            case HOPPER:
-            case DISPENSER:
-            case DROPPER:
-                if (!Config.isInterferePlacementBlocked()) return false;
-                for (BlockFace blockface : allFaces) {
-                    Block newBlock = block.getRelative(blockface);
-                    switch (newBlock.getBlockType()) {
-                        case CHEST:
-                        case TRAPPED_CHEST:
-                        case HOPPER:
-                        case DISPENSER:
-                        case DROPPER:
-                            if (isLocked(newBlock) && !isOwner(newBlock, player)) {
-                                return true;
-                            }
-                        default:
-                            break;
-                    }
-                }
-                break;
-            default:
-                break;
         }
         return false;
     }
@@ -360,7 +267,7 @@ public class LocketAPI {
         TileEntity tile = block.getTileEntity().orElse(null);
         if (tile != null && tile instanceof Sign) {
             String line = ((Sign) tile).lines().get(1).toPlain();
-            return Utils.isPlayerOnLine(player,line);
+            return Utils.isPlayerOnLine(player, line);
         }
         return false;
     }
@@ -417,9 +324,9 @@ public class LocketAPI {
         return isLockString(line) || isMoreString(line);
     }
 
-    public static Location getAttachedBlock(Location<World> sign) {
+    public static Location<World> getAttachedBlock(Location<World> sign) {
         // Requires isSign
-        return sign.getRelative(((org.bukkit.material.Sign) sign.getState().getData()).getFacing().getOppositeFace());
+        return sign.getRelative(sign.getBlock().get(Keys.DIRECTION).orElse(Direction.NONE).getOpposite());
     }
 
 
@@ -462,19 +369,12 @@ public class LocketAPI {
         }
     }
 
-    public static void toggleDoor(Location block, boolean open) {
+    public static void toggleDoor(Location<World> block, boolean open) {
         block.getBlock().cycleValue(Keys.HINGE_POSITION);
-        doorState.update();
-        block.getWorld().playEffect(block.getLocation(), Effect.DOOR_TOGGLE, 0);
     }
 
     public static void toggleDoor(Location block) {
-        BlockState doorState = block.getState();
-        Openable openableState = (Openable) doorState.getData();
-        openableState.setOpen(!openableState.isOpen());
-        doorState.setData((MaterialData) openableState);
-        doorState.update();
-        block.getWorld().playEffect(block.getLocation(), Effect.DOOR_TOGGLE, 0);
+        block.getBlock().cycleValue(Keys.HINGE_POSITION);
     }
 
 }

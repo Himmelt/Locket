@@ -8,7 +8,8 @@ public enum BlockFace {
     SOUTH(Direction.SOUTH),
     WEST(Direction.WEST),
     UP(Direction.UP),
-    DOWN(Direction.DOWN);
+    DOWN(Direction.DOWN),
+    NONE(Direction.NONE);
 
     private final Direction direction;
 
@@ -18,5 +19,24 @@ public enum BlockFace {
 
     public Direction get() {
         return this.direction;
+    }
+
+    public BlockFace getOppositeFace() {
+        switch (this) {
+            case UP:
+                return DOWN;
+            case DOWN:
+                return UP;
+            case EAST:
+                return WEST;
+            case WEST:
+                return EAST;
+            case NORTH:
+                return SOUTH;
+            case SOUTH:
+                return NORTH;
+            default:
+                return NONE;
+        }
     }
 }

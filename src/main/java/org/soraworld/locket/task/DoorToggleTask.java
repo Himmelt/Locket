@@ -9,8 +9,8 @@ public class DoorToggleTask implements Runnable {
 
     private List<Location> doors;
 
-    public DoorToggleTask(List<Location> doors_) {
-        doors = doors_;
+    public DoorToggleTask(List<Location> doors) {
+        this.doors = doors;
     }
 
     @Override
