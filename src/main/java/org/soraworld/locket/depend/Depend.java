@@ -6,12 +6,12 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.world.Location;
 
 public class Depend {
-    protected static WorldGuardPlugin worldGuard = null;
+    /*protected static WorldGuardPlugin worldGuard = null;
     protected static Plugin residence = null;
     protected static Plugin towny = null;
-    protected static Plugin factions = null;
+    protected static Plugin factions = null;*/
 
-    public Depend(Plugin _plugin) {
+/*    public Depend(Plugin _plugin) {
         Plugin worldGuardPlugin = _plugin.getServer().getPluginManager().getPlugin("WorldGuard");
         if (worldGuardPlugin == null || !(worldGuardPlugin instanceof WorldGuardPlugin)) {
             worldGuard = null;
@@ -24,7 +24,7 @@ public class Depend {
         towny = _plugin.getServer().getPluginManager().getPlugin("Towny");
         // Factions
         factions = _plugin.getServer().getPluginManager().getPlugin("Factions");
-    }
+    }*/
 
 
     public static boolean isProtectedFrom(Location location, Player player) {
@@ -72,7 +72,7 @@ public class Depend {
     }
 
     public static boolean isTownyTownOrNationOf(String line, Player player) {
-        if (towny != null) {
+        /*if (towny != null) {
             String name = player.getName();
             try {
                 Resident resident = TownyUniverse.getDataSource().getResident(name);
@@ -98,7 +98,7 @@ public class Depend {
                 e.printStackTrace();
                 Logger.info(e.toString());
             }
-        }
+        }*/
         return false;
     }
 

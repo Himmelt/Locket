@@ -1,24 +1,12 @@
 package org.soraworld.locket.config;
 
-/* Created by Himmelt on 2016/7/15.*/
-
-import org.bukkit.ChatColor;
-import org.bukkit.Material;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.soraworld.locket.Locket;
-import org.soraworld.locket.log.Logger;
 import org.spongepowered.api.block.BlockType;
 
-import java.io.File;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 public class Config {
     private Locket locket;
-    private static FileConfiguration langFile;
 
     private static HashSet<BlockType> lockables = new HashSet<>();
 
@@ -39,7 +27,7 @@ public class Config {
 
     @SuppressWarnings("deprecation")
     public static void reload() {
-        locket.saveDefaultConfig();
+        /*locket.saveDefaultConfig();
         initConfigFiles();
         FileConfiguration configFile = YamlConfiguration.loadConfiguration(new File(locket.getDataFolder(), "config.yml"));
         String langName = configFile.getString("language-file", "lang_en_us.yml");
@@ -91,17 +79,17 @@ public class Config {
                 }
             }
         }
-        lockables.remove(Material.WALL_SIGN);
+        lockables.remove(Material.WALL_SIGN);*/
     }
 
     public static void initConfigFiles() {
-        String[] langFiles = {"lang_en_us.yml", "lang_zh_cn.yml"};
+        /*String[] langFiles = {"lang_en_us.yml", "lang_zh_cn.yml"};
         for (String filename : langFiles) {
             File _file = new File(locket.getDataFolder(), filename);
             if (!_file.exists()) {
                 locket.saveResource(filename, false);
             }
-        }
+        }*/
     }
 
     public static boolean isInterferePlacementBlocked() {
@@ -121,7 +109,8 @@ public class Config {
     }
 
     public static String getLang(String path) {
-        return ChatColor.translateAlternateColorCodes('&', langFile.getString(path, ""));
+        return path;
+        //ChatColor.translateAlternateColorCodes('&', langFile.getString(path, ""));
     }
 
     public static boolean isLockable(BlockType type) {

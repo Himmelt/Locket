@@ -45,7 +45,7 @@ public class PlayerEventListener {
                 event.setCancelled(true);
                 if (!locked && !LocketAPI.isUpDownLockedDoor(location)) {
                     // 拿掉玩家一个木牌
-                    Utils.removeASign(player);
+                    Utils.removeASign(player,event.getHandType());
                     // 显示消息
                     Utils.sendMessages(player, Config.getLang("locked-quick"));
                     Utils.putSignOn(player, location, face);

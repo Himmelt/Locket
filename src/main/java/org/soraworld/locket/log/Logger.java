@@ -1,18 +1,12 @@
 package org.soraworld.locket.log;
 
-/* Created by Himmelt on 2016/7/15.*/
-
-import org.bukkit.plugin.Plugin;
+import org.slf4j.LoggerFactory;
 
 public final class Logger {
 
-    private static Plugin plugin;
-
-    public Logger(Plugin _plugin) {
-        plugin = _plugin;
-    }
+    private static org.slf4j.Logger logger = LoggerFactory.getLogger("Locket");
 
     public static void info(String msg) {
-        plugin.getLogger().info(msg);
+        logger.info(msg);
     }
 }

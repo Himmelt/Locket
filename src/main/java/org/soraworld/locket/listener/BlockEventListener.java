@@ -10,8 +10,13 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
+import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
+import org.spongepowered.api.event.cause.NamedCause;
 import org.spongepowered.api.event.filter.cause.First;
+import org.spongepowered.api.event.filter.cause.Named;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
 import java.util.List;
 
@@ -32,23 +37,19 @@ public class BlockEventListener {
     }
 
     // Tell player about locket
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onPlaceFirstBlockNotify(BlockPlaceEvent event) {
-        if (event.isCancelled()) return;
-        Block block = event.getBlock();
-        Player player = event.getPlayer();
+    @Listener(order = Order.FIRST)
+    public void onPlaceFirstBlockNotify(ChangeBlockEvent.Place event, @First Player player) {
+        Location<World> block = event.getTransactions().get(0).getOriginal().getLocation().get();
         if (!player.hasPermission("locket.lock")) return;
-        if (Utils.shouldNotify(player) && Config.isLockable(block.getType())) {
+        if (Utils.shouldNotify(player) && Config.isLockable(block.getBlockType())) {
             Utils.sendMessages(player, Config.getLang("you-can-quick-lock-it"));
         }
     }
 
     // Player break sign
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onAttemptBreakSign(BlockBreakEvent event) {
-        if (event.isCancelled()) return;
-        Block block = event.getBlock();
-        Player player = event.getPlayer();
+    @Listener(order = Order.EARLY)
+    public void onAttemptBreakSign(ChangeBlockEvent.Break event, @First Player player) {
+        Location<World> block = event.getTransactions().get(0).getOriginal().getLocation().get();
         if (player.hasPermission("locket.admin.break")) return;
         if (LocketAPI.isLockSigned(block)) {
             if (LocketAPI.isOwnerOfSign(block, player)) {
@@ -71,11 +72,9 @@ public class BlockEventListener {
     }
 
     // Protect block from being destroyed
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onAttemptBreakLockedBlocks(BlockBreakEvent event) {
-        if (event.isCancelled()) return;
-        Block block = event.getBlock();
-        Player player = event.getPlayer();
+    @Listener(order = Order.EARLY)
+    public void onAttemptBreakLockedBlocks(ChangeBlockEvent.Break event, @First Player player) {
+        Location<World> block = event.getTransactions().get(0).getOriginal().getLocation().get();
         if (LocketAPI.isLocked(block) || LocketAPI.isUpDownLockedDoor(block)) {
             Utils.sendMessages(player, Config.getLang("block-is-locked"));
             event.setCancelled(true);
@@ -83,9 +82,9 @@ public class BlockEventListener {
     }
 
     // 活塞推出事件
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onPistonExtend(BlockPistonExtendEvent event) {
-        for (Block block : event.getBlocks()) {
+    @Listener(order = Order.EARLY)
+    public void onPistonExtend(@Named(NamedCause.PISTON_EXTEND) ChangeBlockEvent.Pre event) {
+        for (Location<World> block : event.getLocations()) {
             if (LocketAPI.isProtected(block)) {
                 event.setCancelled(true);
                 return;
@@ -94,41 +93,44 @@ public class BlockEventListener {
     }
 
     // 活塞收回事件
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onPistonRetract(BlockPistonRetractEvent event) {
-        Block block = event.getRetractLocation().getBlock();
-        if (LocketAPI.isProtected(block)) {
-            event.setCancelled(true);
+    @Listener(order = Order.EARLY)
+    public void onPistonRetract(@Named(NamedCause.PISTON_RETRACT) ChangeBlockEvent.Pre event) {
+        for (Location<World> block : event.getLocations()) {
+            if (LocketAPI.isProtected(block)) {
+                event.setCancelled(true);
+                return;
+            }
         }
     }
 
     // Prevent redstone current open doors
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onBlockRedstoneChange(BlockRedstoneEvent event) {
-        if (LocketAPI.isProtected(event.getBlock())) {
-            event.setNewCurrent(event.getOldCurrent());
+    @Listener(order = Order.EARLY)
+    public void onBlockRedstoneChange(ChangeBlockEvent.Pre event) {
+        for (Location<World> block : event.getLocations()) {
+            if (LocketAPI.isProtected(block)) {
+                event.setCancelled(true);
+                return;
+            }
         }
     }
 
     // Manual protection
-    @EventHandler(priority = EventPriority.NORMAL)
-    public void onManualLock(SignChangeEvent event) {
-        if (event.getBlock().getType() != Material.WALL_SIGN) return;
-        String topline = event.getLine(0);
-        Player player = event.getPlayer();
+    @Listener(order = Order.DEFAULT)
+    public void onManualLock(ChangeSignEvent event,@First Player player) {
+        String topline = event.getText().get(0).get().toPlain();
         if (!player.hasPermission("locket.lock")) {
             if (LocketAPI.isLockString(topline) || LocketAPI.isMoreString(topline)) {
-                event.setLine(0, Config.getLang("sign-error"));
+                event.getText().setElement(0, Text.of(Config.getLang("sign-error")));
                 Utils.sendMessages(player, Config.getLang("cannot-lock-manual"));
             }
             return;
         }
         if (LocketAPI.isLockString(topline) || LocketAPI.isMoreString(topline)) {
-            Block block = LocketAPI.getAttachedBlock(event.getBlock());
+            Location<World> block = LocketAPI.getAttachedBlock(event.getTargetTile().getLocation());
             if (LocketAPI.isLockable(block)) {
                 // 检查其他插件保护
                 if (Depend.isProtectedFrom(block, player)) {
-                    event.setLine(0, Config.getLang("sign-error"));
+                    event.getText().setElement(0, Text.of(Config.getLang("sign-error")));
                     Utils.sendMessages(player, Config.getLang("cannot-lock-manual"));
                     return;
                 }
@@ -138,34 +140,34 @@ public class BlockEventListener {
                         Utils.sendMessages(player, Config.getLang("locked-manual"));
                         if (!player.hasPermission("locket.lockothers")) {
                             // Player with permission can lock with another name
-                            event.setLine(1, player.getName());
+                            event.getText().setElement(1, Text.of(player.getName()));
                         }
                     } else {
                         Utils.sendMessages(player, Config.getLang("not-locked-yet-manual"));
-                        event.setLine(0, Config.getLang("sign-error"));
+                        event.getText().setElement(0, Text.of(Config.getLang("sign-error")));
                     }
                 } else if (!locked && LocketAPI.isOwnerUpDownLockedDoor(block, player)) {
                     if (LocketAPI.isLockString(topline)) {
                         Utils.sendMessages(player, Config.getLang("cannot-lock-door-nearby-manual"));
-                        event.setLine(0, Config.getLang("sign-error"));
+                        event.getText().setElement(0,Text.of(Config.getLang("sign-error")) );
                     } else {
                         Utils.sendMessages(player, Config.getLang("additional-sign-added-manual"));
                     }
                 } else if (LocketAPI.isOwner(block, player)) {
                     if (LocketAPI.isLockString(topline)) {
                         Utils.sendMessages(player, Config.getLang("block-already-locked-manual"));
-                        event.setLine(0, Config.getLang("sign-error"));
+                        event.getText().setElement(0, Text.of(Config.getLang("sign-error")));
                     } else {
                         Utils.sendMessages(player, Config.getLang("additional-sign-added-manual"));
                     }
                 } else {
                     // Not possible to fall here except override
                     Utils.sendMessages(player, Config.getLang("block-already-locked-manual"));
-                    event.getBlock().breakNaturally();
+                    //event.getTargetTile().getLocation().setBlockType()getBlock().breakNaturally();
                 }
             } else {
                 Utils.sendMessages(player, Config.getLang("block-is-not-lockable"));
-                event.setLine(0, Config.getLang("sign-error"));
+                event.getText().setElement(0, Text.of(Config.getLang("sign-error")));
             }
         }
     }
