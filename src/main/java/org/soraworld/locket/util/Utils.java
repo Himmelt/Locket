@@ -2,6 +2,7 @@ package org.soraworld.locket.util;
 
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.type.HandType;
@@ -25,19 +26,36 @@ public class Utils {
     private static Map<Player, Location<World>> selectedSign = new HashMap<>();
     private static Set<Player> notified = new HashSet<>();
 
-    public static void putSignOn(Player player, Location<World> location, Direction face) {
+    public static void putSignPrivate(Player player, Location<World> location, Direction face) {
         Location<World> newSign = location.getRelative(face);
         newSign.setBlockType(BlockTypes.WALL_SIGN, BlockChangeFlag.NEIGHBOR, Cause.of(NamedCause.source(player)));
         // So this part is pretty much a Bukkit bug:
         // Signs' rotation is not correct with bukkit's set facing, below is the workaround.
         newSign.getBlock().with(Keys.DIRECTION,face);
         updateSign(newSign);
-        Sign sign = (Sign) newSign.getState();
-        sign.setLine(0, line1);
-        sign.setLine(1, line2);
-        sign.update();
+        TileEntity tile = newSign.getTileEntity().orElse(null);
+        if(tile!=null && tile instanceof Sign){
+            Sign sign = (Sign)tile;
+            sign.getSignData().setElement(0,Text.of("[Private]"));
+            sign.getSignData().setElement(1,Text.of(player.getName()));
+        }
+        //sign.update();
     }
-
+    public static void putSignMore(Player player, Location<World> location, Direction face) {
+        Location<World> newSign = location.getRelative(face);
+        newSign.setBlockType(BlockTypes.WALL_SIGN, BlockChangeFlag.NEIGHBOR, Cause.of(NamedCause.source(player)));
+        // So this part is pretty much a Bukkit bug:
+        // Signs' rotation is not correct with bukkit's set facing, below is the workaround.
+        newSign.getBlock().with(Keys.DIRECTION,face);
+        updateSign(newSign);
+        TileEntity tile = newSign.getTileEntity().orElse(null);
+        if(tile!=null && tile instanceof Sign){
+            Sign sign = (Sign)tile;
+            sign.getSignData().setElement(0,Text.of("[More]"));
+            sign.getSignData().setElement(1,Text.of(player.getName()));
+        }
+        //sign.update();
+    }
 
     public static void removeASign(Player player, HandType hand) {
         if (player.gameMode() == GameModes.CREATIVE) return;

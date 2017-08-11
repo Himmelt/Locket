@@ -17,7 +17,7 @@ public class Locket {
     @Listener
     public void onInit(GameInitializationEvent event) {
         locket = this;
-        config = new Config();
+        config = new Config(this);
         Sponge.getEventManager().registerListeners(this, new BlockEventListener());
         Sponge.getEventManager().registerListeners(this, new EntityEventListener());
         Sponge.getEventManager().registerListeners(this, new InventoryEventListener());

@@ -35,7 +35,7 @@ public class PlayerEventListener {
             Direction face = event.getTargetSide();
             // 木牌只能贴在四个侧面
             if (face == Direction.NORTH || face == Direction.WEST || face == Direction.EAST || face == Direction.SOUTH) {
-                Location location = event.getTargetBlock().getLocation().orElse(null);
+                Location<World> location = event.getTargetBlock().getLocation().orElse(null);
                 if (location == null || Depend.isProtectedFrom(location, player) ||
                         location.getRelative(face).getBlockType() != BlockTypes.AIR ||
                         !LocketAPI.isLockable(location)) return;
@@ -48,14 +48,14 @@ public class PlayerEventListener {
                     Utils.removeASign(player,event.getHandType());
                     // 显示消息
                     Utils.sendMessages(player, Config.getLang("locked-quick"));
-                    Utils.putSignOn(player, location, face);
+                    Utils.putSignPrivate(player, location, face);
                 } else if (!locked && LocketAPI.isOwnerUpDownLockedDoor(location, player)) {
-                    Utils.removeASign(player);
+                    Utils.removeASign(player,event.getHandType());
                     Utils.sendMessages(player, Config.getLang("additional-sign-added-quick"));
-                    Utils.putSignOn(player, location, face);
+                    Utils.putSignMore(player, location, face);
                 } else if (LocketAPI.isOwner(location, player)) {
-                    Utils.removeASign(player);
-                    Utils.putSignOn(player, location, face);
+                    Utils.removeASign(player,event.getHandType());
+                    Utils.putSignMore(player, location, face);
                     Utils.sendMessages(player, Config.getLang("additional-sign-added-quick"));
                 } else {
                     Utils.sendMessages(player, Config.getLang("cannot-lock-quick"));
