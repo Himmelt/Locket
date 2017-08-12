@@ -29,7 +29,7 @@ public class Utils {
 
     public static void putSignPrivate(Player player, Location<World> location, Direction face) {
         Location<World> newSign = location.getRelative(face);
-        newSign.setBlockType(BlockTypes.WALL_SIGN, Cause.source(Locket.getLocket()).build());
+        newSign.setBlockType(BlockTypes.WALL_SIGN, Cause.source(Locket.getLocket().getPlugin()).build());
         //newSign.setBlockType(BlockTypes.WALL_SIGN, BlockChangeFlag.NEIGHBOR, Cause.of(NamedCause.source(player)));
         // So this part is pretty much a Bukkit bug:
         // Signs' rotation is not correct with bukkit's set facing, below is the workaround.
