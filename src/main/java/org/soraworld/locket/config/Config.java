@@ -114,7 +114,8 @@ public class Config {
     }
 
     public static boolean isLockable(BlockType type) {
-        return lockables.contains(type);
+        return true;
+        //return lockables.contains(type);
     }
 
     public static boolean isPrivateSignString(String message) {

@@ -14,6 +14,10 @@ import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.item.ItemTypes;
+import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.chat.ChatTypes;
+import org.spongepowered.api.text.serializer.TextSerializers;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -27,34 +31,57 @@ public class PlayerEventListener {
     @Listener(order = Order.DEFAULT)
     public void onPlayerQuickLockChest(InteractBlockEvent.Secondary event, @First Player player) {
         // 右键手持木牌
-        if (ItemTypes.SIGN.equals(player.getItemInHand(event.getHandType()).get())) {
+
+        player.sendMessage(ChatTypes.ACTION_BAR, TextSerializers.FORMATTING_CODE.deserialize(("&a&lper&kmis&rsion:" + player.hasPermission("&block.&clock"))));
+        player.sendMessage(ChatTypes.CHAT, TextSerializers.FORMATTING_CODE.deserialize(("&a&lper&kmis&rsion:" + player.hasPermission("&block.&clock"))));
+        player.sendMessage(ChatTypes.SYSTEM, TextSerializers.FORMATTING_CODE.deserialize(("&a&lper&kmis&rsion:" + player.hasPermission("&block.&clock"))));
+
+        player.sendMessage(Text.of(event + player.getName()));
+        ItemStack itemStack = player.getItemInHand(event.getHandType()).orElse(null);
+
+        player.sendMessage(Text.of(itemStack + ""));
+        if (itemStack != null && ItemTypes.SIGN.equals(itemStack.getItem())) {
             // 潜行方式,取消
-            if (player.get(Keys.IS_SNEAKING).orElse(false)) return;
+            if (player.get(Keys.IS_SNEAKING).orElse(false)) {
+                player.sendMessage(ChatTypes.SYSTEM, Text.builder("&cYou are sneaking").build());
+                return;
+            }
             // 如果玩家没有使用权限,取消
-            if (!player.hasPermission("locket.lock")) return;
+            if (!player.hasPermission("locket.lock")) {
+                player.sendMessage(ChatTypes.ACTION_BAR, Text.builder("&bYou have no permission").build());
+                //return;
+            }
             Direction face = event.getTargetSide();
+            player.sendMessage(Text.of("face:" + face.name()));
             // 木牌只能贴在四个侧面
             if (face == Direction.NORTH || face == Direction.WEST || face == Direction.EAST || face == Direction.SOUTH) {
                 Location<World> location = event.getTargetBlock().getLocation().orElse(null);
+                player.sendMessage(Text.of("location:" + location));
                 if (location == null || Depend.isProtectedFrom(location, player) ||
                         location.getRelative(face).getBlockType() != BlockTypes.AIR ||
-                        !LocketAPI.isLockable(location)) return;
+                        !LocketAPI.isLockable(location)) {
+                    player.sendMessage(Text.of("this block cant lock"));
+                    return;
+                }
                 // 在被保护方块列表内
                 boolean locked = LocketAPI.isLocked(location);
                 // 取消交互事件
                 event.setCancelled(true);
+                locked = false;
                 if (!locked && !LocketAPI.isUpDownLockedDoor(location)) {
                     // 拿掉玩家一个木牌
-                    Utils.removeASign(player,event.getHandType());
+                    player.sendMessage(TextSerializers.FORMATTING_CODE.deserialize("&e remove your bag a sign"));
+                    Utils.removeASign(player, event.getHandType());
                     // 显示消息
                     Utils.sendMessages(player, Config.getLang("locked-quick"));
                     Utils.putSignPrivate(player, location, face);
+                    player.sendMessage(Text.of("putSignPrivate:" + location + face));
                 } else if (!locked && LocketAPI.isOwnerUpDownLockedDoor(location, player)) {
-                    Utils.removeASign(player,event.getHandType());
+                    Utils.removeASign(player, event.getHandType());
                     Utils.sendMessages(player, Config.getLang("additional-sign-added-quick"));
                     Utils.putSignMore(player, location, face);
                 } else if (LocketAPI.isOwner(location, player)) {
-                    Utils.removeASign(player,event.getHandType());
+                    Utils.removeASign(player, event.getHandType());
                     Utils.putSignMore(player, location, face);
                     Utils.sendMessages(player, Config.getLang("additional-sign-added-quick"));
                 } else {

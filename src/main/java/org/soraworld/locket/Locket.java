@@ -14,6 +14,10 @@ public class Locket {
     private static Locket locket;
     private Config config;
 
+    public static Locket getLocket() {
+        return locket;
+    }
+
     @Listener
     public void onInit(GameInitializationEvent event) {
         locket = this;

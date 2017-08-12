@@ -24,6 +24,7 @@ public class LocketAPI {
     public static boolean isLocked(Location<World> location) {
         BlockType type = location.getBlockType();
         if (DoorType.resolve(type) != DoorType.INVALID) {
+            System.out.println("IS DOOR");
             Location<World>[] doors = getDoors(location);
             if (doors == null) return false;
             for (BlockFace doorFace : newsFaces) {
@@ -43,6 +44,7 @@ public class LocketAPI {
             if (isLockedSingleBlock(doors[0].getRelative(Direction.DOWN), null)) return true;
         } else if (type == BlockTypes.CHEST || type == BlockTypes.TRAPPED_CHEST) {
             // Check second chest sign
+            System.out.println("IS CHEST");
             for (BlockFace chestFace : newsFaces) {
                 Location<World> relativeChest = location.getRelative(chestFace.get());
                 if (relativeChest.getBlockType() == location.getBlockType()) {
@@ -224,7 +226,6 @@ public class LocketAPI {
             }
             Location<World> newBlock2 = block.getLocation().get().getBlockRelative(Direction.UP);
             Location<World> newBlock3 = block.getLocation().get().getBlockRelative(Direction.DOWN);
-            ;
             if (isLocked(newBlock3) && !isOwner(newBlock3, player)) {
                 return true;
             }
@@ -292,10 +293,11 @@ public class LocketAPI {
     }
 
     public static boolean isUpDownLockedDoor(Location<World> block) {
-        Location blockUp = block.getRelative(Direction.UP);
+        return false;
+        /*Location blockUp = block.getRelative(Direction.UP);
         if (isUpDownAlsoLockableBlock(blockUp.getBlockType()) && isLocked(blockUp)) return true;
         Location blockDown = block.getRelative(Direction.DOWN);
-        return isUpDownAlsoLockableBlock(blockDown.getBlockType()) && isLocked(blockDown);
+        return isUpDownAlsoLockableBlock(blockDown.getBlockType()) && isLocked(blockDown);*/
     }
 
     public static boolean isOwnerUpDownLockedDoor(Location<World> block, Player player) {
