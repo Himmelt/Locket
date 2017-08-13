@@ -59,9 +59,9 @@ public class LocketAPI {
         return false;
     }
 
-    public static boolean isOwner(Location<World> block, Player player) {
-        if (DoorType.isDoor(block)) {
-            Location<World>[] doors = getDoors(block);
+    public static boolean isOwner(Location<World> location, Player player) {
+        if (DoorType.isDoor(location)) {
+            Location<World>[] doors = getDoors(location);
             if (doors == null) return false;
             for (BlockFace doorFace : newsFaces) {
                 Location<World> relative0 = doors[0].getRelative(doorFace.get()), relative1 = doors[1].getRelative(doorFace.get());
@@ -78,18 +78,17 @@ public class LocketAPI {
             if (isOwnerSingleBlock(doors[1], null, player)) return true;
             if (isOwnerSingleBlock(doors[0], null, player)) return true;
             if (isOwnerSingleBlock(doors[0].getRelative(Direction.DOWN), null, player)) return true;
-        } else if (block.getBlockType() == BlockTypes.CHEST || block.getBlockType() == BlockTypes.TRAPPED_CHEST) {
-            // Check second chest sign
+        } else if (location.getBlockType() == BlockTypes.CHEST || location.getBlockType() == BlockTypes.TRAPPED_CHEST) {
             for (BlockFace chestFace : newsFaces) {
-                Location<World> relativeChest = block.getRelative(chestFace.get());
-                if (relativeChest.getBlockType() == block.getBlockType()) {
+                Location<World> relativeChest = location.getRelative(chestFace.get());
+                if (relativeChest.getBlockType() == location.getBlockType()) {
                     if (isOwnerSingleBlock(relativeChest, chestFace.getOppositeFace(), player)) return true;
                 }
             }
             // Don't break here
             // Everything else (First block of container check goes here)
         } else {
-            if (isOwnerSingleBlock(block, null, player)) return true;
+            if (isOwnerSingleBlock(location, null, player)) return true;
         }
         return false;
     }

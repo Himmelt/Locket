@@ -63,7 +63,7 @@ public class Config {
                 if (add) {
                     lockables.add(Material.getMaterial(materialId));
                 } else {
-                    lockables.remove(Material.getMaterial(materialId));
+                    lockables.removeOne(Material.getMaterial(materialId));
                 }
             } catch (Exception ex) {
                 // It is not really a number...
@@ -74,12 +74,12 @@ public class Config {
                     if (add) {
                         lockables.add(material);
                     } else {
-                        lockables.remove(material);
+                        lockables.removeOne(material);
                     }
                 }
             }
         }
-        lockables.remove(Material.WALL_SIGN);*/
+        lockables.removeOne(Material.WALL_SIGN);*/
     }
 
     public static void initConfigFiles() {

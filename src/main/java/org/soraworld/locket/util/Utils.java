@@ -1,17 +1,24 @@
 package org.soraworld.locket.util;
 
 import org.soraworld.locket.Locket;
+import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
 import org.spongepowered.api.data.type.HandType;
+import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.gamemode.GameModes;
 import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.event.cause.NamedCause;
+import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.chat.ChatTypes;
+import org.spongepowered.api.text.serializer.TextSerializers;
+import org.spongepowered.api.text.title.Title;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.BlockChangeFlag;
 import org.spongepowered.api.world.Location;
@@ -29,19 +36,33 @@ public class Utils {
 
     public static void putSignPrivate(Player player, Location<World> location, Direction face) {
         Location<World> newSign = location.getRelative(face);
+        player.sendMessage(Text.of("event target face:" + face));
         newSign.setBlockType(BlockTypes.WALL_SIGN, Cause.source(Locket.getLocket().getPlugin()).build());
+        BlockState state = BlockTypes.WALL_SIGN.getDefaultState();
+        player.sendMessage(Text.of("sign default face state:" + state.get(Keys.DIRECTION).orElse(Direction.NONE)));
+        state = state.with(Keys.DIRECTION, face).orElse(state);
+        player.sendMessage(Text.of("put sign face after:" + state.get(Keys.DIRECTION).orElse(Direction.NONE)));
+
         //newSign.setBlockType(BlockTypes.WALL_SIGN, BlockChangeFlag.NEIGHBOR, Cause.of(NamedCause.source(player)));
         // So this part is pretty much a Bukkit bug:
         // Signs' rotation is not correct with bukkit's set facing, below is the workaround.
-        newSign.getBlock().with(Keys.DIRECTION, face);
-        updateSign(newSign);
+        newSign.setBlock(state, Cause.source(Locket.getLocket().getPlugin()).build());
+        player.sendMessage(Text.of("put sign face finish:" + newSign.get(Keys.DIRECTION).orElse(Direction.NONE)));
+        player.sendMessage(Text.of("put sign state face finish:" + newSign.getBlock().get(Keys.DIRECTION).orElse(Direction.NONE)));
+
         TileEntity tile = newSign.getTileEntity().orElse(null);
         if (tile != null && tile instanceof Sign) {
-            Sign sign = (Sign) tile;
-            sign.getSignData().setElement(0, Text.of("[Private]"));
-            sign.getSignData().setElement(1, Text.of(player.getName()));
+            SignData data = ((Sign) tile).getSignData();
+            player.sendMessage(Text.of("origin:" + data));
+            data.setElement(0, Text.of("[Private]"));
+            data.setElement(1, Text.of(player.getName()));
+            tile.offer(data);
+            player.sendMessage(Text.of("after:" + data));
         }
+        player.playSound(SoundTypes.BLOCK_WOOD_PLACE, location.getPosition(), 5);
+        //updateSign(newSign);
         //sign.update();
+
     }
 
     public static void putSignMore(Player player, Location<World> location, Direction face) {
@@ -60,12 +81,14 @@ public class Utils {
         //sign.update();
     }
 
-    public static void removeASign(Player player, HandType hand) {
-        if (player.gameMode() == GameModes.CREATIVE) return;
-        if (player.getItemInHand(hand).get().getQuantity() <= 1) {
-            player.setItemInHand(hand, null);
+    public static void removeOne(Player player, HandType hand) {
+        if (GameModes.CREATIVE.equals(player.gameMode().get())) return;
+        ItemStack stack = player.getItemInHand(hand).orElse(null);
+        if (stack != null && stack.getQuantity() > 1) {
+            stack.setQuantity(stack.getQuantity() - 1);
+            player.setItemInHand(hand, stack);
         } else {
-            player.getItemInHand(hand).get().setQuantity(player.getItemInHand(hand).get().getQuantity() - 1);
+            player.setItemInHand(hand, null);
         }
     }
 
@@ -122,4 +145,19 @@ public class Utils {
         }
     }
 
+    public static void sendChat(Player player, String message) {
+        player.sendMessage(ChatTypes.CHAT, TextSerializers.FORMATTING_CODE.deserialize(message));
+    }
+
+    public static void sendActionBar(Player player, String message) {
+        player.sendMessage(ChatTypes.ACTION_BAR, TextSerializers.FORMATTING_CODE.deserialize(message));
+    }
+
+    public static void sendTitle(Player player, Text... texts) {
+        player.sendTitle(Title.builder().title());
+    }
+
+    public static boolean isFace(Direction face) {
+        return face == Direction.NORTH || face == Direction.WEST || face == Direction.EAST || face == Direction.SOUTH;
+    }
 }

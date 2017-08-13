@@ -5,7 +5,7 @@ import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import org.slf4j.Logger;
 import org.soraworld.locket.config.Config;
-import org.soraworld.locket.constant.Constant;
+import org.soraworld.locket.constant.Constants;
 import org.soraworld.locket.listener.*;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.config.ConfigDir;
@@ -17,7 +17,7 @@ import org.spongepowered.api.plugin.PluginContainer;
 
 import java.nio.file.Path;
 
-@Plugin(id = Constant.MODID, name = Constant.NAME, version = Constant.VERSION)
+@Plugin(id = Constants.MODID, name = Constants.NAME, version = Constants.VERSION)
 public class Locket {
 
     @Inject
