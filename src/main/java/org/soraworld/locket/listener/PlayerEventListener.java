@@ -2,9 +2,9 @@ package org.soraworld.locket.listener;
 
 import org.soraworld.locket.api.LocketAPI;
 import org.soraworld.locket.config.Config;
+import org.soraworld.locket.constant.Constants;
 import org.soraworld.locket.constant.Permissions;
 import org.soraworld.locket.depend.Depend;
-import org.soraworld.locket.util.BlockFace;
 import org.soraworld.locket.util.SignUtil;
 import org.soraworld.locket.util.Utils;
 import org.spongepowered.api.block.BlockTypes;
@@ -18,6 +18,7 @@ import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.serializer.TextSerializers;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -29,6 +30,10 @@ public class PlayerEventListener {
 
     @Listener(order = Order.LAST)
     public void onPlayerLockChest(InteractBlockEvent.Secondary event, @First Player player) {
+        Text text = TextSerializers.FORMATTING_CODE.deserialize("&b&lTest Format&c&dHHHH&rsss");
+
+        System.out.println(text.toPlain());
+
         Direction face = event.getTargetSide();
         ItemStack stack = player.getItemInHand(event.getHandType()).orElse(null);
         if (!Utils.isFace(face) || player.get(Keys.IS_SNEAKING).orElse(false) || stack == null || ItemTypes.SIGN != stack.getItem())
@@ -38,7 +43,6 @@ public class PlayerEventListener {
             Utils.sendActionBar(player, "&a&lYou need permission &b[" + Permissions.LOCK + "]&a to do this!");
             return;
         }
-        Utils.sendActionBar(player, "&a&lYou need permission &b[" + Permissions.LOCK + "]&a to do this!");
 
         Location<World> location = event.getTargetBlock().getLocation().orElse(null);
         if (location == null || Depend.isProtectedFrom(location, player) || location.getRelative(face).getBlockType() != BlockTypes.AIR || !LocketAPI.isLockable(location)) {
@@ -46,11 +50,10 @@ public class PlayerEventListener {
             return;
         }
         boolean locked = LocketAPI.isLocked(location);
-        //locked = false;
         if (!locked && !LocketAPI.isUpDownLockedDoor(location)) {
             Utils.removeOne(player, event.getHandType());
             SignUtil.placeWallSign(location.getBlockRelative(face), face, Text.of("[Private]"), Text.of(player.getName()));
-            Utils.sendActionBar(player, "&c保护锁放置成功!");
+            Utils.sendActionBar(player, "&c&l保护锁放置成功!", 20, 80, 40);
         } else if (!locked && LocketAPI.isOwnerUpDownLockedDoor(location, player)) {
             Utils.removeOne(player, event.getHandType());
             SignUtil.placeWallSign(location.getBlockRelative(face), face, Text.of("[More]"));
@@ -96,8 +99,8 @@ public class PlayerEventListener {
             if (doorBlock.getBlockType() == BlockTypes.IRON_DOOR) {
                 LocketAPI.toggleDoor(doorBlock, shouldOpen);
             }
-            for (BlockFace blockface : LocketAPI.newsFaces) {
-                Location relative = doorBlock.getRelative(blockface.get());
+            for (Direction blockface : Constants.FACES) {
+                Location relative = doorBlock.getRelative(blockface);
                 if (relative.getBlockType() == doorBlock.getBlockType()) {
                     doors.add(relative);
                     LocketAPI.toggleDoor(relative, shouldOpen);
@@ -105,5 +108,4 @@ public class PlayerEventListener {
             }
         }
     }
-
 }

@@ -2,6 +2,7 @@ package org.soraworld.locket.util;
 
 import org.soraworld.locket.Locket;
 import org.spongepowered.api.block.BlockState;
+import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.block.tileentity.TileEntity;
@@ -153,11 +154,41 @@ public class Utils {
         player.sendMessage(ChatTypes.ACTION_BAR, TextSerializers.FORMATTING_CODE.deserialize(message));
     }
 
-    public static void sendTitle(Player player, Text... texts) {
-        player.sendTitle(Title.builder().title());
+    public static void sendActionBar(Player player, String message, int fadeIn, int stay, int fadeOut) {
+        Text actionBar = TextSerializers.FORMATTING_CODE.deserialize(message);
+        player.sendTitle(Title.builder().actionBar(actionBar).fadeIn(fadeIn).stay(stay).fadeOut(fadeOut).build());
     }
 
     public static boolean isFace(Direction face) {
         return face == Direction.NORTH || face == Direction.WEST || face == Direction.EAST || face == Direction.SOUTH;
+    }
+
+    public static boolean isDChest(BlockType type) {
+        return type == BlockTypes.CHEST || type == BlockTypes.TRAPPED_CHEST;
+    }
+
+    public static boolean isContainer(BlockType type) {
+        return isDChest(type)
+                || type == BlockTypes.FURNACE
+                || type == BlockTypes.LIT_FURNACE
+                || type == BlockTypes.BLACK_SHULKER_BOX
+                || type == BlockTypes.BLUE_SHULKER_BOX
+                || type == BlockTypes.BROWN_SHULKER_BOX
+                || type == BlockTypes.CYAN_SHULKER_BOX
+                || type == BlockTypes.GRAY_SHULKER_BOX
+                || type == BlockTypes.GREEN_SHULKER_BOX
+                || type == BlockTypes.LIME_SHULKER_BOX
+                || type == BlockTypes.MAGENTA_SHULKER_BOX
+                || type == BlockTypes.ORANGE_SHULKER_BOX
+                || type == BlockTypes.PINK_SHULKER_BOX
+                || type == BlockTypes.PURPLE_SHULKER_BOX
+                || type == BlockTypes.RED_SHULKER_BOX
+                || type == BlockTypes.SILVER_SHULKER_BOX
+                || type == BlockTypes.WHITE_SHULKER_BOX
+                || type == BlockTypes.YELLOW_SHULKER_BOX
+                || type == BlockTypes.BREWING_STAND
+                || type == BlockTypes.DISPENSER
+                || type == BlockTypes.HOPPER
+                || type == BlockTypes.DROPPER;
     }
 }

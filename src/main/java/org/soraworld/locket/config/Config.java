@@ -119,7 +119,7 @@ public class Config {
     }
 
     public static boolean isPrivateSignString(String message) {
-        return defaultPrivateSign.equals(message);
+        return message.contains(defaultPrivateSign);
     }
 
     public static boolean isMoreSign(String message) {

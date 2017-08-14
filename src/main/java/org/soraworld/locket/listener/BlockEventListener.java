@@ -51,7 +51,7 @@ public class BlockEventListener {
     public void onAttemptBreakSign(ChangeBlockEvent.Break event, @First Player player) {
         Location<World> block = event.getTransactions().get(0).getOriginal().getLocation().get();
         if (player.hasPermission("locket.admin.break")) return;
-        if (LocketAPI.isLockSigned(block)) {
+        if (LocketAPI.isPrivateSign(block)) {
             if (LocketAPI.isOwnerOfSign(block, player)) {
                 Utils.sendMessages(player, Config.getLang("break-own-lock-sign"));
                 // Remove additional signs?
@@ -119,13 +119,13 @@ public class BlockEventListener {
     public void onManualLock(ChangeSignEvent event,@First Player player) {
         String topline = event.getText().get(0).get().toPlain();
         if (!player.hasPermission("locket.lock")) {
-            if (LocketAPI.isLockString(topline) || LocketAPI.isMoreString(topline)) {
+            if (LocketAPI.isPrivate(topline) || LocketAPI.isMoreString(topline)) {
                 event.getText().setElement(0, Text.of(Config.getLang("sign-error")));
                 Utils.sendMessages(player, Config.getLang("cannot-lock-manual"));
             }
             return;
         }
-        if (LocketAPI.isLockString(topline) || LocketAPI.isMoreString(topline)) {
+        if (LocketAPI.isPrivate(topline) || LocketAPI.isMoreString(topline)) {
             Location<World> block = LocketAPI.getAttachedBlock(event.getTargetTile().getLocation());
             if (LocketAPI.isLockable(block)) {
                 // 检查其他插件保护
@@ -136,7 +136,7 @@ public class BlockEventListener {
                 }
                 boolean locked = LocketAPI.isLocked(block);
                 if (!locked && !LocketAPI.isUpDownLockedDoor(block)) {
-                    if (LocketAPI.isLockString(topline)) {
+                    if (LocketAPI.isPrivate(topline)) {
                         Utils.sendMessages(player, Config.getLang("locked-manual"));
                         if (!player.hasPermission("locket.lockothers")) {
                             // Player with permission can lock with another name
@@ -147,14 +147,14 @@ public class BlockEventListener {
                         event.getText().setElement(0, Text.of(Config.getLang("sign-error")));
                     }
                 } else if (!locked && LocketAPI.isOwnerUpDownLockedDoor(block, player)) {
-                    if (LocketAPI.isLockString(topline)) {
+                    if (LocketAPI.isPrivate(topline)) {
                         Utils.sendMessages(player, Config.getLang("cannot-lock-door-nearby-manual"));
                         event.getText().setElement(0,Text.of(Config.getLang("sign-error")) );
                     } else {
                         Utils.sendMessages(player, Config.getLang("additional-sign-added-manual"));
                     }
                 } else if (LocketAPI.isOwner(block, player)) {
-                    if (LocketAPI.isLockString(topline)) {
+                    if (LocketAPI.isPrivate(topline)) {
                         Utils.sendMessages(player, Config.getLang("block-already-locked-manual"));
                         event.getText().setElement(0, Text.of(Config.getLang("sign-error")));
                     } else {
