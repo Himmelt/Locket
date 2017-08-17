@@ -1,6 +1,8 @@
 package org.soraworld.locket.util;
 
+import org.slf4j.Logger;
 import org.soraworld.locket.Locket;
+import org.soraworld.locket.constant.Constants;
 import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
@@ -14,72 +16,45 @@ import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.gamemode.GameModes;
 import org.spongepowered.api.event.cause.Cause;
-import org.spongepowered.api.event.cause.NamedCause;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.chat.ChatTypes;
 import org.spongepowered.api.text.serializer.TextSerializers;
 import org.spongepowered.api.text.title.Title;
 import org.spongepowered.api.util.Direction;
-import org.spongepowered.api.world.BlockChangeFlag;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+
+import static org.soraworld.locket.api.LocketAPI.isPrivate;
 
 public class Utils {
 
-    private static Map<Player, Location<World>> selectedSign = new HashMap<>();
-    private static Set<Player> notified = new HashSet<>();
+    private static final Locket locket = Locket.getLocket();
+    private static final PluginContainer plugin = locket.getPlugin();
+    private static final Logger LOGGER = plugin.getLogger();
+    private static final HashMap<Player, Location<World>> SELECTED_SIGNS = new HashMap<>();
 
-    public static void putSignPrivate(Player player, Location<World> location, Direction face) {
-        Location<World> newSign = location.getRelative(face);
-        player.sendMessage(Text.of("event target face:" + face));
-        newSign.setBlockType(BlockTypes.WALL_SIGN, Cause.source(Locket.getLocket().getPlugin()).build());
+
+    public static void placeLockSign(Player player, Location<World> location, Direction face) {
+        Location<World> relative = location.getRelative(face);
+        relative.setBlockType(BlockTypes.WALL_SIGN, Cause.source(Locket.getLocket().getPlugin()).build());
         BlockState state = BlockTypes.WALL_SIGN.getDefaultState();
-        player.sendMessage(Text.of("sign default face state:" + state.get(Keys.DIRECTION).orElse(Direction.NONE)));
-        state = state.with(Keys.DIRECTION, face).orElse(state);
-        player.sendMessage(Text.of("put sign face after:" + state.get(Keys.DIRECTION).orElse(Direction.NONE)));
+        relative.setBlock(state.with(Keys.DIRECTION, face).orElse(state), Cause.source(Locket.getLocket().getPlugin()).build());
 
-        //newSign.setBlockType(BlockTypes.WALL_SIGN, BlockChangeFlag.NEIGHBOR, Cause.of(NamedCause.source(player)));
-        // So this part is pretty much a Bukkit bug:
-        // Signs' rotation is not correct with bukkit's set facing, below is the workaround.
-        newSign.setBlock(state, Cause.source(Locket.getLocket().getPlugin()).build());
-        player.sendMessage(Text.of("put sign face finish:" + newSign.get(Keys.DIRECTION).orElse(Direction.NONE)));
-        player.sendMessage(Text.of("put sign state face finish:" + newSign.getBlock().get(Keys.DIRECTION).orElse(Direction.NONE)));
-
-        TileEntity tile = newSign.getTileEntity().orElse(null);
+        TileEntity tile = relative.getTileEntity().orElse(null);
         if (tile != null && tile instanceof Sign) {
             SignData data = ((Sign) tile).getSignData();
-            player.sendMessage(Text.of("origin:" + data));
             data.setElement(0, Text.of("[Private]"));
             data.setElement(1, Text.of(player.getName()));
+            data.setElement(2, TextSerializers.FORMATTING_CODE.deserialize("&b我是吴通,&c&l空境之主&b!&kWelcome&r&b to My &e&lSoraWorld&r!&r"));
             tile.offer(data);
-            player.sendMessage(Text.of("after:" + data));
         }
         player.playSound(SoundTypes.BLOCK_WOOD_PLACE, location.getPosition(), 5);
-        //updateSign(newSign);
-        //sign.update();
-
-    }
-
-    public static void putSignMore(Player player, Location<World> location, Direction face) {
-        Location<World> newSign = location.getRelative(face);
-        newSign.setBlockType(BlockTypes.WALL_SIGN, BlockChangeFlag.NEIGHBOR, Cause.of(NamedCause.source(player)));
-        // So this part is pretty much a Bukkit bug:
-        // Signs' rotation is not correct with bukkit's set facing, below is the workaround.
-        newSign.getBlock().with(Keys.DIRECTION, face);
-        updateSign(newSign);
-        TileEntity tile = newSign.getTileEntity().orElse(null);
-        if (tile != null && tile instanceof Sign) {
-            Sign sign = (Sign) tile;
-            sign.getSignData().setElement(0, Text.of("[More]"));
-            sign.getSignData().setElement(1, Text.of(player.getName()));
-        }
-        //sign.update();
     }
 
     public static void removeOne(Player player, HandType hand) {
@@ -93,17 +68,12 @@ public class Utils {
         }
     }
 
-    public static void updateSign(Location<World> block) {
-        block.addScheduledUpdate(3, 5);
-        //.getState().update();
-    }
-
     public static Location<World> getSelectedSign(Player player) {
-        return selectedSign.get(player);
+        return SELECTED_SIGNS.get(player);
     }
 
     public static void selectSign(Player player, Location<World> block) {
-        selectedSign.put(player, block);
+        SELECTED_SIGNS.put(player, block);
     }
 
     public static void sendMessages(CommandSource sender, String messages) {
@@ -111,39 +81,8 @@ public class Utils {
         sender.sendMessage(Text.of(messages));
     }
 
-    public static boolean shouldNotify(Player player) {
-        if (notified.contains(player)) {
-            return false;
-        } else {
-            notified.add(player);
-            return true;
-        }
-    }
-
-    public static boolean isUsernameUuidLine(String text) {
-        if (text.contains("#")) {
-            String[] splits = text.split("#", 2);
-            if (splits[1].length() == 36) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static String getUsernameFromLine(String text) {
-        if (isUsernameUuidLine(text)) {
-            return text.split("#", 2)[0];
-        } else {
-            return text;
-        }
-    }
-
     public static boolean isPlayerOnLine(Player player, String text) {
-        if (Utils.isUsernameUuidLine(text)) {
-            return player.getName().equals(getUsernameFromLine(text));
-        } else {
-            return text.equals(player.getName());
-        }
+        return text.equals(player.getName());
     }
 
     public static void sendChat(Player player, String message) {
@@ -190,5 +129,117 @@ public class Utils {
                 || type == BlockTypes.DISPENSER
                 || type == BlockTypes.HOPPER
                 || type == BlockTypes.DROPPER;
+    }
+
+    public static boolean canLock(Player player, Location<World> location) {
+        BlockType type = location.getBlockType();
+        if (isDChest(type)) {
+            int result = canOpenChest(player, location);
+            if (result == 0) {
+                player.sendMessage(Text.of("0-无法打开"));
+                return false;
+            } else if (result == 1) {
+                player.sendMessage(Text.of("1-可以打开"));
+                return true;
+            } else if (result == 2) {
+                player.sendMessage(Text.of("2-多重所有者"));
+            } else if (result == 3) {
+                player.sendMessage(Text.of("3-多重箱子"));
+            } else {
+                player.sendMessage(Text.of("NAN-无法打开"));
+                return false;
+            }
+        } else if (isContainer(type)) {
+            return canTouchBlock(player, location);
+        }
+        return false;
+    }
+
+    private static boolean canTouchBlock(Player player, Location<World> location) {
+        HashSet<Location<World>> signs = new HashSet<>();
+        for (Direction face : Constants.FACES) {
+            Location<World> relative = location.getRelative(face);
+            if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+                player.sendMessage(Text.of("FACE:" + face + "   SIGN-FACE:" + relative.get(Keys.DIRECTION).orElse(null)));
+                signs.add(relative);
+            }
+        }
+        int result = analyzeSign(player, signs);
+        if (result == 1) return true;
+        if (result == 0) {
+            player.sendMessage(Text.of("canTouchBlock:0"));
+            return false;
+        }
+        if (result == 2) {
+            player.sendMessage(Text.of("canTouchBlock:2"));
+            return false;
+        }
+        if (result == 3) {
+            player.sendMessage(Text.of("canTouchBlock:3"));
+            return false;
+        }
+        return false;
+    }
+
+    // 已确认是箱子
+    // 0 --- 无名字
+    // 1 --- 有名字 或 无有效锁
+    // 2 --- 多重所有者
+    // 3 --- 多重箱子
+    private static int canOpenChest(Player player, @Nonnull Location<World> location) {
+        BlockType type = location.getBlockType();
+        HashSet<Location<World>> signs = new HashSet<>();
+        Location<World> link = null;
+        int count = 0;
+
+        for (Direction face : Constants.FACES) {
+            Location<World> relative = location.getRelative(face);
+            if (relative.getBlockType() == type) {
+                if (++count >= 2) return 3;
+                link = relative;
+            } else if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+                player.sendMessage(Text.of("FACE:" + face + "   SIGN-FACE:" + relative.get(Keys.DIRECTION).orElse(null)));
+                signs.add(relative);
+            }
+        }
+
+        if (link != null) {
+            count = 0;
+            for (Direction face : Constants.FACES) {
+                Location<World> relative = link.getRelative(face);
+                if (relative.getBlockType() == type && ++count >= 2) return 3;
+                if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+                    player.sendMessage(Text.of("FACE:" + face + "   SIGN-FACE:" + relative.get(Keys.DIRECTION).orElse(null)));
+                    signs.add(relative);
+                }
+            }
+        }
+        return analyzeSign(player, signs);
+    }
+
+    private static int analyzeSign(Player player, @Nonnull HashSet<Location<World>> locations) {
+        HashSet<String> owners = new HashSet<>(), users = new HashSet<>();
+        for (Location<World> location : locations) {
+            TileEntity tile = location.getTileEntity().orElse(null);
+            if (tile != null && tile instanceof Sign) {
+                Sign sign = ((Sign) tile);
+                String line = sign.lines().get(0).toPlain();
+                String owner = sign.lines().get(1).toPlain();
+                String user1 = sign.lines().get(2).toPlain();
+                String user2 = sign.lines().get(3).toPlain();
+                if (isPrivate(line)) {
+                    owners.add(owner);
+                    users.add(user1);
+                    users.add(user2);
+                }
+            }
+        }
+        if (owners.size() >= 2) return 2;
+        if (owners.size() == 0 || owners.contains(player.getName()) || users.contains(player.getName())) return 1;
+        return 0;
+    }
+
+    public static void removeSelectedSign(Player player) {
+        SELECTED_SIGNS.remove(player);
     }
 }

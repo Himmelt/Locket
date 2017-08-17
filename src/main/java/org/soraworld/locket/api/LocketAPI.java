@@ -1,27 +1,45 @@
 package org.soraworld.locket.api;
 
+import org.soraworld.locket.Locket;
 import org.soraworld.locket.config.Config;
 import org.soraworld.locket.constant.Constants;
 import org.soraworld.locket.constant.Permissions;
 import org.soraworld.locket.depend.Depend;
-import org.soraworld.locket.util.DoorType;
 import org.soraworld.locket.util.Utils;
-import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.plugin.PluginContainer;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.chat.ChatTypes;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
 public class LocketAPI {
+
+    private static final Locket locket = Locket.getLocket();
+    private static final PluginContainer plugin = locket.getPlugin();
+
+    private static final HashMap<Player, IPlayer> PLAYERS = new HashMap<>();
+
+    public static IPlayer getPlayer(Player player) {
+        if (PLAYERS.containsKey(player)) {
+            return PLAYERS.get(player);
+        } else {
+            IPlayer iPlayer = new IPlayer(player);
+            PLAYERS.put(player, iPlayer);
+            return iPlayer;
+        }
+    }
 
     public static boolean canOpenDChest(Player player, Location<World> location) {
         // 1.是不是箱子
@@ -69,7 +87,11 @@ public class LocketAPI {
         HashSet<String> owners = new HashSet<>();
         HashSet<String> users = new HashSet<>();
         for (Direction face : Constants.FACES) {
-            touchSign(location.getRelative(face), owners, users);
+            Location<World> relative = location.getRelative(face);
+            if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face.getOpposite()) {
+                player.sendMessage(ChatTypes.ACTION_BAR, Text.of("方位:" + face.name() + "朝向:" + relative.get(Keys.DIRECTION).orElse(null)));
+                touchSign(relative, owners, users);
+            }
         }
         return (owners.size() == 1 && owners.contains(player.getName())) || users.contains(player.getName());
     }
@@ -116,13 +138,13 @@ public class LocketAPI {
             for (Direction face : Constants.FACES) {
                 Location<World> relative = location.getRelative(face);
                 if (relative.getBlockType() == location.getBlockType()) {
+                    //canDTouch(player,location,face)
                     if (isLockedSingleBlock(relative, face.getOpposite())) return true;
                 }
             }
         }
         if (type == BlockTypes.CHEST || type == BlockTypes.TRAPPED_CHEST) {
             // Check second chest sign
-            System.out.println("IS CHEST");
             for (Direction chestFace : Constants.FACES) {
                 Location<World> relativeChest = location.getRelative(chestFace);
                 if (relativeChest.getBlockType() == location.getBlockType()) {
@@ -190,7 +212,7 @@ public class LocketAPI {
     }
 
     public static boolean isProtected(Location<World> block) {
-        return (isPrivateSign(block) || isLocked(block) || isUpDownLockedDoor(block));
+        return isPrivateSign(block) || isLocked(block);
     }
 
     public static boolean isLockedSingleBlock(Location<World> location, Direction opposite) {
@@ -238,58 +260,12 @@ public class LocketAPI {
         // Normal situation, that block is just locked by an adjacent sign
         if (isOwner(protectedBlock, player)) return true;
         // Situation where double door's block
-        if (isUpDownLockedDoor(protectedBlock) && isOwnerUpDownLockedDoor(protectedBlock, player)) return true;
-        // Otherwise...
         return false;
     }
 
     public static boolean isLockable(Location location) {
         BlockType type = location.getBlockType();
-        if (type == BlockTypes.WALL_SIGN || type == BlockTypes.STANDING_SIGN) return false;
-        if (Config.isLockable(type)) {
-            return true;
-        } else {
-            BlockType typeUp = location.getRelative(Direction.UP).getBlockType();
-            if (isUpDownAlsoLockableBlock(typeUp)) return true;
-            BlockType typeDown = location.getRelative(Direction.DOWN).getBlockType();
-            if (isUpDownAlsoLockableBlock(typeDown)) return true;
-        }
-        return false;
-    }
-
-    public static boolean isUpDownAlsoLockableBlock(BlockType type) {
-        return DoorType.resolve(type) != DoorType.INVALID;
-    }
-
-    public static boolean mayInterfere(BlockSnapshot block, Player player) {
-        BlockType type = block.getState().getType();
-        // DOOR
-        if (type == BlockTypes.WOODEN_DOOR || type == BlockTypes.ACACIA_DOOR || type == BlockTypes.IRON_DOOR || type == BlockTypes.BIRCH_DOOR) {
-            for (Direction face : Constants.FACES) {
-                Location<World> newBlock = block.getLocation().get().getBlockRelative(face);
-                BlockType newType = newBlock.getBlockType();
-                switch (DoorType.resolve(newType)) {
-                    case WOODEN_DOOR:
-                    case BIRCH_DOOR:
-                    case ACACIA_DOOR:
-                    case JUNGLE_DOOR:
-                    case SPRUCE_DOOR:
-                    case DARK_OAK_DOOR:
-                    case IRON_DOOR:
-                        if (isLocked(newBlock) && !isOwner(newBlock, player)) {
-                            return true;
-                        }
-                    default:
-                        break;
-                }
-            }
-            Location<World> newBlock2 = block.getLocation().get().getBlockRelative(Direction.UP);
-            Location<World> newBlock3 = block.getLocation().get().getBlockRelative(Direction.DOWN);
-            if (isLocked(newBlock3) && !isOwner(newBlock3, player)) {
-                return true;
-            }
-        }
-        return false;
+        return type != BlockTypes.WALL_SIGN && type != BlockTypes.STANDING_SIGN && Config.isLockable(type);
     }
 
     public static boolean isSign(Location<World> block) {
@@ -351,28 +327,6 @@ public class LocketAPI {
         return false;
     }
 
-    public static boolean isUpDownLockedDoor(Location<World> block) {
-        return false;
-        /*Location blockUp = block.getRelative(Direction.UP);
-        if (isUpDownAlsoLockableBlock(blockUp.getBlockType()) && isLocked(blockUp)) return true;
-        Location blockDown = block.getRelative(Direction.DOWN);
-        return isUpDownAlsoLockableBlock(blockDown.getBlockType()) && isLocked(blockDown);*/
-    }
-
-    public static boolean isOwnerUpDownLockedDoor(Location<World> block, Player player) {
-        Location blockUp = block.getRelative(Direction.UP);
-        if (isUpDownAlsoLockableBlock(blockUp.getBlockType()) && isOwner(blockUp, player)) return true;
-        Location blockDown = block.getRelative(Direction.DOWN);
-        return isUpDownAlsoLockableBlock(blockDown.getBlockType()) && isOwner(blockDown, player);
-    }
-
-    public static boolean isUserUpDownLockedDoor(Location<World> block, Player player) {
-        Location blockUp = block.getRelative(Direction.UP);
-        if (isUpDownAlsoLockableBlock(blockUp.getBlockType()) && isUser(blockUp, player)) return true;
-        Location blockDown = block.getRelative(Direction.DOWN);
-        return isUpDownAlsoLockableBlock(blockDown.getBlockType()) && isUser(blockDown, player);
-    }
-
     public static boolean isPrivate(String line) {
         return Config.isPrivateSignString(line);
     }
@@ -388,21 +342,6 @@ public class LocketAPI {
     public static Location<World> getAttachedBlock(Location<World> sign) {
         // Requires isSign
         return sign.getRelative(sign.getBlock().get(Keys.DIRECTION).orElse(Direction.NONE).getOpposite());
-    }
-
-    public static Location<World> getDoor(Location<World> location) {
-        Location<World> up = location.getRelative(Direction.UP), down = location.getRelative(Direction.DOWN);
-        if (down.getBlockType() == location.getBlockType()) {
-            return down;
-        }
-        if (up.getBlockType() == location.getBlockType()) {
-            return location;
-        }
-        return null;
-    }
-
-    public static boolean isDoubleDoorBlock(Location block) {
-        return DoorType.resolve(block.getBlockType()) != DoorType.INVALID;
     }
 
     public static Location getBottomDoorBlock(Location block) {

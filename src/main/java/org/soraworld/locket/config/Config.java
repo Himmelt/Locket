@@ -10,8 +10,8 @@ public class Config {
 
     private static HashSet<BlockType> lockables = new HashSet<>();
 
-    private static String defaultPrivateSign = "[Private]";
-    private static String defaultMoreSign = "[More Users]";
+    private static String defaultPrivateSign = "Private";
+    private static String defaultMoreSign = "More";
 
     private static boolean blockInterferePlacement = true;// 干涉放置,比如放置双开门,大箱子,漏斗之类的
     private static boolean blockItemTransferIn = false;

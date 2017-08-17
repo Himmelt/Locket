@@ -6,7 +6,7 @@ import ninja.leaping.configurate.loader.ConfigurationLoader;
 import org.slf4j.Logger;
 import org.soraworld.locket.config.Config;
 import org.soraworld.locket.constant.Constants;
-import org.soraworld.locket.listener.*;
+import org.soraworld.locket.listener.EventListener;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.config.DefaultConfig;
@@ -45,11 +45,7 @@ public class Locket {
     public void onInit(GameInitializationEvent event) {
         locket = this;
         config = new Config(this);
-        Sponge.getEventManager().registerListeners(this, new BlockEventListener());
-        Sponge.getEventManager().registerListeners(this, new EntityEventListener());
-        Sponge.getEventManager().registerListeners(this, new InventoryEventListener());
-        Sponge.getEventManager().registerListeners(this, new PlayerEventListener());
-        Sponge.getEventManager().registerListeners(this, new WorldEventListener());
+        Sponge.getEventManager().registerListeners(this, new EventListener());
     }
 
     public PluginContainer getPlugin() {

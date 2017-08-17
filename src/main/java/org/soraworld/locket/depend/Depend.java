@@ -1,7 +1,5 @@
 package org.soraworld.locket.depend;
 
-import org.soraworld.locket.log.Logger;
-import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.world.Location;
 
