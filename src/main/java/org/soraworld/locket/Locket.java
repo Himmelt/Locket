@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import org.slf4j.Logger;
+import org.soraworld.locket.command.CommandSpecs;
 import org.soraworld.locket.config.Config;
 import org.soraworld.locket.constant.Constants;
 import org.soraworld.locket.listener.EventListener;
@@ -46,6 +47,7 @@ public class Locket {
         locket = this;
         config = new Config(this);
         Sponge.getEventManager().registerListeners(this, new EventListener());
+        Sponge.getCommandManager().register(plugin, CommandSpecs.CMD_LOCKET, "locket", "lock");
     }
 
     public PluginContainer getPlugin() {
