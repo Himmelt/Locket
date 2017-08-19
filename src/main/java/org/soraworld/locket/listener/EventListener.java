@@ -1,10 +1,10 @@
 package org.soraworld.locket.listener;
 
-import org.soraworld.locket.Locket;
 import org.soraworld.locket.api.IPlayer;
 import org.soraworld.locket.api.LocketAPI;
 import org.soraworld.locket.config.Config;
 import org.soraworld.locket.constant.AccessResult;
+import org.soraworld.locket.constant.Constants;
 import org.soraworld.locket.constant.Permissions;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
@@ -20,6 +20,7 @@ import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.block.TickBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
 import org.spongepowered.api.event.cause.NamedCause;
 import org.spongepowered.api.event.filter.IsCancelled;
@@ -46,20 +47,44 @@ public class EventListener {
     // FIRST 监听
 
     // 玩家方块交互事件(主要行为保护)
-    @Listener(order = Order.FIRST)
+    @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerInteractBlock(InteractBlockEvent event, @First Player player) {
+        player.sendMessage(Text.of("===== onPlayerInteractBlock ====="));
         Location<World> location = event.getTargetBlock().getLocation().orElse(null);
         if (location == null) return;
         IPlayer iPlayer = LocketAPI.getPlayer(player);
-        if (iPlayer.canAccess(location) != AccessResult.SUCCESS) {
-            iPlayer.sendChat("你无法与此方块进行交互");
-            event.setCancelled(true);
+        AccessResult result = iPlayer.canInteract(location);
+        switch (result) {
+            case OWNER:
+                iPlayer.sendChat("你是所有者");
+                return;
+            case USER:
+                iPlayer.sendChat("你是使用者");
+                return;
+            case NOT_LOCK:
+                iPlayer.sendChat("方块没有上锁");
+                return;
+            case ADMIN_INTERACT:
+                iPlayer.sendChat("你有admin.interact权限");
+                return;
+            case M_OWNERS:
+                iPlayer.sendChat("这个方块有多个所有者,这是不允许的,请联系管理员!");
+                event.setCancelled(true);
+                return;
+            case M_CHESTS:
+                iPlayer.sendChat("这是一个多重箱子,这是不允许的,请联系管理员!");
+                event.setCancelled(true);
+                return;
+            default:
+                iPlayer.sendChat("你没有进行此操作的权限");
+                event.setCancelled(true);
         }
     }
 
     // 玩家放置方块事件
-    @Listener(order = Order.FIRST)
+    @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerPlaceBlock(ChangeBlockEvent.Place event, @First Player player) {
+        player.sendMessage(Text.of("===== onPlayerPlaceBlock ====="));
         if (player.hasPermission(Permissions.ADMIN_INTERFERE)) return;
         List<Transaction<BlockSnapshot>> transactions = event.getTransactions();
         IPlayer iPlayer = LocketAPI.getPlayer(player);
@@ -73,8 +98,9 @@ public class EventListener {
     }
 
     // 玩家破坏方块事件
-    @Listener(order = Order.FIRST)
+    @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerBreakBlock(ChangeBlockEvent.Break event, @First Player player) {
+        player.sendMessage(Text.of("===== onPlayerBreakBlock ====="));
         List<Transaction<BlockSnapshot>> transactions = event.getTransactions();
         IPlayer iPlayer = LocketAPI.getPlayer(player);
         for (Transaction<BlockSnapshot> transaction : transactions) {
@@ -92,8 +118,9 @@ public class EventListener {
     }
 
     // 活塞推出事件
-    @Listener(order = Order.FIRST)
-    public void onPistonExtend(@Named(NamedCause.PISTON_EXTEND) ChangeBlockEvent.Pre event) {
+    // Cause org.spongepowered.api.world.World
+    @Listener(order = Order.FIRST, beforeModifications = true)
+    public void onPistonExtend(ChangeBlockEvent.Pre event, @Named(NamedCause.PISTON_EXTEND) Object world) {
         for (Location<World> block : event.getLocations()) {
             if (LocketAPI.isLocked(block)) {
                 event.setCancelled(true);
@@ -103,8 +130,9 @@ public class EventListener {
     }
 
     // 活塞收回事件
-    @Listener(order = Order.FIRST)
-    public void onPistonRetract(@Named(NamedCause.PISTON_RETRACT) ChangeBlockEvent.Pre event) {
+    // Cause org.spongepowered.api.world.World
+    @Listener(order = Order.FIRST, beforeModifications = true)
+    public void onPistonRetract(ChangeBlockEvent.Pre event, @Named(NamedCause.PISTON_RETRACT) Object world) {
         for (Location<World> block : event.getLocations()) {
             if (LocketAPI.isLocked(block)) {
                 event.setCancelled(true);
@@ -114,8 +142,9 @@ public class EventListener {
     }
 
     // 环境生长事件
-    @Listener(order = Order.FIRST)
+    @Listener(order = Order.FIRST, beforeModifications = true)
     public void onStructureGrow(ChangeBlockEvent.Grow event) {
+        System.out.println("===== onStructureGrow =====");
         List<Transaction<BlockSnapshot>> transactions = event.getTransactions();
         for (Transaction<BlockSnapshot> transaction : transactions) {
             Location<World> location = transaction.getOriginal().getLocation().orElse(null);
@@ -126,10 +155,33 @@ public class EventListener {
         }
     }
 
+    @Listener(order = Order.FIRST, beforeModifications = true)
+    public void onModify(ChangeBlockEvent.Modify event) {
+        System.out.println("===== onModify =====");
+        System.out.println(event.getCause());
+        List<Transaction<BlockSnapshot>> transactions = event.getTransactions();
+        for (Transaction<BlockSnapshot> transaction : transactions) {
+            Location<World> location = transaction.getOriginal().getLocation().orElse(null);
+            System.out.println(transaction.getOriginal());
+            if (location != null && LocketAPI.isLocked(location)) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+    }
+
+    //@Listener(order = Order.FIRST, beforeModifications = true)
+    public void onRandom(TickBlockEvent.Random event) {
+        System.out.println("===== onRandom =====");
+        System.out.println(event.getTargetBlock());
+    }
+
+
     // 容器传输事件(取消依然监控)
-    @Listener(order = Order.FIRST)
+    @Listener(order = Order.FIRST, beforeModifications = true)
     @IsCancelled(value = Tristate.UNDEFINED)
     public void onInventoryMove(ChangeInventoryEvent.Transfer event) {
+        System.out.println("===== onInventoryMove =====");
         if (Config.isItemTransferOutBlocked() || Config.getHopperMinecartAction()) {
             if (isInventoryLocked(event.getCause().first(HopperMinecart.class).get())) {
                 if (Config.isItemTransferOutBlocked()) {
@@ -175,56 +227,81 @@ public class EventListener {
     // 右键锁箱子
     @Listener(order = Order.LAST)
     public void onPlayerLockBlock(InteractBlockEvent.Secondary event, @First Player player) {
-        if (player.get(Keys.IS_SNEAKING).orElse(false)) return;
-        Direction face = event.getTargetSide();
-        if (!face.isCardinal()) return;
+        player.sendMessage(Text.of("===== onPlayerLockBlock ====="));
         ItemStack stack = player.getItemInHand(event.getHandType()).orElse(null);
         if (stack == null || ItemTypes.SIGN != stack.getItem()) return;
+        if (player.get(Keys.IS_SNEAKING).orElse(false)) return;
+        Direction face = event.getTargetSide();
+        if (!Constants.FACES.contains(face)) return;
+        Location<World> location = event.getTargetBlock().getLocation().orElse(null);
+        if (location == null || !LocketAPI.isLockable(location)) return;
+        // 事件进入取消阶段
         event.setCancelled(true);
         IPlayer iPlayer = LocketAPI.getPlayer(player);
         if (!player.hasPermission(Permissions.LOCK)) {
-            iPlayer.sendChat("&a&lYou need permission &b[" + Permissions.LOCK + "]&a to do this!");
-            return;
-        }
-        Location<World> location = event.getTargetBlock().getLocation().orElse(null);
-        if (location == null || !LocketAPI.isLockable(location)) {
-            //Utils.sendChat(player, "&c&lYou can't lock this block from this side!");
-            Locket.getLocket().getPlugin().getLogger().info("方块不存在或不属于可保护范围!");
-            return;
-        }
-        if (location.getRelative(face).getBlockType() != BlockTypes.AIR) {
-            iPlayer.sendChat("&c&l此面空间被占用,无法放置保护锁!");
+            iPlayer.sendChat("&a&l你需要权限 &b[" + Permissions.LOCK + "]&a!");
             return;
         }
         if (iPlayer.isOtherProtect(location)) {
             iPlayer.sendChat("&c&l方块被其他插件保护,你没有操作权限!");
             return;
         }
+        if (location.getRelative(face).getBlockType() != BlockTypes.AIR) {
+            iPlayer.sendChat("&c&l此面空间被占用,无法放置保护锁!");
+            return;
+        }
         AccessResult result = iPlayer.canLock(location);
-        if (result == AccessResult.SUCCESS) {
-            iPlayer.placeLock(location, face);
-            iPlayer.removeSign(event.getHandType());
-        } else {
-            iPlayer.sendChat("你无法对此方块上锁!");
+        switch (result) {
+            case OWNER:
+                iPlayer.sendChat("你是所有者,放置");
+                iPlayer.placeLock(location, face);
+                iPlayer.removeSign(event.getHandType());
+                return;
+            case USER:
+                iPlayer.sendChat("你是使用者,不放置");
+                return;
+            case NOT_LOCK:
+                iPlayer.sendChat("方块没有上锁,放置");
+                iPlayer.placeLock(location, face);
+                iPlayer.removeSign(event.getHandType());
+                return;
+            case NO_PERM_LOCK:
+                iPlayer.sendChat("你没有.lock权限");
+                return;
+            case M_OWNERS:
+                iPlayer.sendChat("这个方块有多个所有者,这是不允许的,请联系管理员!");
+                return;
+            case M_CHESTS:
+                iPlayer.sendChat("这是一个多重箱子,这是不允许的,请联系管理员!");
+                return;
+            case UNLOCKABLE:
+                iPlayer.sendChat("这个方块不可被锁");
+            default:
+                iPlayer.sendChat("你没有进行此操作的权限");
         }
     }
 
     // 右键选择告示牌
-    @Listener(order = Order.LATE)
+    @Listener(order = Order.LAST)
     public void onPlayerSelectSign(InteractBlockEvent.Secondary event, @First Player player) {
-        if (!player.hasPermission(Permissions.EDIT)) return;
+        player.sendMessage(Text.of("===== onPlayerSelectSign ====="));
+        if (!player.hasPermission(Permissions.EDIT)) {
+            LocketAPI.getPlayer(player).sendChat("你没有 " + Permissions.EDIT + " 权限");
+            return;
+        }
         Location<World> location = event.getTargetBlock().getLocation().orElse(null);
         if (location == null) return;
         BlockType type = location.getBlockType();
         if (type == BlockTypes.WALL_SIGN) {
             LocketAPI.getPlayer(player).select(location);
-            player.sendMessage(Text.of("sign-selected"));
+            player.sendMessage(Text.of("你选择了一个告示牌:" + location));
         }
     }
 
     // 玩家修改告示牌事件
     @Listener(order = Order.LAST)
     public void onPlayerChangeSign(ChangeSignEvent event, @First Player player) {
+        player.sendMessage(Text.of("===== onPlayerChangeSign ====="));
         SignData data = event.getText();
         String line_0 = data.get(0).orElse(Text.EMPTY).toPlain();
         if (LocketAPI.isPrivate(line_0)) {

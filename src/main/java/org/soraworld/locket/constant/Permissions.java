@@ -12,4 +12,5 @@ public final class Permissions {
     public static final String ADMIN_UNLOCK = ADMIN + ".unlock";
     public static final String ADMIN_OVERFLOW = ADMIN + ".overflow";
     public static final String ADMIN_INTERFERE = ADMIN + ".interfere";
+    public static final String ADMIN_INTERACT = ADMIN + ".interact";
 }

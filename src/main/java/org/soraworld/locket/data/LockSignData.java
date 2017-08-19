@@ -10,10 +10,9 @@ public class LockSignData {
     private final HashSet<String> owners = new HashSet<>();
     private final HashSet<String> users = new HashSet<>();
 
-    public LockSignData append(LockSignData data) {
+    public void append(LockSignData data) {
         this.owners.addAll(data.owners);
         this.users.addAll(data.users);
-        return this;
     }
 
     public void addOwner(String owner) {

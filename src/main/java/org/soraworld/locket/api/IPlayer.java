@@ -75,8 +75,39 @@ public class IPlayer {
         return analyzeSign(signs);
     }
 
-    public AccessResult canAccess(@Nonnull Location<World> location) {
-        return AccessResult.FAILED;
+    public AccessResult canInteract(@Nonnull Location<World> location) {
+        BlockType type = location.getBlockType();
+        if (player.hasPermission(Permissions.ADMIN_INTERACT)) return AccessResult.ADMIN_INTERACT;
+
+        int count = 0;
+        boolean isDChest = LocketAPI.isDChest(type);
+        Location<World> link = null;
+        HashSet<Location<World>> signs = new HashSet<>();
+
+        // 检查4个方向是否是 WALL_SIGN 或 DChest
+        for (Direction face : Constants.FACES) {
+            Location<World> relative = location.getRelative(face);
+            if (isDChest && relative.getBlockType() == type) {
+                link = relative;
+                if (++count >= 2) return AccessResult.M_CHESTS;
+            } else if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+                player.sendMessage(Text.of("FACE:" + face + "   SIGN-FACE:" + relative.get(Keys.DIRECTION).orElse(null)));
+                signs.add(relative);
+            }
+        }
+        // 检查相邻箱子
+        if (isDChest && link != null) {
+            count = 0;
+            for (Direction face : Constants.FACES) {
+                Location<World> relative = link.getRelative(face);
+                if (relative.getBlockType() == type && ++count >= 2) return AccessResult.M_CHESTS;
+                if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+                    player.sendMessage(Text.of("FACE:" + face + "   SIGN-FACE:" + relative.get(Keys.DIRECTION).orElse(null)));
+                    signs.add(relative);
+                }
+            }
+        }
+        return analyzeSign(signs);
     }
 
     public AccessResult canBreak(@Nonnull Location<World> location) {
@@ -155,9 +186,7 @@ public class IPlayer {
         TileEntity tile = relative.getTileEntity().orElse(null);
         if (tile != null && tile instanceof Sign) {
             SignData data = ((Sign) tile).getSignData();
-            data.setElement(0, Text.of("[Private]"));
-            data.setElement(1, Text.of(player.getName()));
-            data.setElement(2, TextSerializers.FORMATTING_CODE.deserialize("&b我是吴通,&c&l空境之主&b!&kWelcome&r&b to My &e&lSoraWorld&r!&r"));
+            data.setElement(0, Text.of("[Private]" + player.getName()));
             tile.offer(data);
         }
         player.playSound(SoundTypes.BLOCK_WOOD_PLACE, location.getPosition(), 1.0D);
@@ -183,6 +212,6 @@ public class IPlayer {
     }
 
     public boolean canInterfere(Location<World> location) {
-        return false;
+        return true;
     }
 }

@@ -91,7 +91,7 @@ public class LocketAPI {
         String line_2 = sign.lines().get(2).toPlain();
         String line_3 = sign.lines().get(3).toPlain();
         if (isPrivate(line_0)) {
-            data.addOwner(line_0.substring(line_0.indexOf("Private")).trim());
+            data.addOwner(line_0.substring(line_0.indexOf("[Private]")).trim());
             data.addUser(line_1, line_2, line_3);
         }
         return data;
