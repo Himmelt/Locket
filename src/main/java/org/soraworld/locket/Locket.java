@@ -1,13 +1,15 @@
 package org.soraworld.locket;
 
 import com.google.inject.Inject;
+import net.minecraftforge.common.MinecraftForge;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import org.slf4j.Logger;
 import org.soraworld.locket.command.CommandSpecs;
 import org.soraworld.locket.config.Config;
 import org.soraworld.locket.constant.Constants;
-import org.soraworld.locket.listener.EventListener;
+import org.soraworld.locket.listener.SpongeEventListener;
+import org.soraworld.locket.listener.ForgeEventListener;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.config.DefaultConfig;
@@ -46,8 +48,12 @@ public class Locket {
     public void onInit(GameInitializationEvent event) {
         locket = this;
         config = new Config(this);
-        Sponge.getEventManager().registerListeners(this, new EventListener());
+        Sponge.getEventManager().registerListeners(this, new SpongeEventListener());
         Sponge.getCommandManager().register(plugin, CommandSpecs.CMD_LOCKET, "locket", "lock");
+
+        System.out.println("register forge event");
+        MinecraftForge.EVENT_BUS.register(new ForgeEventListener());
+
     }
 
     public PluginContainer getPlugin() {

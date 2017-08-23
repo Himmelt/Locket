@@ -2,7 +2,7 @@ package org.soraworld.locket.command;
 
 import org.soraworld.locket.api.IPlayer;
 import org.soraworld.locket.api.LocketAPI;
-import org.soraworld.locket.constant.AccessResult;
+import org.soraworld.locket.constant.Result;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
@@ -25,9 +25,9 @@ public class CommandLocket implements CommandExecutor {
             Text text = args.<Text>getOne("name").orElse(Text.of(""));
             if (sign == null) {
                 player.sendMessage(Text.of("no-sign-selected"));
-            } else if (!(player.hasPermission("locket.edit.admin") || iPlayer.canLock(iPlayer.selection()) == AccessResult.SUCCESS)) {
+            } else if (!(player.hasPermission("locket.edit.admin") || iPlayer.canLock(iPlayer.selection()) == Result.OWNER)) {
                 player.sendMessage(Text.of("sign-need-reselect"));
-            } else if (iPlayer.canLock(sign) == AccessResult.OWNER) {
+            } else if (iPlayer.canLock(sign) == Result.OWNER) {
                 switch (line) {
                     case 1:
                         player.sendMessage(Text.of("cannot-change-this-line"));

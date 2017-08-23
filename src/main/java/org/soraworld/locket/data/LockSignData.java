@@ -1,8 +1,7 @@
 package org.soraworld.locket.data;
 
-import org.soraworld.locket.constant.AccessResult;
+import org.soraworld.locket.constant.Result;
 
-import java.util.Collections;
 import java.util.HashSet;
 
 public class LockSignData {
@@ -15,19 +14,24 @@ public class LockSignData {
         this.users.addAll(data.users);
     }
 
-    public void addOwner(String owner) {
+    public void puts(String owner, String user1, String user2) {
+        System.out.println("put owner:" + owner);
         owners.add(owner);
+        users.add(user1);
+        users.add(user2);
     }
 
-    public void addUser(String... users) {
-        Collections.addAll(this.users, users);
+    public Result getAccess(String username) {
+        System.out.println("size" + owners.size());
+        if (owners.size() <= 0) return Result.NOT_LOCK;
+        if (owners.size() >= 2) return Result.M_OWNERS;
+        for (String s : owners) {
+            System.out.println("[" + s + "]");
+        }
+        System.out.println("[" + owners.contains(username) + "]");
+        if (owners.contains(username)) return Result.OWNER;
+        if (users.contains(username)) return Result.USER;
+        return Result.NO_ACCESS;
     }
 
-    public AccessResult getAccess(String username) {
-        if (owners.size() <= 0) return AccessResult.NOT_LOCK;
-        if (owners.size() >= 2) return AccessResult.M_OWNERS;
-        if (owners.contains(username)) return AccessResult.OWNER;
-        if (users.contains(username)) return AccessResult.USER;
-        return AccessResult.NO_ACCESS;
-    }
 }

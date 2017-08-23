@@ -3,6 +3,7 @@ package org.soraworld.locket.api;
 import org.soraworld.locket.Locket;
 import org.soraworld.locket.config.Config;
 import org.soraworld.locket.data.LockSignData;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -33,6 +34,17 @@ public class LocketAPI {
         }
     }
 
+    public static IPlayer getPlayer(String name) {
+        Player player = Sponge.getServer().getPlayer(name).orElse(null);
+        if (PLAYERS.containsKey(player)) {
+            return PLAYERS.get(player);
+        } else {
+            IPlayer iPlayer = new IPlayer(player);
+            PLAYERS.put(player, iPlayer);
+            return iPlayer;
+        }
+    }
+
     public static void removePlayer(Player player) {
         PLAYERS.remove(player);
     }
@@ -48,7 +60,8 @@ public class LocketAPI {
     }
 
     public static boolean isPrivate(String line) {
-        return Config.isPrivateSignString(line);
+        System.out.println(getPrivate()+"|"+line);
+        return getPrivate().equals(line);
     }
 
     public static Location<World> getAttached(Location<World> sign) {
@@ -90,11 +103,12 @@ public class LocketAPI {
         String line_1 = sign.lines().get(1).toPlain();
         String line_2 = sign.lines().get(2).toPlain();
         String line_3 = sign.lines().get(3).toPlain();
-        if (isPrivate(line_0)) {
-            data.addOwner(line_0.substring(line_0.indexOf("[Private]")).trim());
-            data.addUser(line_1, line_2, line_3);
-        }
+        if (isPrivate(line_0)) data.puts(line_1, line_2, line_3);
         return data;
+    }
+
+    public static String getPrivate() {
+        return "[Private]";
     }
 
 }

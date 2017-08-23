@@ -1,6 +1,6 @@
 package org.soraworld.locket.constant;
 
-public final class Permissions {
+public final class Perms {
 
     public static final String ROOT = Constants.MODID;
     public static final String LOCK = ROOT + ".lock";

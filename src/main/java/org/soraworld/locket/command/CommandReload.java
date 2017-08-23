@@ -11,7 +11,6 @@ import org.spongepowered.api.text.Text;
 public class CommandReload implements CommandExecutor {
     @Override
     public CommandResult execute(CommandSource source, CommandContext args) throws CommandException {
-        Config.reload();
         source.sendMessage(Text.of("config-reloaded"));
         return CommandResult.success();
     }
