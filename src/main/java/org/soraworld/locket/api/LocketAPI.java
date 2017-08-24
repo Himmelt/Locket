@@ -60,7 +60,6 @@ public class LocketAPI {
     }
 
     public static boolean isPrivate(String line) {
-        System.out.println(getPrivate()+"|"+line);
         return getPrivate().equals(line);
     }
 

@@ -15,23 +15,17 @@ public class LockSignData {
     }
 
     public void puts(String owner, String user1, String user2) {
-        System.out.println("put owner:" + owner);
         owners.add(owner);
         users.add(user1);
         users.add(user2);
     }
 
     public Result getAccess(String username) {
-        System.out.println("size" + owners.size());
-        if (owners.size() <= 0) return Result.NOT_LOCK;
-        if (owners.size() >= 2) return Result.M_OWNERS;
-        for (String s : owners) {
-            System.out.println("[" + s + "]");
-        }
-        System.out.println("[" + owners.contains(username) + "]");
-        if (owners.contains(username)) return Result.OWNER;
-        if (users.contains(username)) return Result.USER;
-        return Result.NO_ACCESS;
+        if (owners.size() <= 0) return Result.SIGN_NOT_LOCK;
+        if (owners.size() >= 2) return Result.SIGN_M_OWNERS;
+        if (owners.contains(username)) return Result.SIGN_OWNER;
+        if (users.contains(username)) return Result.SIGN_USER;
+        return Result.SIGN_NO_ACCESS;
     }
 
 }
