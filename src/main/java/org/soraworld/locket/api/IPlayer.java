@@ -1,6 +1,5 @@
 package org.soraworld.locket.api;
 
-import org.soraworld.locket.Locket;
 import org.soraworld.locket.constant.Constants;
 import org.soraworld.locket.constant.Result;
 import org.soraworld.locket.data.LockSignData;
@@ -15,10 +14,8 @@ import org.spongepowered.api.data.type.HandType;
 import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.gamemode.GameModes;
-import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.item.inventory.ItemStack;
-import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.chat.ChatTypes;
+import org.spongepowered.api.text.chat.ChatType;
 import org.spongepowered.api.text.serializer.TextSerializers;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
@@ -79,15 +76,15 @@ public class IPlayer {
 
     public void placeLock(@Nonnull Location<World> location, Direction face, HandType hand) {
         Location<World> relative = location.getRelative(face);
-        relative.setBlockType(BlockTypes.WALL_SIGN, Cause.source(Locket.getLocket().getPlugin()).build());
+        relative.setBlockType(BlockTypes.WALL_SIGN, Constants.PLUGIN_CAUSE);
         BlockState state = BlockTypes.WALL_SIGN.getDefaultState();
-        relative.setBlock(state.with(Keys.DIRECTION, face).orElse(state), Cause.source(Locket.getLocket().getPlugin()).build());
+        relative.setBlock(state.with(Keys.DIRECTION, face).orElse(state), Constants.PLUGIN_CAUSE);
 
         TileEntity tile = relative.getTileEntity().orElse(null);
         if (tile != null && tile instanceof Sign) {
             SignData data = ((Sign) tile).getSignData();
-            data.setElement(0, Text.of("[Private]"));
-            data.setElement(1, Text.of(player.getName()));
+            data.setElement(0, LocketAPI.CONFIG.getPrivateText());
+            data.setElement(1, LocketAPI.CONFIG.getOwnerText(username));
             tile.offer(data);
         }
         removeSign(hand);
@@ -95,11 +92,17 @@ public class IPlayer {
     }
 
     public void sendChat(String message) {
-        player.sendMessage(ChatTypes.CHAT, TextSerializers.FORMATTING_CODE.deserialize(message));
+        player.sendMessage(LocketAPI.CONFIG.getChatType(), TextSerializers.FORMATTING_CODE.deserialize(message));
     }
 
-    public void sendChat(Text message) {
-        player.sendMessage(ChatTypes.CHAT, message);
+    public void sendChat(ChatType type, String message) {
+        player.sendMessage(type, TextSerializers.FORMATTING_CODE.deserialize(message));
+    }
+
+    public void adminNotify(String message) {
+        if (LocketAPI.CONFIG.isAdminNotify()) {
+            player.sendMessage(LocketAPI.CONFIG.getChatType(), TextSerializers.FORMATTING_CODE.deserialize(message));
+        }
     }
 
     public Result tryAccess(@Nonnull Location<World> block) {
@@ -108,6 +111,9 @@ public class IPlayer {
         int count = 0;
         Location<World> link = null;
         HashSet<Location<World>> signs = new HashSet<>();
+
+        // 自身也将参与检查
+        signs.add(block);
 
         // 检查4个方向是否是 WALL_SIGN 或 DChest
         for (Direction face : Constants.FACES) {
@@ -137,4 +143,17 @@ public class IPlayer {
         return false;
     }
 
+    public boolean hasPerm(String perm) {
+        return player.hasPermission(perm);
+    }
+
+    public void lockSign(Location<World> location) {
+        TileEntity tile = location.getTileEntity().orElse(null);
+        if (tile != null && tile instanceof Sign) {
+            SignData data = ((Sign) tile).getSignData();
+            data.setElement(0, LocketAPI.CONFIG.getPrivateText());
+            data.setElement(1, LocketAPI.CONFIG.getOwnerText(username));
+            tile.offer(data);
+        }
+    }
 }

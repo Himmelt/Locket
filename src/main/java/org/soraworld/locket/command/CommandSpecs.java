@@ -8,7 +8,7 @@ public final class CommandSpecs {
 
     public static final CommandSpec CMD_LOCKET = CommandSpec.builder()
             .description(Text.of("locket"))
-            .permission(Perms.ROOT)
+            .permission(Perms.LOCK)
             .executor(new CommandLocket())
             .build();
 }

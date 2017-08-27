@@ -1,10 +1,13 @@
 package org.soraworld.locket.constant;
 
-import org.soraworld.locket.Locket;
+import com.google.common.reflect.TypeToken;
+import org.soraworld.locket.api.LocketAPI;
+import org.soraworld.locket.config.Config;
 import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.util.Direction;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public final class Constants {
@@ -12,7 +15,11 @@ public final class Constants {
     public static final String NAME = "Locket";
     public static final String VERSION = "1.0.4";
 
-    public static final Cause PLUGIN_CAUSE = Cause.source(Locket.getLocket().getPlugin()).build();
+    public static final Cause PLUGIN_CAUSE = Cause.source(LocketAPI.PLUGIN).build();
 
     public static final List<Direction> FACES = Arrays.asList(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST);
+
+    public static final TypeToken<HashMap<String, String>> TOKEN_HASH_MAP = new TypeToken<HashMap<String, String>>() {
+    };
+    public static final TypeToken<Config> TOKEN_CONFIG = TypeToken.of(Config.class);
 }

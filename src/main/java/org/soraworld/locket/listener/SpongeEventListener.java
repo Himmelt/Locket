@@ -2,8 +2,8 @@ package org.soraworld.locket.listener;
 
 import org.soraworld.locket.api.IPlayer;
 import org.soraworld.locket.api.LocketAPI;
+import org.soraworld.locket.config.I18n;
 import org.soraworld.locket.constant.Perms;
-import org.soraworld.locket.constant.Result;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -20,6 +20,7 @@ import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
 import org.spongepowered.api.event.cause.NamedCause;
 import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.event.filter.cause.Named;
+import org.spongepowered.api.event.game.GameReloadEvent;
 import org.spongepowered.api.event.item.inventory.ChangeInventoryEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
 import org.spongepowered.api.item.ItemTypes;
@@ -29,6 +30,7 @@ import org.spongepowered.api.item.inventory.InventoryArchetypes;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.type.CarriedInventory;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.chat.ChatTypes;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -40,10 +42,13 @@ public class SpongeEventListener {
     // 玩家方块交互事件(主要行为保护)
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerInteractBlock(InteractBlockEvent event, @First Player player) {
-        if (player.hasPermission(Perms.ADMIN_INTERACT)) return;
+        IPlayer iPlayer = LocketAPI.getPlayer(player);
+        if (iPlayer.hasPerm(Perms.ADMIN_INTERACT)) {
+            iPlayer.adminNotify(I18n.format("notify-admin-interact"));
+            return;
+        }
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
         if (block == null) return;
-        IPlayer iPlayer = LocketAPI.getPlayer(player);
         switch (iPlayer.tryAccess(block)) {
             case SIGN_USER:
                 iPlayer.sendChat("你是使用者");
@@ -70,45 +75,37 @@ public class SpongeEventListener {
 
     // 玩家放置方块事件
     @Listener(order = Order.FIRST, beforeModifications = true)
-    public void onPlayerPlaceBlock(ChangeBlockEvent.Pre event, @Named(NamedCause.PLAYER_PLACE) Object world, @First Player player) {
+    public void onPlayerPlaceBlock(ChangeBlockEvent.Place event, @First Player player) {
         if (player.hasPermission(Perms.ADMIN_INTERFERE)) return;
         IPlayer iPlayer = LocketAPI.getPlayer(player);
-        event.getLocations().forEach(location -> {
-            if (player.hasPermission(Perms.INTERFERE)) {
+        for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
+            Location<World> block = transaction.getOriginal().getLocation().orElse(null);
+            if (!player.hasPermission(Perms.INTERFERE)) {
                 event.setCancelled(true);
                 iPlayer.sendChat("你不能在此处放置可能影响他人保护锁的方块!");
+                return;
             }
-        });
+        }
     }
 
     // 玩家破坏方块事件
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerBreakBlock(ChangeBlockEvent.Pre event, @Named(NamedCause.PLAYER_BREAK) Object world, @First Player player) {
         IPlayer iPlayer = LocketAPI.getPlayer(player);
-        boolean admin_unlock = player.hasPermission(Perms.ADMIN_UNLOCK);
-        boolean admin_break = player.hasPermission(Perms.ADMIN_BREAK);
         for (Location<World> block : event.getLocations()) {
-            if (iPlayer.analyzeSign(block) != Result.SIGN_NOT_LOCK) {
-                if (!admin_unlock) event.setCancelled(true);
-                return;
-            }
-
-            if (admin_break) return;
             switch (iPlayer.tryAccess(block)) {
-                case SIGN_USER:
-                    event.setCancelled(true);
-                    iPlayer.sendChat("你是用户,不能破坏此方块(s)!");
-                    return;
                 case SIGN_OWNER:
-                    event.setCancelled(true);
-                    iPlayer.sendChat("你是所有者,请使用/locket unlock 解锁!");
-                    return;
+                    if (!iPlayer.hasPerm(Perms.BREAK)) {
+                        iPlayer.sendChat("你需要 &e" + Perms.BREAK + " &r权限!");
+                        event.setCancelled(true);
+                        return;
+                    }
+                    iPlayer.sendChat(ChatTypes.ACTION_BAR, "你是所有者,可以破坏此方块!");
+                    break;
                 case SIGN_NOT_LOCK:
-                    iPlayer.sendChat("未上锁,继续!");
-                    continue;
-                case SIGN_M_OWNERS:
-                case SIGN_NO_ACCESS:
-                case M_CHESTS:
+                    iPlayer.sendChat(ChatTypes.ACTION_BAR, "未上锁,继续!");
+                    break;
+                default:
                     event.setCancelled(true);
                     iPlayer.sendChat("你不能破坏此方块(s)!");
                     return;
@@ -315,6 +312,11 @@ public class SpongeEventListener {
     @Listener
     public void onPlayerLogout(ClientConnectionEvent.Disconnect event, @First Player player) {
         LocketAPI.removePlayer(player);
+    }
+
+    @Listener
+    public void onReload(GameReloadEvent event) {
+        LocketAPI.CONFIG.load();
     }
 
 }
