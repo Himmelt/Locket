@@ -32,26 +32,29 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 @ConfigSerializable
 public class Config {
 
-    @Setting(value = "lang", comment = "Language: zh_cn,en_us...")
+    @Setting(value = "00_lang", comment = "Language: zh_cn,en_us...")
     private String lang = "en_us";
-    @Setting(value = "chatType", comment = "ChatType: chat,action-bar")
-    private ChatType chatType = ChatTypes.CHAT;
-    @Setting(value = "adminNotify", comment = "Notify when player is using admin permission")
+    @Setting(value = "01_adminNotify", comment = "Notify when player is using admin permission")
     private boolean adminNotify = false;
-    @Setting(value = "protectTileEntity", comment = "Whether protect all tileentities")
+    @Setting(value = "02_protectTileEntity", comment = "Whether protect all tileentities")
     private boolean protectTileEntity = false;
-    @Setting(value = "protectCarrier", comment = "Whether protect all containers")
+    @Setting(value = "03_protectCarrier", comment = "Whether protect all containers")
     private boolean protectCarrier = false;
-    @Setting(value = "defaultSign", comment = "Default Private text")
-    private Text defaultSign = Text.of("[Private]");
-    @Setting(value = "lockables", comment = "Lockable Block ID(s)")
+    @Setting(value = "04_chatType", comment = "ChatType: chat,action-bar")
+    private ChatType chatType = ChatTypes.CHAT;
+    @Setting(value = "05_defaultSign", comment = "Default Private text")
+    private Text defaultSign = Constants.DEFAULT_PRIVATE;
+    @Setting(value = "06_acceptSigns", comment = "Acceptable Private texts")
+    private List<String> acceptSigns = new ArrayList<>();
+    @Setting(value = "07_lockables", comment = "Lockable Block ID(s)")
     private List<String> lockables = new ArrayList<>();
-    @Setting(value = "doubleBlocks", comment = "The double-chest like blocks, which can be opened from neighbors")
+    @Setting(value = "08_doubleBlocks", comment = "The double-chest like blocks, which can be accessed from neighbors")
     private List<String> doubleBlocks = new ArrayList<>();
 
     private Path cfgDir;
@@ -91,7 +94,9 @@ public class Config {
         protectTileEntity = config.protectTileEntity;
         protectCarrier = config.protectCarrier;
         defaultSign = config.defaultSign == null ? defaultSign : config.defaultSign;
+        acceptSigns = config.acceptSigns == null ? acceptSigns : config.acceptSigns;
         lockables = config.lockables == null ? lockables : config.lockables;
+        doubleBlocks = config.doubleBlocks == null ? doubleBlocks : config.doubleBlocks;
     }
 
     public void load() {
@@ -139,9 +144,17 @@ public class Config {
             I18n.LANGUAGES = new HashMap<>();
         }
         privateSign = I18n.formatText(LangKeys.PRIVATE_SIGN);
+        acceptSigns.add(defaultSign.toPlain());
+        acceptSigns.add(privateSign.toPlain());
+        ///////////////////
+        save();
     }
 
     public void save() {
+        // 去重
+        acceptSigns = new ArrayList<>(new HashSet<>(acceptSigns));
+        lockables = new ArrayList<>(new HashSet<>(lockables));
+        doubleBlocks = new ArrayList<>(new HashSet<>(doubleBlocks));
         try {
             rootNode.setValue(Constants.TOKEN_CONFIG, this);
             cfgLoader.save(rootNode);
@@ -153,10 +166,8 @@ public class Config {
 
     public boolean isLockable(Location<World> block) {
         BlockType type = block.getBlockType();
-        System.out.println(type);
         if (type == BlockTypes.WALL_SIGN || type == BlockTypes.STANDING_SIGN) return false;
         TileEntity tile = block.getTileEntity().orElse(null);
-        System.out.println(tile + "" + protectTileEntity + protectCarrier);
         return protectTileEntity && tile != null || protectCarrier && tile != null && tile instanceof TileEntityCarrier || lockables.contains(type.getId());
     }
 
@@ -177,7 +188,7 @@ public class Config {
     }
 
     public boolean isPrivate(String line) {
-        return privateSign.toPlain().equals(line) || defaultSign.toPlain().equals(line);
+        return acceptSigns.contains(line);
     }
 
     public Text getPrivateText() {

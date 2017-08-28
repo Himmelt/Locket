@@ -49,6 +49,7 @@ public class SpongeEventListener {
         }
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
         if (block == null) return;
+        System.out.println(block.getBlockType().getId());
         switch (iPlayer.tryAccess(block)) {
             case SIGN_USER:
                 iPlayer.sendChat("你是使用者");
