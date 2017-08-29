@@ -2,6 +2,8 @@ package org.soraworld.locket.command;
 
 import org.soraworld.locket.api.IPlayer;
 import org.soraworld.locket.api.LocketAPI;
+import org.soraworld.locket.config.I18n;
+import org.soraworld.locket.constant.LangKeys;
 import org.soraworld.locket.constant.Perms;
 import org.soraworld.locket.constant.Result;
 import org.spongepowered.api.command.CommandException;
@@ -18,8 +20,6 @@ public class CommandLocket implements CommandExecutor {
 
     @Override
     public CommandResult execute(CommandSource source, CommandContext args) throws CommandException {
-        LocketAPI.CONFIG.load();
-        LocketAPI.CONFIG.save();
         if (!(source instanceof Player)) {
             source.sendMessage(Text.of("This command can only be executed by an in-game player."));
             return CommandResult.empty();
@@ -30,18 +30,40 @@ public class CommandLocket implements CommandExecutor {
             iPlayer.sendChat("请先右键选择一个告示牌!");
             return CommandResult.empty();
         }
+        Integer line = args.<Integer>getOne("line").orElse(null);
+        String text = args.<String>getOne("name").orElse(null);
         if (iPlayer.hasPerm(Perms.ADMIN_LOCK)) {
-            iPlayer.lockSign(selection);
-            iPlayer.sendChat("ADMIN_LOCK!");
+            if (line == null || line == 0 || line > 3 || text == null || text.isEmpty()) {
+                iPlayer.lockSign(selection);
+            } else {
+                iPlayer.lockSign(selection, line, text);
+            }
+            iPlayer.adminNotify("ADMIN_LOCK!");
             return CommandResult.success();
         }
-        if (iPlayer.hasPerm(Perms.LOCK) && iPlayer.tryAccess(selection) == Result.SIGN_OWNER) {
-            iPlayer.lockSign(selection);
-            iPlayer.sendChat("tryAccess!");
+        if (!iPlayer.hasPerm(Perms.LOCK)) {
+            iPlayer.sendChat(I18n.formatText(LangKeys.NEED_PERM, Perms.LOCK));
+            return CommandResult.empty();
+        }
+        Result result = iPlayer.tryAccess(selection);
+        if (line == null && text == null) {
+            if (result == Result.SIGN_OWNER || result == Result.SIGN_NOT_LOCK) {
+                iPlayer.lockSign(selection);
+                iPlayer.sendChat(I18n.formatText(LangKeys.MANU_LOCK));
+                return CommandResult.success();
+            } else {
+                iPlayer.sendChat("你无法手动锁住此方块");
+                return CommandResult.empty();
+            }
+        }
+        if (line != null && line == 0) {
+            iPlayer.sendChat("此行无法修改");
+        }
+        if (line != null && line >= 2 && line <= 3 && text != null && !text.isEmpty()) {
+            iPlayer.lockSign(selection, line, text);
+            iPlayer.sendChat(I18n.formatText(LangKeys.MANU_LOCK));
             return CommandResult.success();
         }
-        Integer line = args.<Integer>getOne("line").orElse(1);
-        String text = args.<String>getOne("name").orElse("");
         return CommandResult.empty();
     }
 }

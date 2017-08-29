@@ -15,6 +15,7 @@ import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.gamemode.GameModes;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.chat.ChatType;
 import org.spongepowered.api.text.serializer.TextSerializers;
 import org.spongepowered.api.util.Direction;
@@ -95,6 +96,10 @@ public class IPlayer {
         player.sendMessage(LocketAPI.CONFIG.getChatType(), TextSerializers.FORMATTING_CODE.deserialize(message));
     }
 
+    public void sendChat(Text text) {
+        player.sendMessage(LocketAPI.CONFIG.getChatType(), text);
+    }
+
     public void sendChat(ChatType type, String message) {
         player.sendMessage(type, TextSerializers.FORMATTING_CODE.deserialize(message));
     }
@@ -106,6 +111,7 @@ public class IPlayer {
     }
 
     public Result tryAccess(@Nonnull Location<World> block) {
+        if (isOtherProtect(block)) return Result.SIGN_NO_ACCESS;
         BlockType type = block.getBlockType();
         boolean isDChest = LocketAPI.isDChest(type);
         int count = 0;
@@ -127,6 +133,7 @@ public class IPlayer {
         }
         // 检查相邻箱子
         if (isDChest && link != null) {
+            if (isOtherProtect(link)) return Result.SIGN_NO_ACCESS;
             count = 0;
             for (Direction face : Constants.FACES) {
                 Location<World> relative = link.getRelative(face);
@@ -153,6 +160,20 @@ public class IPlayer {
             SignData data = ((Sign) tile).getSignData();
             data.setElement(0, LocketAPI.CONFIG.getPrivateText());
             data.setElement(1, LocketAPI.CONFIG.getOwnerText(username));
+            tile.offer(data);
+        }
+    }
+
+
+    // line 0 1 2 3
+    public void lockSign(Location<World> location, Integer line, String text) {
+        if (line == null || line == 0 || line > 3 || text == null || text.isEmpty()) return;
+        TileEntity tile = location.getTileEntity().orElse(null);
+        if (tile != null && tile instanceof Sign) {
+            SignData data = ((Sign) tile).getSignData();
+            data.setElement(0, LocketAPI.CONFIG.getPrivateText());
+            data.setElement(1, LocketAPI.CONFIG.getOwnerText(username));
+            data.setElement(line, line == 1 ? LocketAPI.CONFIG.getOwnerText(text) : LocketAPI.CONFIG.getUserText(text));
             tile.offer(data);
         }
     }

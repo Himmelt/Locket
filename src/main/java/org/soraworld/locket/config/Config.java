@@ -38,23 +38,23 @@ import java.util.List;
 @ConfigSerializable
 public class Config {
 
-    @Setting(value = "00_lang", comment = "Language: zh_cn,en_us...")
+    @Setting(value = "a_lang", comment = "Language: zh_cn,en_us...")
     private String lang = "en_us";
-    @Setting(value = "01_adminNotify", comment = "Notify when player is using admin permission")
+    @Setting(value = "b_adminNotify", comment = "Notify when player is using admin permission")
     private boolean adminNotify = false;
-    @Setting(value = "02_protectTileEntity", comment = "Whether protect all tileentities")
+    @Setting(value = "c_protectTileEntity", comment = "Whether protect all tileentities")
     private boolean protectTileEntity = false;
-    @Setting(value = "03_protectCarrier", comment = "Whether protect all containers")
+    @Setting(value = "d_protectCarrier", comment = "Whether protect all containers")
     private boolean protectCarrier = false;
-    @Setting(value = "04_chatType", comment = "ChatType: chat,action-bar")
+    @Setting(value = "e_chatType", comment = "ChatType: chat,action-bar")
     private ChatType chatType = ChatTypes.CHAT;
-    @Setting(value = "05_defaultSign", comment = "Default Private text")
+    @Setting(value = "f_defaultSign", comment = "Default Private text")
     private Text defaultSign = Constants.DEFAULT_PRIVATE;
-    @Setting(value = "06_acceptSigns", comment = "Acceptable Private texts")
+    @Setting(value = "g_acceptSigns", comment = "Acceptable Private texts")
     private List<String> acceptSigns = new ArrayList<>();
-    @Setting(value = "07_lockables", comment = "Lockable Block ID(s)")
+    @Setting(value = "h_lockables", comment = "Lockable Block ID(s)")
     private List<String> lockables = new ArrayList<>();
-    @Setting(value = "08_doubleBlocks", comment = "The double-chest like blocks, which can be accessed from neighbors")
+    @Setting(value = "i_doubleBlocks", comment = "The double-chest like blocks, which can be accessed from neighbors")
     private List<String> doubleBlocks = new ArrayList<>();
 
     private Path cfgDir;
@@ -199,7 +199,12 @@ public class Config {
         return I18n.formatText(LangKeys.OWNER_FORMAT, owner);
     }
 
+    public Text getUserText(String user) {
+        return I18n.formatText(LangKeys.USER_FORMAT, user);
+    }
+
     public boolean isDChest(BlockType type) {
         return doubleBlocks.contains(type.getId());
     }
+
 }

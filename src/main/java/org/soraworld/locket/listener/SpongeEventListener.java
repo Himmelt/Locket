@@ -49,7 +49,6 @@ public class SpongeEventListener {
         }
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
         if (block == null) return;
-        System.out.println(block.getBlockType().getId());
         switch (iPlayer.tryAccess(block)) {
             case SIGN_USER:
                 iPlayer.sendChat("你是使用者");
@@ -63,14 +62,17 @@ public class SpongeEventListener {
             case SIGN_M_OWNERS:
                 iPlayer.sendChat("这个方块有多个所有者,这是不允许的,请联系管理员!");
                 event.setCancelled(true);
+                block.addScheduledUpdate(1, 10);
                 return;
             case SIGN_NO_ACCESS:
                 iPlayer.sendChat("你没有进行此操作的权限");
                 event.setCancelled(true);
+                block.addScheduledUpdate(1, 10);
                 return;
             case M_CHESTS:
                 iPlayer.sendChat("这是一个多重箱子,这是不允许的,请联系管理员!");
                 event.setCancelled(true);
+                block.addScheduledUpdate(1, 10);
         }
     }
 
