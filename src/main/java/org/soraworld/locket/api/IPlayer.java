@@ -11,6 +11,7 @@ import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
 import org.spongepowered.api.data.type.HandType;
+import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.gamemode.GameModes;
@@ -110,6 +111,12 @@ public class IPlayer {
         }
     }
 
+    public void adminNotify(Text text) {
+        if (LocketAPI.CONFIG.isAdminNotify()) {
+            player.sendMessage(LocketAPI.CONFIG.getChatType(), text);
+        }
+    }
+
     public Result tryAccess(@Nonnull Location<World> block) {
         if (isOtherProtect(block)) return Result.SIGN_NO_ACCESS;
         BlockType type = block.getBlockType();
@@ -165,16 +172,32 @@ public class IPlayer {
     }
 
 
-    // line 0 1 2 3
+    // line 1 2 3 4
     public void lockSign(Location<World> location, Integer line, String text) {
-        if (line == null || line == 0 || line > 3 || text == null || text.isEmpty()) return;
+        if (line == null || line == 1 || line > 4 || text == null || text.isEmpty()) return;
         TileEntity tile = location.getTileEntity().orElse(null);
         if (tile != null && tile instanceof Sign) {
             SignData data = ((Sign) tile).getSignData();
             data.setElement(0, LocketAPI.CONFIG.getPrivateText());
             data.setElement(1, LocketAPI.CONFIG.getOwnerText(username));
-            data.setElement(line, line == 1 ? LocketAPI.CONFIG.getOwnerText(text) : LocketAPI.CONFIG.getUserText(text));
+            data.setElement(line - 1, line == 2 ? LocketAPI.CONFIG.getOwnerText(text) : LocketAPI.CONFIG.getUserText(text));
             tile.offer(data);
         }
     }
+
+    public void unLockSign(Location<World> location, int line) {
+        TileEntity tile = location.getTileEntity().orElse(null);
+        if (tile != null && tile instanceof Sign) {
+            SignData data = ((Sign) tile).getSignData();
+            data.setElement(line, Text.EMPTY);
+            tile.offer(data);
+        }
+    }
+
+    public BlockType getHeldBlockType() {
+        ItemStack stack = player.getItemInHand(HandTypes.MAIN_HAND).orElse(null);
+        return stack == null ? BlockTypes.AIR : stack.getItem().getBlock().orElse(BlockTypes.AIR);
+    }
+
+
 }

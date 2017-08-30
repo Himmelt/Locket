@@ -147,7 +147,7 @@ public class Config {
         acceptSigns.add(defaultSign.toPlain());
         acceptSigns.add(privateSign.toPlain());
         ///////////////////
-        save();
+        //save();
     }
 
     public void save() {
@@ -207,4 +207,7 @@ public class Config {
         return doubleBlocks.contains(type.getId());
     }
 
+    public void addType(BlockType type) {
+        lockables.add(type.getId());
+    }
 }

@@ -30,8 +30,8 @@ public class CommandLocket implements CommandExecutor {
             iPlayer.sendChat("请先右键选择一个告示牌!");
             return CommandResult.empty();
         }
-        Integer line = args.<Integer>getOne("line").orElse(null);
-        String text = args.<String>getOne("name").orElse(null);
+        Integer line = args.<Integer>getOne(I18n.formatText(LangKeys.CMD_ARG_LINE)).orElse(null);
+        String text = args.<String>getOne(I18n.formatText(LangKeys.CMD_ARG_NAME)).orElse(null);
         if (iPlayer.hasPerm(Perms.ADMIN_LOCK)) {
             if (line == null || line == 0 || line > 3 || text == null || text.isEmpty()) {
                 iPlayer.lockSign(selection);

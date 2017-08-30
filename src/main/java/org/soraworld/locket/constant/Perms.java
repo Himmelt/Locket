@@ -17,4 +17,5 @@ public final class Perms {
     public static final String ADMIN_INTERACT = ADMIN + ".interact";
     public static final String ADMIN_LOCK = ADMIN + ".lock";
     public static final String ADMIN_EDIT = ADMIN + ".edit";
+    public static final String ADMIN_CONFIG = ADMIN + ".reload";
 }
