@@ -120,7 +120,7 @@ public class IPlayer {
     public Result tryAccess(@Nonnull Location<World> block) {
         if (isOtherProtect(block)) return Result.SIGN_NO_ACCESS;
         BlockType type = block.getBlockType();
-        boolean isDChest = LocketAPI.isDChest(type);
+        boolean isDBlock = LocketAPI.isDBlock(type);
         int count = 0;
         Location<World> link = null;
         HashSet<Location<World>> signs = new HashSet<>();
@@ -131,20 +131,20 @@ public class IPlayer {
         // 检查4个方向是否是 WALL_SIGN 或 DChest
         for (Direction face : Constants.FACES) {
             Location<World> relative = block.getRelative(face);
-            if (isDChest && relative.getBlockType() == type) {
+            if (isDBlock && relative.getBlockType() == type) {
                 link = relative;
-                if (++count >= 2) return Result.M_CHESTS;
+                if (++count >= 2) return Result.M_BLOCKS;
             } else if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
                 signs.add(relative);
             }
         }
-        // 检查相邻箱子
-        if (isDChest && link != null) {
+        // 检查相邻双联方块
+        if (isDBlock && link != null) {
             if (isOtherProtect(link)) return Result.SIGN_NO_ACCESS;
             count = 0;
             for (Direction face : Constants.FACES) {
                 Location<World> relative = link.getRelative(face);
-                if (relative.getBlockType() == type && ++count >= 2) return Result.M_CHESTS;
+                if (relative.getBlockType() == type && ++count >= 2) return Result.M_BLOCKS;
                 if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
                     signs.add(relative);
                 }
@@ -172,15 +172,16 @@ public class IPlayer {
     }
 
 
-    // line 1 2 3 4
-    public void lockSign(Location<World> location, Integer line, String text) {
-        if (line == null || line == 1 || line > 4 || text == null || text.isEmpty()) return;
+    // line: null/3/4   name:null/name
+    public void lockSign(Location<World> location, Integer line, String name) {
         TileEntity tile = location.getTileEntity().orElse(null);
         if (tile != null && tile instanceof Sign) {
             SignData data = ((Sign) tile).getSignData();
             data.setElement(0, LocketAPI.CONFIG.getPrivateText());
             data.setElement(1, LocketAPI.CONFIG.getOwnerText(username));
-            data.setElement(line - 1, line == 2 ? LocketAPI.CONFIG.getOwnerText(text) : LocketAPI.CONFIG.getUserText(text));
+            if (line != null && (line == 3 || line == 4) && name != null && !name.isEmpty()) {
+                data.setElement(line - 1, LocketAPI.CONFIG.getUserText(name));
+            }
             tile.offer(data);
         }
     }

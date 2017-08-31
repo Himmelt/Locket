@@ -32,7 +32,7 @@ plugins {
 }
 
 group 'org.soraworld'
-version '1.0.4'
+version '1.0.5'
 description = 'Locket Plugin'
 
 tasks.withType(JavaCompile) {
@@ -48,5 +48,5 @@ tasks.withType(JavaCompile) {
 
 dependencies {
     compile 'org.spongepowered:spongeapi:6.1.0-SNAPSHOT'
-    compile 'net.minecraftforge:forgeSrc:1.11.2-13.20.1.2429'
+    //compile 'net.minecraftforge:forgeSrc:1.11.2-13.20.1.2429'
 }

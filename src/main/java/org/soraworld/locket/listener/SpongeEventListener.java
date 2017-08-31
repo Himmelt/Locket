@@ -3,6 +3,7 @@ package org.soraworld.locket.listener;
 import org.soraworld.locket.api.IPlayer;
 import org.soraworld.locket.api.LocketAPI;
 import org.soraworld.locket.config.I18n;
+import org.soraworld.locket.constant.LangKeys;
 import org.soraworld.locket.constant.Perms;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
@@ -69,7 +70,7 @@ public class SpongeEventListener {
                 event.setCancelled(true);
                 block.addScheduledUpdate(1, 10);
                 return;
-            case M_CHESTS:
+            case M_BLOCKS:
                 iPlayer.sendChat("这是一个多重箱子,这是不允许的,请联系管理员!");
                 event.setCancelled(true);
                 block.addScheduledUpdate(1, 10);
@@ -257,7 +258,7 @@ public class SpongeEventListener {
             case SIGN_NO_ACCESS:
                 iPlayer.sendChat("你没有进行此操作的权限,你既不是所有者也不是用户!");
                 return;
-            case M_CHESTS:
+            case M_BLOCKS:
                 iPlayer.sendChat("这是一个多重箱子,这是不允许的,请联系管理员!");
         }
     }
@@ -268,45 +269,55 @@ public class SpongeEventListener {
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
         if (block != null && block.getBlockType() == BlockTypes.WALL_SIGN) {
             IPlayer iPlayer = LocketAPI.getPlayer(player);
-            if (!player.hasPermission(Perms.EDIT)) {
-                iPlayer.sendChat("你没有 [" + Perms.EDIT + "] 权限");
+            if (!player.hasPermission(Perms.LOCK)) {
+                iPlayer.sendChat(I18n.formatText(LangKeys.NEED_PERM, Perms.LOCK));
                 return;
             }
             iPlayer.select(block);
-            iPlayer.sendChat("你选择了一个告示牌!");
+            iPlayer.sendChat(I18n.formatText(LangKeys.SELECT_SIGN));
         }
     }
 
     // 玩家修改告示牌事件
     @Listener(order = Order.LAST)
     public void onPlayerChangeSign(ChangeSignEvent event, @First Player player) {
-        if (player.hasPermission(Perms.ADMIN_EDIT)) {
-            LocketAPI.getPlayer(player).sendChat("ADMIN_EDIT");
-            return;
-        }
         SignData data = event.getText();
         String line_0 = data.get(0).orElse(Text.EMPTY).toPlain();
+        String line_1 = data.get(1).orElse(Text.EMPTY).toPlain();
+        String line_2 = data.get(2).orElse(Text.EMPTY).toPlain();
+        String line_3 = data.get(3).orElse(Text.EMPTY).toPlain();
         if (LocketAPI.isPrivate(line_0)) {
-            IPlayer iPlayer = LocketAPI.getPlayer(player);
             Sign sign = event.getTargetTile();
+            IPlayer iPlayer = LocketAPI.getPlayer(player);
             Location<World> block = LocketAPI.getAttached(sign.getLocation());
-
+            if (iPlayer.hasPerm(Perms.ADMIN_LOCK)) {
+                iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
+                data.setElement(0, LocketAPI.CONFIG.getPrivateText());
+                data.setElement(1, LocketAPI.CONFIG.getOwnerText(line_1.isEmpty() ? player.getName() : line_1));
+                data.setElement(2, LocketAPI.CONFIG.getUserText(line_2));
+                data.setElement(3, LocketAPI.CONFIG.getUserText(line_3));
+                sign.offer(data);
+                return;
+            }
             if (!LocketAPI.isLockable(block)) {
-                iPlayer.sendChat("此方块无法用告示牌保护!");
+                iPlayer.sendChat(I18n.formatText(LangKeys.CANT_LOCK));
                 event.setCancelled(true);
                 return;
             }
             if (!player.hasPermission(Perms.LOCK)) {
-                iPlayer.sendChat("你没有手动锁牌的权限");
+                iPlayer.sendChat(I18n.formatText(LangKeys.NEED_PERM, Perms.LOCK));
                 event.setCancelled(true);
                 return;
             }
             if (iPlayer.isOtherProtect(block)) {
-                iPlayer.sendChat("方块被其他插件保护,且你没有操作权限!");
+                iPlayer.sendChat(I18n.formatText(LangKeys.OTHER_PROTECT));
                 event.setCancelled(true);
                 return;
             }
-            data.setElement(1, Text.of(player.getName()));
+            data.setElement(0, LocketAPI.CONFIG.getPrivateText());
+            data.setElement(1, LocketAPI.CONFIG.getOwnerText(player.getName()));
+            data.setElement(2, LocketAPI.formatText(line_2));
+            data.setElement(3, LocketAPI.formatText(line_3));
             sign.offer(data);
         }
     }

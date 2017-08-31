@@ -8,6 +8,8 @@ import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.plugin.PluginContainer;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.serializer.TextSerializers;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -53,8 +55,8 @@ public class LocketAPI {
         return sign.getRelative(sign.getBlock().get(Keys.DIRECTION).orElse(Direction.NONE).getOpposite());
     }
 
-    static boolean isDChest(BlockType type) {
-        return CONFIG.isDChest(type);
+    static boolean isDBlock(BlockType type) {
+        return CONFIG.isDBlock(type);
     }
 
     static LockSignData parseSign(@Nonnull Sign sign) {
@@ -67,4 +69,7 @@ public class LocketAPI {
         return data;
     }
 
+    public static Text formatText(String text) {
+        return TextSerializers.FORMATTING_CODE.deserialize(text);
+    }
 }

@@ -179,8 +179,24 @@ public class Config {
         lockables.add(id);
     }
 
+    public void addType(BlockType type) {
+        lockables.add(type.getId());
+    }
+
+    public void addDType(BlockType type) {
+        doubleBlocks.add(type.getId());
+    }
+
     public void removeType(String id) {
         lockables.remove(id);
+    }
+
+    public void removeType(BlockType type) {
+        lockables.remove(type.getId());
+    }
+
+    public void removeDType(BlockType type) {
+        doubleBlocks.remove(type.getId());
     }
 
     public ChatType getChatType() {
@@ -203,11 +219,9 @@ public class Config {
         return I18n.formatText(LangKeys.USER_FORMAT, user);
     }
 
-    public boolean isDChest(BlockType type) {
+    public boolean isDBlock(BlockType type) {
         return doubleBlocks.contains(type.getId());
     }
 
-    public void addType(BlockType type) {
-        lockables.add(type.getId());
-    }
+
 }
