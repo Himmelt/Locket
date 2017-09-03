@@ -9,7 +9,6 @@ import org.soraworld.locket.constant.Result;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
-import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
@@ -26,11 +25,7 @@ import org.spongepowered.api.event.game.GameReloadEvent;
 import org.spongepowered.api.event.item.inventory.ChangeInventoryEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
 import org.spongepowered.api.item.ItemTypes;
-import org.spongepowered.api.item.inventory.Inventory;
-import org.spongepowered.api.item.inventory.InventoryArchetype;
-import org.spongepowered.api.item.inventory.InventoryArchetypes;
 import org.spongepowered.api.item.inventory.ItemStack;
-import org.spongepowered.api.item.inventory.type.CarriedInventory;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
@@ -70,7 +65,7 @@ public class SpongeEventListener {
         }
     }
 
-    // 玩家放置方块事件
+    // TODO 玩家放置方块事件
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerPlaceBlock(ChangeBlockEvent.Place event, @First Player player) {
         IPlayer iPlayer = LocketAPI.getPlayer(player);
@@ -140,77 +135,39 @@ public class SpongeEventListener {
         }
     }
 
-    // 环境生长事件
-    //@Listener(order = Order.FIRST, beforeModifications = true)
+    // TODO 环境生长事件
+    @Listener(order = Order.FIRST, beforeModifications = true)
     public void onStructureGrow(ChangeBlockEvent.Grow event) {
-        System.out.println("===== onStructureGrow =====");
         List<Transaction<BlockSnapshot>> transactions = event.getTransactions();
         for (Transaction<BlockSnapshot> transaction : transactions) {
             Location<World> location = transaction.getOriginal().getLocation().orElse(null);
-            if (LocketAPI.isLocked(location) != Result.SIGN_NOT_LOCK) {
+            if (location != null && LocketAPI.isLocked(location) != Result.SIGN_NOT_LOCK) {
                 event.setCancelled(true);
                 return;
             }
         }
     }
 
-    //@Listener(order = Order.FIRST, beforeModifications = true)
+    // TODO 方块变化事件
+    @Listener(order = Order.FIRST, beforeModifications = true)
     public void onModify(ChangeBlockEvent.Modify event) {
-        System.out.println("===== onModify =====");
-        System.out.println(event.getClass());
         List<Transaction<BlockSnapshot>> transactions = event.getTransactions();
         for (Transaction<BlockSnapshot> transaction : transactions) {
             Location<World> location = transaction.getOriginal().getLocation().orElse(null);
-            if (LocketAPI.isLocked(location) != Result.SIGN_NOT_LOCK) {
+            if (location != null && LocketAPI.isLocked(location) != Result.SIGN_NOT_LOCK) {
                 event.setCancelled(true);
                 return;
             }
         }
     }
 
-    // 容器传输事件(取消依然监控)
+    // TODO 爆炸保护
+
+    // TODO 容器传输事件(取消依然监控)
     //@Listener(order = Order.FIRST, beforeModifications = true)
     //@IsCancelled(value = Tristate.UNDEFINED)
     public void onInventoryMove(ChangeInventoryEvent.Transfer event) {
-        System.out.println("===== onInventoryMove =====");
-        /*if (Config.isItemTransferOutBlocked() || Config.getHopperMinecartAction()) {
-            if (isInventoryLocked(event.getCause().first(HopperMinecart.class).get())) {
-                if (Config.isItemTransferOutBlocked()) {
-                    event.setCancelled(true);
-                }
-                // Additional Hopper Minecart Check
-                if (event.getTargetInventory() instanceof HopperMinecart) {
-                    boolean hopperMinecartAction = Config.getHopperMinecartAction();
-                    if (hopperMinecartAction) {
-                        // case 0 - Impossible
-                        // Cancel only, it is not called if !Config.isItemTransferOutBlocked()
-                        event.setCancelled(true);
-                    }
-                }
-                return;
-            }
-        }*/
-//        if (Config.isItemTransferInBlocked()) {
-//            if (isInventoryLocked(event.getTargetInventory())) {
-//                event.setCancelled(true);
-//            }
-//        }
-    }
 
-    public boolean isInventoryLocked(Inventory inventory) {
-        InventoryArchetype archetype = inventory.getArchetype();
-        if (archetype == InventoryArchetypes.DOUBLE_CHEST) {
-            inventory = inventory;
-        }
-        if (inventory instanceof CarriedInventory) {
-            CarriedInventory carriedInventory = (CarriedInventory) inventory;
-            if (carriedInventory.getCarrier().get() instanceof TileEntityCarrier) {
-                TileEntityCarrier carrier = (TileEntityCarrier) carriedInventory.getCarrier().get();
-                Location block = carrier.getLocation();
-                return LocketAPI.isLocked(block) != Result.SIGN_NOT_LOCK;
-            }
-        }
-        return false;
     }
 
     // 右键锁箱子
@@ -323,6 +280,7 @@ public class SpongeEventListener {
         LocketAPI.removePlayer(player);
     }
 
+    // 重载配置
     @Listener
     public void onReload(GameReloadEvent event) {
         LocketAPI.CONFIG.load();

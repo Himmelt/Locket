@@ -4,7 +4,7 @@ import com.google.inject.Inject;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.GuiceObjectMapperFactory;
-import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.soraworld.locket.api.LocketAPI;
 import org.soraworld.locket.command.CommandSpecs;
 import org.soraworld.locket.config.Config;
@@ -25,14 +25,12 @@ import java.nio.file.Path;
 public class Locket {
 
     @Inject
-    public Locket(Logger logger,
-                  PluginContainer plugin,
+    public Locket(PluginContainer plugin,
                   GuiceObjectMapperFactory factory,
                   @ConfigDir(sharedRoot = false) Path cfgDir,
-                  @DefaultConfig(sharedRoot = false) Path cfgFile,
                   @DefaultConfig(sharedRoot = false) ConfigurationLoader<CommentedConfigurationNode> cfgLoader) {
-        LocketAPI.LOGGER = logger;
         LocketAPI.PLUGIN = plugin;
+        LocketAPI.LOGGER = LoggerFactory.getLogger(Constants.NAME);
         LocketAPI.CONFIG = new Config(cfgDir, cfgLoader, factory);
     }
 
@@ -42,8 +40,6 @@ public class Locket {
         LocketAPI.CONFIG.save();
         Sponge.getEventManager().registerListeners(this, new SpongeEventListener());
         Sponge.getCommandManager().register(this, CommandSpecs.CMD_LOCKET, "locket", "lock");
-
-        //MinecraftForge.EVENT_BUS.register(new ForgeEventListener());
     }
 
     @Listener

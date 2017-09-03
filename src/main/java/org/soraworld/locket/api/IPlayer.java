@@ -61,14 +61,6 @@ public class IPlayer {
         }
     }
 
-    public Result analyzeSign(@Nonnull Location<World> block) {
-        TileEntity tile = block.getTileEntity().orElse(null);
-        if (tile != null && tile instanceof Sign) {
-            return LocketAPI.parseSign((Sign) tile).getAccess(username);
-        }
-        return Result.SIGN_NOT_LOCK;
-    }
-
     public Location<World> selection() {
         return selected;
     }
@@ -178,17 +170,6 @@ public class IPlayer {
         return player.hasPermission(perm);
     }
 
-    public void lockSign(Location<World> location) {
-        TileEntity tile = location.getTileEntity().orElse(null);
-        if (tile != null && tile instanceof Sign) {
-            SignData data = ((Sign) tile).getSignData();
-            data.setElement(0, LocketAPI.CONFIG.getPrivateText());
-            data.setElement(1, LocketAPI.CONFIG.getOwnerText(username));
-            tile.offer(data);
-        }
-    }
-
-    // line: null/3/4   name:null/name
     public void lockSign(Location<World> location, Integer line, String name) {
         TileEntity tile = location.getTileEntity().orElse(null);
         if (tile != null && tile instanceof Sign) {

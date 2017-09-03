@@ -225,7 +225,6 @@ public class Config {
         return doubleBlocks.contains(type.getId());
     }
 
-
     public Text HEAD() {
         return head;
     }

@@ -43,7 +43,7 @@ public class LocketAPI {
         PLAYERS.remove(player);
     }
 
-    public static Result isLocked(Location<World> block) {
+    public static Result isLocked(@Nonnull Location<World> block) {
         BlockType type = block.getBlockType();
         boolean isDBlock = LocketAPI.isDBlock(type);
         int count = 0;

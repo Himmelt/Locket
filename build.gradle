@@ -28,25 +28,16 @@ buildscript {
 
 plugins {
     id 'org.spongepowered.plugin' version '0.8.1'
-    //id 'com.github.johnrengelman.shadow' version '2.0.1'
 }
 
 group 'org.soraworld'
-version '1.0.5'
+version '1.0.6'
 description = 'Locket Plugin'
 
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
 }
 
-//shadowJar {
-//    dependencies {
-//        include(dependency('org.mindrot:jbcrypt:0.4'))
-//        include(dependency('com.sun.mail:javax.mail:1.6.0'))
-//    }
-//}
-
 dependencies {
     compile 'org.spongepowered:spongeapi:6.1.0-SNAPSHOT'
-    //compile 'net.minecraftforge:forgeSrc:1.11.2-13.20.1.2429'
 }
