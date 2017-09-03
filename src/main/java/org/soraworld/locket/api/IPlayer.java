@@ -123,24 +123,14 @@ public class IPlayer {
 
     public void adminNotify(String message) {
         if (LocketAPI.CONFIG.isAdminNotify()) {
-            ChatType chatType = LocketAPI.CONFIG.getChatType();
             Text text = TextSerializers.FORMATTING_CODE.deserialize(message);
-            if (chatType == ChatTypes.ACTION_BAR) {
-                player.sendMessage(chatType, text);
-            } else {
-                player.sendMessage(chatType, LocketAPI.CONFIG.HEAD().concat(text));
-            }
+            player.sendMessage(LocketAPI.CONFIG.HEAD().concat(text));
         }
     }
 
     public void adminNotify(Text text) {
         if (LocketAPI.CONFIG.isAdminNotify()) {
-            ChatType chatType = LocketAPI.CONFIG.getChatType();
-            if (chatType == ChatTypes.ACTION_BAR) {
-                player.sendMessage(chatType, text);
-            } else {
-                player.sendMessage(chatType, LocketAPI.CONFIG.HEAD().concat(text));
-            }
+            player.sendMessage(LocketAPI.CONFIG.HEAD().concat(text));
         }
     }
 
@@ -216,7 +206,7 @@ public class IPlayer {
         TileEntity tile = location.getTileEntity().orElse(null);
         if (tile != null && tile instanceof Sign) {
             SignData data = ((Sign) tile).getSignData();
-            data.setElement(line, Text.EMPTY);
+            data.setElement(line - 1, Text.EMPTY);
             tile.offer(data);
         }
     }

@@ -43,14 +43,15 @@ public class SpongeEventListener {
     // 玩家方块交互事件(主要行为保护)
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerInteractBlock(InteractBlockEvent event, @First Player player) {
+        Location<World> block = event.getTargetBlock().getLocation().orElse(null);
+        if (block == null) return;
         IPlayer iPlayer = LocketAPI.getPlayer(player);
-        if (iPlayer.hasPerm(Perms.ADMIN_INTERACT)) {
+        Result result = iPlayer.tryAccess(block);
+        if (result != Result.SIGN_NOT_LOCK && iPlayer.hasPerm(Perms.ADMIN_INTERACT)) {
             iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
             return;
         }
-        Location<World> block = event.getTargetBlock().getLocation().orElse(null);
-        if (block == null) return;
-        switch (iPlayer.tryAccess(block)) {
+        switch (result) {
             case SIGN_USER:
             case SIGN_OWNER:
             case SIGN_NOT_LOCK:
@@ -74,7 +75,7 @@ public class SpongeEventListener {
     public void onPlayerPlaceBlock(ChangeBlockEvent.Place event, @First Player player) {
         IPlayer iPlayer = LocketAPI.getPlayer(player);
         if (player.hasPermission(Perms.ADMIN_INTERFERE)) {
-            iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
+            //iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
             return;
         }
         for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {

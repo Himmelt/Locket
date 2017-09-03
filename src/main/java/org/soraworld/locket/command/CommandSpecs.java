@@ -28,42 +28,38 @@ public final class CommandSpecs {
                 Text HEAD = LocketAPI.CONFIG.HEAD();
                 if (action != null && (action.equals("+") || action.equals("++") || action.equals("-") || action.equals("--"))) {
                     BlockType type = args.<BlockType>getOne("block").orElse(null);
-                    if (type != null && type != BlockTypes.AIR && type != BlockTypes.WALL_SIGN && type != BlockTypes.STANDING_SIGN) {
-                        switch (action) {
-                            case "+":
-                                LocketAPI.CONFIG.addType(type);
-                                source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.TYPE_ADD_SUCCESS)));
-                                break;
-                            case "++":
-                                LocketAPI.CONFIG.addDType(type);
-                                source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.DTYPE_ADD_SUCCESS)));
-                                break;
-                            case "-":
-                                LocketAPI.CONFIG.removeType(type);
-                                source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.TYPE_REMOVE_SUCCESS)));
-                                break;
-                            case "--":
-                                LocketAPI.CONFIG.removeDType(type);
-                                source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.DTYPE_REMOVE_SUCCESS)));
-                                break;
-                        }
-                        LocketAPI.CONFIG.save();
-                        return CommandResult.success();
-                    }
                     if (type == null) {
                         if (source instanceof Player) {
-                            IPlayer iPlayer = LocketAPI.getPlayer((Player) source);
-                            BlockType block = iPlayer.getHeldBlockType();
-                            if (block != BlockTypes.AIR && block != BlockTypes.WALL_SIGN && block != BlockTypes.STANDING_SIGN) {
-                                LocketAPI.CONFIG.addType(block);
-                                source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.TYPE_ADD_SUCCESS)));
-                                LocketAPI.CONFIG.save();
-                                return CommandResult.success();
-                            }
+                            type = LocketAPI.getPlayer((Player) source).getHeldBlockType();
                         } else {
                             source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.ONLY_PLAYER)));
+                            return CommandResult.empty();
                         }
                     }
+                    if (type == BlockTypes.AIR || type == BlockTypes.WALL_SIGN || type == BlockTypes.STANDING_SIGN) {
+                        source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.TYPE_ADD_FAILED)));
+                        return CommandResult.empty();
+                    }
+                    switch (action) {
+                        case "+":
+                            LocketAPI.CONFIG.addType(type);
+                            source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.TYPE_ADD_SUCCESS)));
+                            break;
+                        case "++":
+                            LocketAPI.CONFIG.addDType(type);
+                            source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.DTYPE_ADD_SUCCESS)));
+                            break;
+                        case "-":
+                            LocketAPI.CONFIG.removeType(type);
+                            source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.TYPE_REMOVE_SUCCESS)));
+                            break;
+                        case "--":
+                            LocketAPI.CONFIG.removeDType(type);
+                            source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.DTYPE_REMOVE_SUCCESS)));
+                            break;
+                    }
+                    LocketAPI.CONFIG.save();
+                    return CommandResult.success();
                 }
                 return CommandResult.empty();
             })
@@ -94,7 +90,7 @@ public final class CommandSpecs {
                 }
                 Integer line = args.<Integer>getOne("line").orElse(null);
                 if (line == null || (line != 3 && line != 4)) {
-                    iPlayer.sendChat(I18n.formatText(LangKeys.CANT_UNLOCK));
+                    iPlayer.sendChat(I18n.formatText(LangKeys.CANT_REMOVE));
                     return CommandResult.empty();
                 }
                 if (iPlayer.hasPerm(Perms.ADMIN_LOCK)) {
