@@ -2,9 +2,13 @@ package org.soraworld.locket.api;
 
 import org.slf4j.Logger;
 import org.soraworld.locket.config.Config;
+import org.soraworld.locket.constant.Constants;
+import org.soraworld.locket.constant.Result;
 import org.soraworld.locket.data.LockSignData;
 import org.spongepowered.api.block.BlockType;
+import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.plugin.PluginContainer;
@@ -16,6 +20,7 @@ import org.spongepowered.api.world.World;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class LocketAPI {
 
@@ -38,9 +43,47 @@ public class LocketAPI {
         PLAYERS.remove(player);
     }
 
-    public static boolean isLocked(Location<World> location) {
-        BlockType type = location.getBlockType();
-        return false;
+    public static Result isLocked(Location<World> block) {
+        BlockType type = block.getBlockType();
+        boolean isDBlock = LocketAPI.isDBlock(type);
+        int count = 0;
+        Location<World> link = null;
+        HashSet<Location<World>> signs = new HashSet<>();
+
+        // 自身也将参与检查
+        signs.add(block);
+
+        // 检查4个方向是否是 WALL_SIGN 或 DChest
+        for (Direction face : Constants.FACES) {
+            Location<World> relative = block.getRelative(face);
+            if (isDBlock && relative.getBlockType() == type) {
+                link = relative;
+                if (++count >= 2) return Result.M_BLOCKS;
+            } else if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+                signs.add(relative);
+            }
+        }
+        // 检查相邻双联方块
+        if (isDBlock && link != null) {
+            count = 0;
+            for (Direction face : Constants.FACES) {
+                Location<World> relative = link.getRelative(face);
+                if (relative.getBlockType() == type && ++count >= 2) return Result.M_BLOCKS;
+                if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+                    signs.add(relative);
+                }
+            }
+        }
+
+        if (signs.isEmpty()) return Result.SIGN_NOT_LOCK;
+        LockSignData data = new LockSignData();
+        for (Location<World> sign : signs) {
+            TileEntity tile = sign.getTileEntity().orElse(null);
+            if (tile != null && tile instanceof Sign) {
+                data.append(parseSign((Sign) tile));
+            }
+        }
+        return data.getAccess("Himmelt");
     }
 
     public static boolean isLockable(Location<World> location) {

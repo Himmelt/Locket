@@ -59,6 +59,7 @@ public class Config {
 
     private Path cfgDir;
     private Text privateSign;
+    private Text head;
     private CommentedConfigurationNode rootNode;
     private ConfigurationLoader<CommentedConfigurationNode> cfgLoader;
     private static final ConfigurationOptions options = ConfigurationOptions.defaults().setShouldCopyDefaults(true);
@@ -144,6 +145,7 @@ public class Config {
             I18n.LANGUAGES = new HashMap<>();
         }
         privateSign = I18n.formatText(LangKeys.PRIVATE_SIGN);
+        head = I18n.formatText(LangKeys.CHAT_HEAD);
         acceptSigns.add(defaultSign.toPlain());
         acceptSigns.add(privateSign.toPlain());
         ///////////////////
@@ -224,4 +226,7 @@ public class Config {
     }
 
 
+    public Text HEAD() {
+        return head;
+    }
 }

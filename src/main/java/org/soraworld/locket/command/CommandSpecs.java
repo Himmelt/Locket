@@ -25,25 +25,26 @@ public final class CommandSpecs {
                     GenericArguments.optional(GenericArguments.catalogedElement(Text.of("block"), BlockType.class)))
             .executor((source, args) -> {
                 String action = args.<String>getOne("action").orElse(null);
+                Text HEAD = LocketAPI.CONFIG.HEAD();
                 if (action != null && (action.equals("+") || action.equals("++") || action.equals("-") || action.equals("--"))) {
                     BlockType type = args.<BlockType>getOne("block").orElse(null);
                     if (type != null && type != BlockTypes.AIR && type != BlockTypes.WALL_SIGN && type != BlockTypes.STANDING_SIGN) {
                         switch (action) {
                             case "+":
                                 LocketAPI.CONFIG.addType(type);
-                                source.sendMessage(I18n.formatText(LangKeys.TYPE_ADD_SUCCESS));
+                                source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.TYPE_ADD_SUCCESS)));
                                 break;
                             case "++":
                                 LocketAPI.CONFIG.addDType(type);
-                                source.sendMessage(I18n.formatText(LangKeys.DTYPE_ADD_SUCCESS));
+                                source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.DTYPE_ADD_SUCCESS)));
                                 break;
                             case "-":
                                 LocketAPI.CONFIG.removeType(type);
-                                source.sendMessage(I18n.formatText(LangKeys.TYPE_REMOVE_SUCCESS));
+                                source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.TYPE_REMOVE_SUCCESS)));
                                 break;
                             case "--":
                                 LocketAPI.CONFIG.removeDType(type);
-                                source.sendMessage(I18n.formatText(LangKeys.DTYPE_REMOVE_SUCCESS));
+                                source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.DTYPE_REMOVE_SUCCESS)));
                                 break;
                         }
                         LocketAPI.CONFIG.save();
@@ -55,12 +56,12 @@ public final class CommandSpecs {
                             BlockType block = iPlayer.getHeldBlockType();
                             if (block != BlockTypes.AIR && block != BlockTypes.WALL_SIGN && block != BlockTypes.STANDING_SIGN) {
                                 LocketAPI.CONFIG.addType(block);
-                                source.sendMessage(I18n.formatText(LangKeys.TYPE_ADD_SUCCESS));
+                                source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.TYPE_ADD_SUCCESS)));
                                 LocketAPI.CONFIG.save();
                                 return CommandResult.success();
                             }
                         } else {
-                            source.sendMessage(I18n.formatText(LangKeys.ONLY_PLAYER));
+                            source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.ONLY_PLAYER)));
                         }
                     }
                 }
@@ -72,7 +73,7 @@ public final class CommandSpecs {
             .permission(Perms.ADMIN_CONFIG)
             .executor((source, args) -> {
                 LocketAPI.CONFIG.load();
-                source.sendMessage(I18n.formatText(LangKeys.CFG_RELOAD));
+                source.sendMessage(LocketAPI.CONFIG.HEAD().concat(I18n.formatText(LangKeys.CFG_RELOAD)));
                 return CommandResult.success();
             })
             .build();
@@ -82,7 +83,7 @@ public final class CommandSpecs {
             .arguments(GenericArguments.onlyOne(GenericArguments.integer(Text.of("line"))))
             .executor((source, args) -> {
                 if (!(source instanceof Player)) {
-                    source.sendMessage(I18n.formatText(LangKeys.ONLY_PLAYER));
+                    source.sendMessage(LocketAPI.CONFIG.HEAD().concat(I18n.formatText(LangKeys.ONLY_PLAYER)));
                     return CommandResult.empty();
                 }
                 IPlayer iPlayer = LocketAPI.getPlayer((Player) source);

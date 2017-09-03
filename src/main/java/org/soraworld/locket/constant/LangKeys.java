@@ -21,4 +21,9 @@ public final class LangKeys {
     public static final String TYPE_REMOVE_SUCCESS = "typeRemoveSuccess";
     public static final String DTYPE_ADD_SUCCESS = "dTypeAddSuccess";
     public static final String DTYPE_REMOVE_SUCCESS = "dTypeRemoveSuccess";
+    public static final String QUICK_LOCK = "quickLock";
+    public static final String MULTI_OWNERS = "multiOwners";
+    public static final String MULTI_BLOCKS = "multiBlocks";
+    public static final String NO_ACCESS = "noAccess";
+    public static final String CHAT_HEAD = "chatHead";
 }

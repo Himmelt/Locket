@@ -18,6 +18,7 @@ import org.spongepowered.api.entity.living.player.gamemode.GameModes;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.chat.ChatType;
+import org.spongepowered.api.text.chat.ChatTypes;
 import org.spongepowered.api.text.serializer.TextSerializers;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
@@ -37,10 +38,10 @@ public class IPlayer {
         this.username = player.getName();
     }
 
-    private Result analyzeSign(@Nonnull HashSet<Location<World>> blocks) {
-        if (blocks.isEmpty()) return Result.SIGN_NOT_LOCK;
+    private Result analyzeSign(@Nonnull HashSet<Location<World>> signs) {
+        if (signs.isEmpty()) return Result.SIGN_NOT_LOCK;
         LockSignData data = new LockSignData();
-        for (Location<World> block : blocks) {
+        for (Location<World> block : signs) {
             TileEntity tile = block.getTileEntity().orElse(null);
             if (tile != null && tile instanceof Sign) {
                 data.append(LocketAPI.parseSign((Sign) tile));
@@ -81,7 +82,6 @@ public class IPlayer {
         relative.setBlockType(BlockTypes.WALL_SIGN, Constants.PLUGIN_CAUSE);
         BlockState state = BlockTypes.WALL_SIGN.getDefaultState();
         relative.setBlock(state.with(Keys.DIRECTION, face).orElse(state), Constants.PLUGIN_CAUSE);
-
         TileEntity tile = relative.getTileEntity().orElse(null);
         if (tile != null && tile instanceof Sign) {
             SignData data = ((Sign) tile).getSignData();
@@ -94,26 +94,53 @@ public class IPlayer {
     }
 
     public void sendChat(String message) {
-        player.sendMessage(LocketAPI.CONFIG.getChatType(), TextSerializers.FORMATTING_CODE.deserialize(message));
+        ChatType chatType = LocketAPI.CONFIG.getChatType();
+        Text text = TextSerializers.FORMATTING_CODE.deserialize(message);
+        if (chatType == ChatTypes.ACTION_BAR) {
+            player.sendMessage(chatType, text);
+        } else {
+            player.sendMessage(chatType, LocketAPI.CONFIG.HEAD().concat(text));
+        }
     }
 
     public void sendChat(Text text) {
-        player.sendMessage(LocketAPI.CONFIG.getChatType(), text);
+        ChatType chatType = LocketAPI.CONFIG.getChatType();
+        if (chatType == ChatTypes.ACTION_BAR) {
+            player.sendMessage(chatType, text);
+        } else {
+            player.sendMessage(chatType, LocketAPI.CONFIG.HEAD().concat(text));
+        }
     }
 
     public void sendChat(ChatType type, String message) {
-        player.sendMessage(type, TextSerializers.FORMATTING_CODE.deserialize(message));
+        Text text = TextSerializers.FORMATTING_CODE.deserialize(message);
+        if (type == ChatTypes.ACTION_BAR) {
+            player.sendMessage(type, text);
+        } else {
+            player.sendMessage(type, LocketAPI.CONFIG.HEAD().concat(text));
+        }
     }
 
     public void adminNotify(String message) {
         if (LocketAPI.CONFIG.isAdminNotify()) {
-            player.sendMessage(LocketAPI.CONFIG.getChatType(), TextSerializers.FORMATTING_CODE.deserialize(message));
+            ChatType chatType = LocketAPI.CONFIG.getChatType();
+            Text text = TextSerializers.FORMATTING_CODE.deserialize(message);
+            if (chatType == ChatTypes.ACTION_BAR) {
+                player.sendMessage(chatType, text);
+            } else {
+                player.sendMessage(chatType, LocketAPI.CONFIG.HEAD().concat(text));
+            }
         }
     }
 
     public void adminNotify(Text text) {
         if (LocketAPI.CONFIG.isAdminNotify()) {
-            player.sendMessage(LocketAPI.CONFIG.getChatType(), text);
+            ChatType chatType = LocketAPI.CONFIG.getChatType();
+            if (chatType == ChatTypes.ACTION_BAR) {
+                player.sendMessage(chatType, text);
+            } else {
+                player.sendMessage(chatType, LocketAPI.CONFIG.HEAD().concat(text));
+            }
         }
     }
 
@@ -171,7 +198,6 @@ public class IPlayer {
         }
     }
 
-
     // line: null/3/4   name:null/name
     public void lockSign(Location<World> location, Integer line, String name) {
         TileEntity tile = location.getTileEntity().orElse(null);
@@ -199,6 +225,5 @@ public class IPlayer {
         ItemStack stack = player.getItemInHand(HandTypes.MAIN_HAND).orElse(null);
         return stack == null ? BlockTypes.AIR : stack.getItem().getBlock().orElse(BlockTypes.AIR);
     }
-
 
 }
