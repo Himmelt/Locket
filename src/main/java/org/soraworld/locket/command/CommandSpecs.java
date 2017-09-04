@@ -40,22 +40,23 @@ public final class CommandSpecs {
                         source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.TYPE_ADD_FAILED)));
                         return CommandResult.empty();
                     }
+                    String typeName = type.getTranslation().get();
                     switch (action) {
                         case "+":
                             LocketAPI.CONFIG.addType(type);
-                            source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.TYPE_ADD_SUCCESS)));
+                            source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.TYPE_ADD_SUCCESS, typeName)));
                             break;
                         case "++":
                             LocketAPI.CONFIG.addDType(type);
-                            source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.DTYPE_ADD_SUCCESS)));
+                            source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.DTYPE_ADD_SUCCESS, typeName)));
                             break;
                         case "-":
                             LocketAPI.CONFIG.removeType(type);
-                            source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.TYPE_REMOVE_SUCCESS)));
+                            source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.TYPE_REMOVE_SUCCESS, typeName)));
                             break;
                         case "--":
                             LocketAPI.CONFIG.removeDType(type);
-                            source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.DTYPE_REMOVE_SUCCESS)));
+                            source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.DTYPE_REMOVE_SUCCESS, typeName)));
                             break;
                     }
                     LocketAPI.CONFIG.save();

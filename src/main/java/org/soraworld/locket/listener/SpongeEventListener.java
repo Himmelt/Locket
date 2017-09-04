@@ -82,12 +82,13 @@ public class SpongeEventListener {
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerBreakBlock(ChangeBlockEvent.Pre event, @Named(NamedCause.PLAYER_BREAK) Object world, @First Player player) {
         IPlayer iPlayer = LocketAPI.getPlayer(player);
-        if (iPlayer.hasPerm(Perms.ADMIN_LOCK)) {
-            iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
-            return;
-        }
         for (Location<World> block : event.getLocations()) {
-            switch (iPlayer.tryAccess(block)) {
+            Result result = iPlayer.tryAccess(block);
+            if (result != Result.SIGN_NOT_LOCK && iPlayer.hasPerm(Perms.ADMIN_LOCK)) {
+                iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
+                break;
+            }
+            switch (result) {
                 case SIGN_OWNER:
                     if (!iPlayer.hasPerm(Perms.LOCK)) {
                         iPlayer.sendChat(I18n.formatText(LangKeys.NEED_PERM, Perms.LOCK));

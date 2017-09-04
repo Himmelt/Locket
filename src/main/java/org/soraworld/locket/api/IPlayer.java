@@ -32,10 +32,16 @@ public class IPlayer {
     private final String username;
     private final Player player;
     private Location<World> selected;
+    private Result latest;
+    private long last;
+    private Location<World> target;
+    private static final int delay = 1000;
 
     IPlayer(@Nonnull Player player) {
         this.player = player;
         this.username = player.getName();
+        this.latest = Result.SIGN_NO_ACCESS;
+        this.last = System.currentTimeMillis();
     }
 
     private Result analyzeSign(@Nonnull HashSet<Location<World>> signs) {
@@ -127,7 +133,15 @@ public class IPlayer {
     }
 
     public Result tryAccess(@Nonnull Location<World> block) {
-        if (isOtherProtect(block)) return Result.SIGN_NO_ACCESS;
+        if (block.equals(target) && last + delay > System.currentTimeMillis()) {
+            return latest;
+        }
+        target = block;
+        last = System.currentTimeMillis();
+        if (isOtherProtect(block)) {
+            latest = Result.SIGN_NO_ACCESS;
+            return latest;
+        }
         BlockType type = block.getBlockType();
         boolean isDBlock = LocketAPI.isDBlock(type);
         int count = 0;
@@ -142,24 +156,34 @@ public class IPlayer {
             Location<World> relative = block.getRelative(face);
             if (isDBlock && relative.getBlockType() == type) {
                 link = relative;
-                if (++count >= 2) return Result.M_BLOCKS;
+                if (++count >= 2) {
+                    latest = Result.M_BLOCKS;
+                    return latest;
+                }
             } else if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
                 signs.add(relative);
             }
         }
         // 检查相邻双联方块
         if (isDBlock && link != null) {
-            if (isOtherProtect(link)) return Result.SIGN_NO_ACCESS;
+            if (isOtherProtect(link)) {
+                latest = Result.SIGN_NO_ACCESS;
+                return latest;
+            }
             count = 0;
             for (Direction face : Constants.FACES) {
                 Location<World> relative = link.getRelative(face);
-                if (relative.getBlockType() == type && ++count >= 2) return Result.M_BLOCKS;
+                if (relative.getBlockType() == type && ++count >= 2) {
+                    latest = Result.M_BLOCKS;
+                    return latest;
+                }
                 if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
                     signs.add(relative);
                 }
             }
         }
-        return analyzeSign(signs);
+        latest = analyzeSign(signs);
+        return latest;
     }
 
     public boolean isOtherProtect(Location<World> location) {
