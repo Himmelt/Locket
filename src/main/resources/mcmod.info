@@ -2,7 +2,6 @@
   {
     "modid": "locket",
     "name": "Locket",
-    "description": "Locket Plugin",
     "version": "1.0.7",
     "url": "https://github.com/Himmelt/Locket",
     "updateUrl": "https://github.com/Himmelt/Locket/releases",
