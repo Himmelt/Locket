@@ -18,9 +18,8 @@ import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
-import org.spongepowered.api.event.cause.NamedCause;
+import org.spongepowered.api.event.filter.cause.ContextValue;
 import org.spongepowered.api.event.filter.cause.First;
-import org.spongepowered.api.event.filter.cause.Named;
 import org.spongepowered.api.event.game.GameReloadEvent;
 import org.spongepowered.api.event.item.inventory.ChangeInventoryEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
@@ -80,7 +79,7 @@ public class SpongeEventListener {
 
     // 玩家破坏方块事件
     @Listener(order = Order.FIRST, beforeModifications = true)
-    public void onPlayerBreakBlock(ChangeBlockEvent.Pre event, @Named(NamedCause.PLAYER_BREAK) Object world, @First Player player) {
+    public void onPlayerBreakBlock(ChangeBlockEvent.Pre event, @ContextValue("PLAYER_BREAK") Object world, @First Player player) {
         IPlayer iPlayer = LocketAPI.getPlayer(player);
         for (Location<World> block : event.getLocations()) {
             Result result = iPlayer.tryAccess(block);
@@ -116,7 +115,7 @@ public class SpongeEventListener {
 
     // 活塞推出事件
     @Listener(order = Order.FIRST, beforeModifications = true)
-    public void onPistonExtend(ChangeBlockEvent.Pre event, @Named(NamedCause.PISTON_EXTEND) Object world) {
+    public void onPistonExtend(ChangeBlockEvent.Pre event, @ContextValue("PISTON_EXTEND") Object world) {
         for (Location<World> block : event.getLocations()) {
             if (LocketAPI.isLocked(block) != Result.SIGN_NOT_LOCK) {
                 event.setCancelled(true);
@@ -127,7 +126,7 @@ public class SpongeEventListener {
 
     // 活塞收回事件
     @Listener(order = Order.FIRST, beforeModifications = true)
-    public void onPistonRetract(ChangeBlockEvent.Pre event, @Named(NamedCause.PISTON_RETRACT) Object world) {
+    public void onPistonRetract(ChangeBlockEvent.Pre event, @ContextValue("PISTON_RETRACT") Object world) {
         for (Location<World> block : event.getLocations()) {
             if (LocketAPI.isLocked(block) != Result.SIGN_NOT_LOCK) {
                 event.setCancelled(true);
@@ -175,7 +174,7 @@ public class SpongeEventListener {
     @Listener(order = Order.LAST)
     public void onPlayerLockBlock(InteractBlockEvent.Secondary event, @First Player player) {
         ItemStack stack = player.getItemInHand(event.getHandType()).orElse(null);
-        if (stack == null || ItemTypes.SIGN != stack.getItem()) return;
+        if (stack == null || ItemTypes.SIGN != stack.getType()) return;
         if (player.get(Keys.IS_SNEAKING).orElse(false)) return;
         Direction face = event.getTargetSide();
         if (face == Direction.UP || face == Direction.DOWN || face == Direction.NONE) return;

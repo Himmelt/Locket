@@ -21,6 +21,7 @@ import org.spongepowered.api.text.chat.ChatType;
 import org.spongepowered.api.text.chat.ChatTypes;
 import org.spongepowered.api.text.serializer.TextSerializers;
 import org.spongepowered.api.util.Direction;
+import org.spongepowered.api.world.BlockChangeFlags;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
@@ -77,9 +78,9 @@ public class IPlayer {
 
     public void placeLock(@Nonnull Location<World> location, Direction face, HandType hand) {
         Location<World> relative = location.getRelative(face);
-        relative.setBlockType(BlockTypes.WALL_SIGN, Constants.PLUGIN_CAUSE);
+        relative.setBlockType(BlockTypes.WALL_SIGN, BlockChangeFlags.NONE);
         BlockState state = BlockTypes.WALL_SIGN.getDefaultState();
-        relative.setBlock(state.with(Keys.DIRECTION, face).orElse(state), Constants.PLUGIN_CAUSE);
+        relative.setBlock(state.with(Keys.DIRECTION, face).orElse(state), BlockChangeFlags.NONE);
         TileEntity tile = relative.getTileEntity().orElse(null);
         if (tile != null && tile instanceof Sign) {
             SignData data = ((Sign) tile).getSignData();
@@ -218,7 +219,7 @@ public class IPlayer {
 
     public BlockType getHeldBlockType() {
         ItemStack stack = player.getItemInHand(HandTypes.MAIN_HAND).orElse(null);
-        return stack == null ? BlockTypes.AIR : stack.getItem().getBlock().orElse(BlockTypes.AIR);
+        return stack == null ? BlockTypes.AIR : stack.getType().getBlock().orElse(BlockTypes.AIR);
     }
 
 }
