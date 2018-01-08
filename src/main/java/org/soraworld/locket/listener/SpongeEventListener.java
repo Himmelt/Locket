@@ -1,6 +1,6 @@
 package org.soraworld.locket.listener;
 
-import org.soraworld.locket.api.IPlayer;
+import org.soraworld.locket.core.WrappedPlayer;
 import org.soraworld.locket.api.LocketAPI;
 import org.soraworld.locket.config.I18n;
 import org.soraworld.locket.constant.LangKeys;
@@ -23,6 +23,7 @@ import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.event.game.GameReloadEvent;
 import org.spongepowered.api.event.item.inventory.ChangeInventoryEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
+import org.spongepowered.api.event.world.ExplosionEvent;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.text.Text;
@@ -34,17 +35,31 @@ import java.util.List;
 
 public class SpongeEventListener {
 
-    // 玩家方块交互事件(主要行为保护)
+
     @Listener(order = Order.FIRST, beforeModifications = true)
+    public void onBlockChange(ChangeBlockEvent event) {
+        event.filter(loc -> {
+            Result result = LocketAPI.isLocked(loc);
+            System.out.println(">>" + result + " >> " + loc);
+            return result == Result.SIGN_NOT_LOCK;
+        });
+    }
+
+    // 玩家方块交互事件(主要行为保护)
+    //@Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerInteractBlock(InteractBlockEvent event, @First Player player) {
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
         if (block == null) return;
-        IPlayer iPlayer = LocketAPI.getPlayer(player);
+        WrappedPlayer iPlayer = LocketAPI.getPlayer(player);
         Result result = iPlayer.tryAccess(block);
+        iPlayer.adminNotify("==" + block + "|" + result);
         if (result != Result.SIGN_NOT_LOCK && iPlayer.hasPerm(Perms.ADMIN_INTERACT)) {
-            iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
+            /////////////////////////////////////////////////////////////////////
+            //iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
+            iPlayer.adminNotify("line 49");
             return;
         }
+        iPlayer.adminNotify(">>>>>>>>>>>>>>>>>>");
         switch (result) {
             case SIGN_USER:
             case SIGN_OWNER:
@@ -65,11 +80,12 @@ public class SpongeEventListener {
     }
 
     // TODO 玩家放置方块事件
-    @Listener(order = Order.FIRST, beforeModifications = true)
+    //@Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerPlaceBlock(ChangeBlockEvent.Place event, @First Player player) {
-        IPlayer iPlayer = LocketAPI.getPlayer(player);
+        WrappedPlayer iPlayer = LocketAPI.getPlayer(player);
         if (player.hasPermission(Perms.ADMIN_INTERFERE)) {
             //iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
+            iPlayer.adminNotify("line 77");
             return;
         }
         for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
@@ -78,14 +94,17 @@ public class SpongeEventListener {
     }
 
     // 玩家破坏方块事件
-    @Listener(order = Order.FIRST, beforeModifications = true)
-    public void onPlayerBreakBlock(ChangeBlockEvent.Pre event, @ContextValue("PLAYER_BREAK") Object world, @First Player player) {
-        IPlayer iPlayer = LocketAPI.getPlayer(player);
+    //@Listener(order = Order.FIRST, beforeModifications = true)
+    public void onPlayerBreakBlock(ChangeBlockEvent.Pre event, @ContextValue("PLAYER_BREAK") @First Player player) {
+        WrappedPlayer iPlayer = LocketAPI.getPlayer(player);
         for (Location<World> block : event.getLocations()) {
             Result result = iPlayer.tryAccess(block);
+            iPlayer.adminNotify("result:" + block + "|" + result);
             if (result != Result.SIGN_NOT_LOCK && iPlayer.hasPerm(Perms.ADMIN_LOCK)) {
-                iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
-                break;
+                //iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
+                iPlayer.adminNotify("line 93");
+                return;
+                //break;
             }
             switch (result) {
                 case SIGN_OWNER:
@@ -106,18 +125,19 @@ public class SpongeEventListener {
                     event.setCancelled(true);
                     return;
                 default:
-                    event.setCancelled(true);
                     iPlayer.sendChat(I18n.formatText(LangKeys.NO_ACCESS));
+                    event.setCancelled(true);
                     return;
             }
         }
     }
 
     // 活塞推出事件
-    @Listener(order = Order.FIRST, beforeModifications = true)
-    public void onPistonExtend(ChangeBlockEvent.Pre event, @ContextValue("PISTON_EXTEND") Object world) {
+    //@Listener(order = Order.FIRST, beforeModifications = true)
+    public void onPistonExtend(ChangeBlockEvent.Pre event, @ContextValue("PISTON_EXTEND") @First Object cause) {
         for (Location<World> block : event.getLocations()) {
             if (LocketAPI.isLocked(block) != Result.SIGN_NOT_LOCK) {
+                System.out.println("onPistonExtend Cancel:" + block);
                 event.setCancelled(true);
                 return;
             }
@@ -125,10 +145,11 @@ public class SpongeEventListener {
     }
 
     // 活塞收回事件
-    @Listener(order = Order.FIRST, beforeModifications = true)
-    public void onPistonRetract(ChangeBlockEvent.Pre event, @ContextValue("PISTON_RETRACT") Object world) {
+    //@Listener(order = Order.FIRST, beforeModifications = true)
+    public void onPistonRetract(ChangeBlockEvent.Pre event, @ContextValue("PISTON_RETRACT") @First Object cause) {
         for (Location<World> block : event.getLocations()) {
             if (LocketAPI.isLocked(block) != Result.SIGN_NOT_LOCK) {
+                System.out.println("onPistonRetract Cancel");
                 event.setCancelled(true);
                 return;
             }
@@ -136,12 +157,13 @@ public class SpongeEventListener {
     }
 
     // TODO 环境生长事件
-    @Listener(order = Order.FIRST, beforeModifications = true)
+    //@Listener(order = Order.FIRST, beforeModifications = true)
     public void onStructureGrow(ChangeBlockEvent.Grow event) {
         List<Transaction<BlockSnapshot>> transactions = event.getTransactions();
         for (Transaction<BlockSnapshot> transaction : transactions) {
             Location<World> location = transaction.getOriginal().getLocation().orElse(null);
             if (location != null && LocketAPI.isLocked(location) != Result.SIGN_NOT_LOCK) {
+                System.out.println("onStructureGrow Cancel");
                 event.setCancelled(true);
                 return;
             }
@@ -149,12 +171,13 @@ public class SpongeEventListener {
     }
 
     // TODO 方块变化事件
-    @Listener(order = Order.FIRST, beforeModifications = true)
+    //@Listener(order = Order.FIRST, beforeModifications = true)
     public void onModify(ChangeBlockEvent.Modify event) {
         List<Transaction<BlockSnapshot>> transactions = event.getTransactions();
         for (Transaction<BlockSnapshot> transaction : transactions) {
             Location<World> location = transaction.getOriginal().getLocation().orElse(null);
             if (location != null && LocketAPI.isLocked(location) != Result.SIGN_NOT_LOCK) {
+                System.out.println("onModify Cancel");
                 event.setCancelled(true);
                 return;
             }
@@ -162,16 +185,20 @@ public class SpongeEventListener {
     }
 
     // TODO 爆炸保护
+    //@Listener(order = Order.FIRST, beforeModifications = true)
+    public void onExplosion(ExplosionEvent.Detonate event) {
+        event.getAffectedLocations().removeIf(location -> location != null && LocketAPI.isLocked(location) != Result.SIGN_NOT_LOCK);
+    }
 
     // TODO 容器传输事件(取消依然监控)
     //@Listener(order = Order.FIRST, beforeModifications = true)
     //@IsCancelled(value = Tristate.UNDEFINED)
-    public void onInventoryMove(ChangeInventoryEvent.Transfer event) {
-
+    public void onInventoryTransfer(ChangeInventoryEvent.Transfer event) {
+        System.out.println("onInventoryTransfer");
     }
 
     // 右键锁箱子
-    @Listener(order = Order.LAST)
+    //@Listener(order = Order.LAST)
     public void onPlayerLockBlock(InteractBlockEvent.Secondary event, @First Player player) {
         ItemStack stack = player.getItemInHand(event.getHandType()).orElse(null);
         if (stack == null || ItemTypes.SIGN != stack.getType()) return;
@@ -182,11 +209,13 @@ public class SpongeEventListener {
         if (block == null) return;
         if (!LocketAPI.isLockable(block) || block.getRelative(face).getBlockType() != BlockTypes.AIR) return;
 
+        System.out.println("onPlayerLockBlock cancel");
         event.setCancelled(true);
 
-        IPlayer iPlayer = LocketAPI.getPlayer(player);
+        WrappedPlayer iPlayer = LocketAPI.getPlayer(player);
         if (player.hasPermission(Perms.ADMIN_LOCK)) {
-            iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
+            //iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
+            iPlayer.adminNotify("line 201");
             iPlayer.placeLock(block, face, event.getHandType());
             return;
         }
@@ -194,7 +223,7 @@ public class SpongeEventListener {
             iPlayer.sendChat(I18n.formatText(LangKeys.NEED_PERM, Perms.LOCK));
             return;
         }
-        if (iPlayer.isOtherProtect(block)) {
+        if (iPlayer.otherProtected(block)) {
             iPlayer.sendChat(I18n.formatText(LangKeys.OTHER_PROTECT));
             return;
         }
@@ -216,11 +245,11 @@ public class SpongeEventListener {
     }
 
     // 右键选择告示牌
-    @Listener(order = Order.LAST)
+    //@Listener(order = Order.LAST)
     public void onPlayerSelectSign(InteractBlockEvent.Secondary event, @First Player player) {
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
         if (block != null && block.getBlockType() == BlockTypes.WALL_SIGN) {
-            IPlayer iPlayer = LocketAPI.getPlayer(player);
+            WrappedPlayer iPlayer = LocketAPI.getPlayer(player);
             if (!player.hasPermission(Perms.LOCK)) {
                 iPlayer.sendChat(I18n.formatText(LangKeys.NEED_PERM, Perms.LOCK));
                 return;
@@ -231,7 +260,7 @@ public class SpongeEventListener {
     }
 
     // 玩家修改告示牌事件
-    @Listener(order = Order.LAST)
+    //@Listener(order = Order.LAST)
     public void onPlayerChangeSign(ChangeSignEvent event, @First Player player) {
         SignData data = event.getText();
         String line_0 = data.get(0).orElse(Text.EMPTY).toPlain();
@@ -240,10 +269,11 @@ public class SpongeEventListener {
         String line_3 = data.get(3).orElse(Text.EMPTY).toPlain();
         if (LocketAPI.isPrivate(line_0)) {
             Sign sign = event.getTargetTile();
-            IPlayer iPlayer = LocketAPI.getPlayer(player);
+            WrappedPlayer iPlayer = LocketAPI.getPlayer(player);
             Location<World> block = LocketAPI.getAttached(sign.getLocation());
             if (iPlayer.hasPerm(Perms.ADMIN_LOCK)) {
-                iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
+                //iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
+                iPlayer.adminNotify("line 259");
                 data.setElement(0, LocketAPI.CONFIG.getPrivateText());
                 data.setElement(1, LocketAPI.CONFIG.getOwnerText(line_1.isEmpty() ? player.getName() : line_1));
                 data.setElement(2, LocketAPI.CONFIG.getUserText(line_2));
@@ -261,7 +291,7 @@ public class SpongeEventListener {
                 event.setCancelled(true);
                 return;
             }
-            if (iPlayer.isOtherProtect(block)) {
+            if (iPlayer.otherProtected(block)) {
                 iPlayer.sendChat(I18n.formatText(LangKeys.OTHER_PROTECT));
                 event.setCancelled(true);
                 return;
@@ -275,13 +305,13 @@ public class SpongeEventListener {
     }
 
     // 玩家登出
-    @Listener
+    //@Listener
     public void onPlayerLogout(ClientConnectionEvent.Disconnect event, @First Player player) {
         LocketAPI.removePlayer(player);
     }
 
     // 重载配置
-    @Listener
+    //@Listener
     public void onReload(GameReloadEvent event) {
         LocketAPI.CONFIG.load();
     }

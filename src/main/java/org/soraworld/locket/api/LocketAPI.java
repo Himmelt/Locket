@@ -2,9 +2,9 @@ package org.soraworld.locket.api;
 
 import org.slf4j.Logger;
 import org.soraworld.locket.config.Config;
-import org.soraworld.locket.constant.Constants;
-import org.soraworld.locket.constant.Result;
-import org.soraworld.locket.data.LockSignData;
+import org.soraworld.locket.constant.Perms;
+import org.soraworld.locket.core.WrappedPlayer;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -19,100 +19,107 @@ import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 
 public class LocketAPI {
 
     public static Config CONFIG;
     public static Logger LOGGER;
     public static PluginContainer PLUGIN;
-    private static final HashMap<Player, IPlayer> PLAYERS = new HashMap<>();
+    private static final HashMap<Player, IPlayer> players = new HashMap<>();
+    private static final Direction[] FACES = new Direction[]{Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
 
     public static IPlayer getPlayer(Player player) {
-        if (PLAYERS.containsKey(player)) {
-            return PLAYERS.get(player);
-        } else {
-            IPlayer iPlayer = new IPlayer(player);
-            PLAYERS.put(player, iPlayer);
-            return iPlayer;
+        IPlayer iPlayer = players.get(player);
+        if (iPlayer == null) {
+            iPlayer = new WrappedPlayer(player);
+            players.put(player, iPlayer);
         }
+        return iPlayer;
     }
 
     public static void removePlayer(Player player) {
-        PLAYERS.remove(player);
-    }
-
-    public static Result isLocked(@Nonnull Location<World> block) {
-        BlockType type = block.getBlockType();
-        boolean isDBlock = LocketAPI.isDBlock(type);
-        int count = 0;
-        Location<World> link = null;
-        HashSet<Location<World>> signs = new HashSet<>();
-
-        // 自身也将参与检查
-        signs.add(block);
-
-        // 检查4个方向是否是 WALL_SIGN 或 DChest
-        for (Direction face : Constants.FACES) {
-            Location<World> relative = block.getRelative(face);
-            if (isDBlock && relative.getBlockType() == type) {
-                link = relative;
-                if (++count >= 2) return Result.M_BLOCKS;
-            } else if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
-                signs.add(relative);
-            }
-        }
-        // 检查相邻双联方块
-        if (isDBlock && link != null) {
-            count = 0;
-            for (Direction face : Constants.FACES) {
-                Location<World> relative = link.getRelative(face);
-                if (relative.getBlockType() == type && ++count >= 2) return Result.M_BLOCKS;
-                if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
-                    signs.add(relative);
-                }
-            }
-        }
-
-        if (signs.isEmpty()) return Result.SIGN_NOT_LOCK;
-        LockSignData data = new LockSignData();
-        for (Location<World> sign : signs) {
-            TileEntity tile = sign.getTileEntity().orElse(null);
-            if (tile != null && tile instanceof Sign) {
-                data.append(parseSign((Sign) tile));
-            }
-        }
-        return data.getAccess("Himmelt");
+        players.remove(player);
     }
 
     public static boolean isLockable(Location<World> location) {
         return CONFIG.isLockable(location);
     }
 
-    public static boolean isPrivate(String line) {
-        return CONFIG.isPrivate(line);
-    }
-
-    public static Location<World> getAttached(Location<World> sign) {
-        return sign.getRelative(sign.getBlock().get(Keys.DIRECTION).orElse(Direction.NONE).getOpposite());
-    }
-
-    static boolean isDBlock(BlockType type) {
+    public static boolean isDuplex(BlockType type) {
         return CONFIG.isDBlock(type);
     }
 
-    static LockSignData parseSign(@Nonnull Sign sign) {
-        LockSignData data = new LockSignData();
-        String line_0 = sign.lines().get(0).toPlain();
-        String line_1 = sign.lines().get(1).toPlain();
-        String line_2 = sign.lines().get(2).toPlain();
-        String line_3 = sign.lines().get(3).toPlain();
-        if (isPrivate(line_0)) data.puts(line_1, line_2, line_3);
-        return data;
+    public static List<Location<World>> getSideSigns(Location<World> loc) {
+        byte count = 0;
+        Location<World> link = null, side;
+        BlockType type = loc.getBlockType();
+        boolean duplex = isDuplex(type);
+        ArrayList<Location<World>> signs = new ArrayList<>();
+
+        if (type == BlockTypes.WALL_SIGN || type == BlockTypes.STANDING_SIGN) signs.add(loc);
+        for (Direction face : FACES) {
+            side = loc.getRelative(face);
+            if (duplex && side.getBlockType() == type) {
+                link = side;
+                if (++count >= 2) {
+                    notifyAdmins("Found multi-blocks at " + loc);
+                    return null;
+                }
+            } else if (side.getBlockType() == BlockTypes.WALL_SIGN && side.get(Keys.DIRECTION).orElse(null) == face) {
+                signs.add(side);
+            }
+        }
+        if (duplex && link != null) {
+            count = 0;
+            for (Direction face : FACES) {
+                side = link.getRelative(face);
+                if (side.getBlockType() == type && ++count >= 2) {
+                    notifyAdmins("Found multi-blocks at " + loc);
+                    return null;
+                }
+                if (side.getBlockType() == BlockTypes.WALL_SIGN && side.get(Keys.DIRECTION).orElse(null) == face) {
+                    signs.add(side);
+                }
+            }
+        }
+        return signs;
     }
 
-    public static Text formatText(String text) {
-        return TextSerializers.FORMATTING_CODE.deserialize(text);
+    public static boolean isLocked(@Nonnull Location<World> loc) {
+        List<Location<World>> signs = getSideSigns(loc);
+        if (signs == null) return true;
+        for (Location<World> sign : signs) {
+            TileEntity tile = sign.getTileEntity().orElse(null);
+            if (tile instanceof Sign && isPrivate((Sign) tile)) return true;
+        }
+        return false;
+    }
+
+
+    public static boolean isPrivate(@Nonnull Sign sign) {
+        return sign.lines().size() >= 1 && isPrivate(sign.lines().get(0).toPlain());
+    }
+
+    public static boolean isPrivate(String text) {
+        return CONFIG.isPrivate(text);
+    }
+
+    public static void notifyAdmins(String text) {
+        if (CONFIG.isAdminNotify()) {
+            Sponge.getServer().getOnlinePlayers().stream()
+                    .filter(player -> player.hasPermission(Perms.ADMIN))
+                    .forEach(player -> player.sendMessage(TextSerializers.FORMATTING_CODE.deserialize(text)));
+        }
+    }
+
+    private static void notifyAdmins(Text text) {
+        if (CONFIG.isAdminNotify()) {
+            Sponge.getServer().getOnlinePlayers().stream()
+                    .filter(player -> player.hasPermission(Perms.ADMIN))
+                    .forEach(player -> player.sendMessage(text));
+        }
     }
 }

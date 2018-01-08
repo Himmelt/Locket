@@ -57,11 +57,11 @@ public class Config {
     @Setting(value = "i_doubleBlocks", comment = "The double-chest like blocks, which can be accessed from neighbors")
     private List<String> doubleBlocks = new ArrayList<>();
 
-    private Path cfgDir;
+    private Path path;
     private Text privateSign;
     private Text head;
     private CommentedConfigurationNode rootNode;
-    private ConfigurationLoader<CommentedConfigurationNode> cfgLoader;
+    private ConfigurationLoader<CommentedConfigurationNode> loader;
     private static final ConfigurationOptions options = ConfigurationOptions.defaults().setShouldCopyDefaults(true);
 
     static {
@@ -81,9 +81,9 @@ public class Config {
         init();
     }
 
-    public Config(Path cfgDir, ConfigurationLoader<CommentedConfigurationNode> loader, ObjectMapperFactory factory) {
-        this.cfgLoader = loader;
-        this.cfgDir = cfgDir;
+    public Config(Path path, ConfigurationLoader<CommentedConfigurationNode> loader, ObjectMapperFactory factory) {
+        this.loader = loader;
+        this.path = path;
         options.setObjectMapperFactory(factory);
         init();
     }
@@ -102,7 +102,7 @@ public class Config {
 
     public void load() {
         try {
-            rootNode = cfgLoader.load(options);
+            rootNode = loader.load(options);
             LocketAPI.LOGGER.info("config loaded from file.");
         } catch (IOException e) {
             LocketAPI.LOGGER.warn("Unable to load config from file.");
@@ -116,7 +116,7 @@ public class Config {
             e.printStackTrace();
         }
         // 加载语言
-        Path langFile = cfgDir.resolve("lang_" + lang + ".conf");
+        Path langFile = path.resolve("lang_" + lang + ".conf");
         ConfigurationLoader<CommentedConfigurationNode> langLoader = HoconConfigurationLoader.builder().setPath(langFile).build();
         if (Files.notExists(langFile)) {
             Asset asset = LocketAPI.PLUGIN.getAsset("lang/" + "lang_" + lang + ".conf").orElse(null);
@@ -159,7 +159,7 @@ public class Config {
         doubleBlocks = new ArrayList<>(new HashSet<>(doubleBlocks));
         try {
             rootNode.setValue(Constants.TOKEN_CONFIG, this);
-            cfgLoader.save(rootNode);
+            loader.save(rootNode);
             LocketAPI.LOGGER.info("config saved to file.");
         } catch (Exception e) {
             LocketAPI.LOGGER.error("Unable to save config to file.");

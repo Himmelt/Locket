@@ -21,17 +21,17 @@ import org.spongepowered.api.plugin.PluginContainer;
 
 import java.nio.file.Path;
 
-@Plugin(id = Constants.MODID, name = Constants.NAME, version = Constants.VERSION)
+@Plugin(id = Constants.MOD_ID, name = Constants.NAME, version = Constants.VERSION)
 public class Locket {
 
     @Inject
     public Locket(PluginContainer plugin,
                   GuiceObjectMapperFactory factory,
-                  @ConfigDir(sharedRoot = false) Path cfgDir,
-                  @DefaultConfig(sharedRoot = false) ConfigurationLoader<CommentedConfigurationNode> cfgLoader) {
+                  @ConfigDir(sharedRoot = false) Path path,
+                  @DefaultConfig(sharedRoot = false) ConfigurationLoader<CommentedConfigurationNode> loader) {
         LocketAPI.PLUGIN = plugin;
         LocketAPI.LOGGER = LoggerFactory.getLogger(Constants.NAME);
-        LocketAPI.CONFIG = new Config(cfgDir, cfgLoader, factory);
+        LocketAPI.CONFIG = new Config(path, loader, factory);
     }
 
     @Listener

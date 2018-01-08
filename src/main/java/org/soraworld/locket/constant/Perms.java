@@ -2,7 +2,7 @@ package org.soraworld.locket.constant;
 
 public final class Perms {
 
-    private static final String LOCKET = Constants.MODID;
+    private static final String LOCKET = Constants.MOD_ID;
     public static final String LOCK = LOCKET + ".lock";
 
     public static final String ADMIN = LOCKET + ".admin";

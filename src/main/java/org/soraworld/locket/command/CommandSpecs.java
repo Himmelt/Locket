@@ -1,6 +1,6 @@
 package org.soraworld.locket.command;
 
-import org.soraworld.locket.api.IPlayer;
+import org.soraworld.locket.core.WrappedPlayer;
 import org.soraworld.locket.api.LocketAPI;
 import org.soraworld.locket.config.I18n;
 import org.soraworld.locket.constant.LangKeys;
@@ -83,7 +83,7 @@ public final class CommandSpecs {
                     source.sendMessage(LocketAPI.CONFIG.HEAD().concat(I18n.formatText(LangKeys.ONLY_PLAYER)));
                     return CommandResult.empty();
                 }
-                IPlayer iPlayer = LocketAPI.getPlayer((Player) source);
+                WrappedPlayer iPlayer = LocketAPI.getPlayer((Player) source);
                 Location<World> selection = iPlayer.selection();
                 if (selection == null) {
                     iPlayer.sendChat(I18n.formatText(LangKeys.SELECT_FIRST));
@@ -127,7 +127,7 @@ public final class CommandSpecs {
                     source.sendMessage(I18n.formatText(LangKeys.ONLY_PLAYER));
                     return CommandResult.empty();
                 }
-                IPlayer iPlayer = LocketAPI.getPlayer((Player) source);
+                WrappedPlayer iPlayer = LocketAPI.getPlayer((Player) source);
                 Location<World> selection = iPlayer.selection();
                 if (selection == null) {
                     iPlayer.sendChat(I18n.formatText(LangKeys.SELECT_FIRST));
