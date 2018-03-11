@@ -72,10 +72,9 @@ public class WrappedPlayer implements IPlayer {
             }
         }
         if (owners.size() <= 0) return Role.NONE;
-        if (owners.size() >= 2) return Result.SIGN_M_OWNERS;
-        if (owners.contains(username)) return Result.SIGN_OWNER;
-        if (users.contains(username)) return Result.SIGN_USER;
-        return Result.SIGN_NO_ACCESS;
+        if (owners.size() >= 2) return Role.SIGN_M_OWNERS;
+        if (owners.contains(username)) return Role.SIGN_OWNER;
+        if (users.contains(username)) return Role.SIGN_USER;
         return Role.NONE;
     }
 
