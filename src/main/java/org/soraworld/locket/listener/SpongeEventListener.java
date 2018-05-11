@@ -1,11 +1,11 @@
 package org.soraworld.locket.listener;
 
-import org.soraworld.locket.core.WrappedPlayer;
 import org.soraworld.locket.api.LocketAPI;
 import org.soraworld.locket.config.I18n;
 import org.soraworld.locket.constant.LangKeys;
 import org.soraworld.locket.constant.Perms;
 import org.soraworld.locket.constant.Result;
+import org.soraworld.locket.core.WrappedPlayer;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -38,11 +38,7 @@ public class SpongeEventListener {
 
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onBlockChange(ChangeBlockEvent event) {
-        event.filter(loc -> {
-            Result result = LocketAPI.isLocked(loc);
-            System.out.println(">>" + result + " >> " + loc);
-            return result == Result.SIGN_NOT_LOCK;
-        });
+        event.filter(LocketAPI::isLocked);
     }
 
     // 玩家方块交互事件(主要行为保护)
@@ -136,7 +132,7 @@ public class SpongeEventListener {
     //@Listener(order = Order.FIRST, beforeModifications = true)
     public void onPistonExtend(ChangeBlockEvent.Pre event, @ContextValue("PISTON_EXTEND") @First Object cause) {
         for (Location<World> block : event.getLocations()) {
-            if (LocketAPI.isLocked(block) != Result.SIGN_NOT_LOCK) {
+            if (LocketAPI.isLocked(block)) {
                 System.out.println("onPistonExtend Cancel:" + block);
                 event.setCancelled(true);
                 return;
@@ -148,7 +144,7 @@ public class SpongeEventListener {
     //@Listener(order = Order.FIRST, beforeModifications = true)
     public void onPistonRetract(ChangeBlockEvent.Pre event, @ContextValue("PISTON_RETRACT") @First Object cause) {
         for (Location<World> block : event.getLocations()) {
-            if (LocketAPI.isLocked(block) != Result.SIGN_NOT_LOCK) {
+            if (LocketAPI.isLocked(block)) {
                 System.out.println("onPistonRetract Cancel");
                 event.setCancelled(true);
                 return;
@@ -162,7 +158,7 @@ public class SpongeEventListener {
         List<Transaction<BlockSnapshot>> transactions = event.getTransactions();
         for (Transaction<BlockSnapshot> transaction : transactions) {
             Location<World> location = transaction.getOriginal().getLocation().orElse(null);
-            if (location != null && LocketAPI.isLocked(location) != Result.SIGN_NOT_LOCK) {
+            if (location != null && LocketAPI.isLocked(location)) {
                 System.out.println("onStructureGrow Cancel");
                 event.setCancelled(true);
                 return;
@@ -176,7 +172,7 @@ public class SpongeEventListener {
         List<Transaction<BlockSnapshot>> transactions = event.getTransactions();
         for (Transaction<BlockSnapshot> transaction : transactions) {
             Location<World> location = transaction.getOriginal().getLocation().orElse(null);
-            if (location != null && LocketAPI.isLocked(location) != Result.SIGN_NOT_LOCK) {
+            if (location != null && LocketAPI.isLocked(location)) {
                 System.out.println("onModify Cancel");
                 event.setCancelled(true);
                 return;
@@ -187,7 +183,7 @@ public class SpongeEventListener {
     // TODO 爆炸保护
     //@Listener(order = Order.FIRST, beforeModifications = true)
     public void onExplosion(ExplosionEvent.Detonate event) {
-        event.getAffectedLocations().removeIf(location -> location != null && LocketAPI.isLocked(location) != Result.SIGN_NOT_LOCK);
+        event.getAffectedLocations().removeIf(location -> location != null && LocketAPI.isLocked(location));
     }
 
     // TODO 容器传输事件(取消依然监控)

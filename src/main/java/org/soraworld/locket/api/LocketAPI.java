@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.soraworld.locket.config.Config;
 import org.soraworld.locket.constant.Perms;
 import org.soraworld.locket.core.WrappedPlayer;
+import org.soraworld.locket.data.LockSignData;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
@@ -28,11 +29,11 @@ public class LocketAPI {
     public static Config CONFIG;
     public static Logger LOGGER;
     public static PluginContainer PLUGIN;
-    private static final HashMap<Player, IPlayer> players = new HashMap<>();
+    private static final HashMap<Player, WrappedPlayer> players = new HashMap<>();
     private static final Direction[] FACES = new Direction[]{Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
 
-    public static IPlayer getPlayer(Player player) {
-        IPlayer iPlayer = players.get(player);
+    public static WrappedPlayer getPlayer(Player player) {
+        WrappedPlayer iPlayer = players.get(player);
         if (iPlayer == null) {
             iPlayer = new WrappedPlayer(player);
             players.put(player, iPlayer);
@@ -98,7 +99,6 @@ public class LocketAPI {
         return false;
     }
 
-
     public static boolean isPrivate(@Nonnull Sign sign) {
         return sign.lines().size() >= 1 && isPrivate(sign.lines().get(0).toPlain());
     }
@@ -121,5 +121,17 @@ public class LocketAPI {
                     .filter(player -> player.hasPermission(Perms.ADMIN))
                     .forEach(player -> player.sendMessage(text));
         }
+    }
+
+    public static Location<World> getAttached(Location<World> selection) {
+        return null;
+    }
+
+    public static LockSignData parseSign(Sign tile) {
+        return null;
+    }
+
+    public static Text formatText(String line_2) {
+        return null;
     }
 }

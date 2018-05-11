@@ -1,11 +1,11 @@
 package org.soraworld.locket.command;
 
-import org.soraworld.locket.core.WrappedPlayer;
 import org.soraworld.locket.api.LocketAPI;
 import org.soraworld.locket.config.I18n;
 import org.soraworld.locket.constant.LangKeys;
 import org.soraworld.locket.constant.Perms;
 import org.soraworld.locket.constant.Result;
+import org.soraworld.locket.core.WrappedPlayer;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.command.CommandResult;

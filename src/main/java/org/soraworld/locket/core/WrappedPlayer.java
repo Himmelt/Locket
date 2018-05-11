@@ -78,7 +78,6 @@ public class WrappedPlayer implements IPlayer {
         return Role.NONE;
     }
 
-
     private Result analyzeSign(@Nonnull HashSet<Location<World>> signs) {
         if (signs.isEmpty()) return Result.SIGN_NOT_LOCK;
         LockSignData data = new LockSignData();
