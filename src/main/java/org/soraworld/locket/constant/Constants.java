@@ -1,7 +1,7 @@
 package org.soraworld.locket.constant;
 
 import com.google.common.reflect.TypeToken;
-import org.soraworld.locket.config.Config;
+import org.soraworld.locket.config.LocketManager;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Direction;
 
@@ -19,5 +19,5 @@ public final class Constants {
 
     public static final TypeToken<HashMap<String, String>> TOKEN_HASH_MAP = new TypeToken<HashMap<String, String>>() {
     };
-    public static final TypeToken<Config> TOKEN_CONFIG = TypeToken.of(Config.class);
+    public static final TypeToken<LocketManager> TOKEN_CONFIG = TypeToken.of(LocketManager.class);
 }

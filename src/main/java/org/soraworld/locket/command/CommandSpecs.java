@@ -1,161 +1,86 @@
 package org.soraworld.locket.command;
 
 import org.soraworld.locket.api.LocketAPI;
-import org.soraworld.locket.config.I18n;
+import org.soraworld.locket.config.LocketManager;
 import org.soraworld.locket.constant.LangKeys;
 import org.soraworld.locket.constant.Perms;
 import org.soraworld.locket.constant.Result;
 import org.soraworld.locket.core.WrappedPlayer;
-import org.spongepowered.api.block.BlockType;
-import org.spongepowered.api.block.BlockTypes;
-import org.spongepowered.api.command.CommandResult;
-import org.spongepowered.api.command.args.GenericArguments;
-import org.spongepowered.api.command.spec.CommandSpec;
+import org.soraworld.violet.command.Paths;
+import org.soraworld.violet.command.SpongeCommand;
+import org.soraworld.violet.command.Sub;
+import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 public final class CommandSpecs {
 
-    private static final CommandSpec CMD_LOCKET_TYPE = CommandSpec.builder()
-            .description(Text.of("Locket type +/-/++/--."))
-            .permission(Perms.ADMIN_CONFIG)
-            .arguments(GenericArguments.onlyOne(GenericArguments.string(Text.of("action"))),
-                    GenericArguments.optional(GenericArguments.catalogedElement(Text.of("block"), BlockType.class)))
-            .executor((source, args) -> {
-                String action = args.<String>getOne("action").orElse(null);
-                Text HEAD = LocketAPI.CONFIG.HEAD();
-                if (action != null && (action.equals("+") || action.equals("++") || action.equals("-") || action.equals("--"))) {
-                    BlockType type = args.<BlockType>getOne("block").orElse(null);
-                    if (type == null) {
-                        if (source instanceof Player) {
-                            type = LocketAPI.getPlayer((Player) source).getHeldBlockType();
-                        } else {
-                            source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.ONLY_PLAYER)));
-                            return CommandResult.empty();
-                        }
-                    }
-                    if (type == BlockTypes.AIR || type == BlockTypes.WALL_SIGN || type == BlockTypes.STANDING_SIGN) {
-                        source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.TYPE_ADD_FAILED)));
-                        return CommandResult.empty();
-                    }
-                    String typeName = type.getTranslation().get();
-                    switch (action) {
-                        case "+":
-                            LocketAPI.CONFIG.addType(type);
-                            source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.TYPE_ADD_SUCCESS, typeName)));
-                            break;
-                        case "++":
-                            LocketAPI.CONFIG.addDType(type);
-                            source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.DTYPE_ADD_SUCCESS, typeName)));
-                            break;
-                        case "-":
-                            LocketAPI.CONFIG.removeType(type);
-                            source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.TYPE_REMOVE_SUCCESS, typeName)));
-                            break;
-                        case "--":
-                            LocketAPI.CONFIG.removeDType(type);
-                            source.sendMessage(HEAD.concat(I18n.formatText(LangKeys.DTYPE_REMOVE_SUCCESS, typeName)));
-                            break;
-                    }
-                    LocketAPI.CONFIG.save();
-                    return CommandResult.success();
-                }
-                return CommandResult.empty();
-            })
-            .build();
-    private static final CommandSpec CMD_LOCKET_RELOAD = CommandSpec.builder()
-            .description(Text.of("Locket reload config."))
-            .permission(Perms.ADMIN_CONFIG)
-            .executor((source, args) -> {
-                LocketAPI.CONFIG.load();
-                source.sendMessage(LocketAPI.CONFIG.HEAD().concat(I18n.formatText(LangKeys.CFG_RELOAD)));
-                return CommandResult.success();
-            })
-            .build();
-    private static final CommandSpec CMD_LOCKET_REMOVE = CommandSpec.builder()
-            .description(Text.of("Locket remove line."))
-            .permission(Perms.LOCK)
-            .arguments(GenericArguments.onlyOne(GenericArguments.integer(Text.of("line"))))
-            .executor((source, args) -> {
-                if (!(source instanceof Player)) {
-                    source.sendMessage(LocketAPI.CONFIG.HEAD().concat(I18n.formatText(LangKeys.ONLY_PLAYER)));
-                    return CommandResult.empty();
-                }
-                WrappedPlayer iPlayer = LocketAPI.getPlayer((Player) source);
-                Location<World> selection = iPlayer.selection();
-                if (selection == null) {
-                    iPlayer.sendChat(I18n.formatText(LangKeys.SELECT_FIRST));
-                    return CommandResult.empty();
-                }
-                Integer line = args.<Integer>getOne("line").orElse(null);
-                if (line == null || (line != 3 && line != 4)) {
-                    iPlayer.sendChat(I18n.formatText(LangKeys.CANT_REMOVE));
-                    return CommandResult.empty();
-                }
-                if (iPlayer.hasPerm(Perms.ADMIN_LOCK)) {
-                    iPlayer.unLockSign(selection, line);
-                    iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
-                    return CommandResult.success();
-                }
-                if (!iPlayer.hasPerm(Perms.LOCK)) {
-                    iPlayer.sendChat(I18n.formatText(LangKeys.NEED_PERM, Perms.LOCK));
-                    return CommandResult.empty();
-                }
-                Result result = iPlayer.tryAccess(selection);
-                if (result == Result.SIGN_OWNER) {
-                    iPlayer.unLockSign(selection, line);
-                    iPlayer.sendChat(I18n.formatText(LangKeys.MANU_REMOVE));
-                    return CommandResult.success();
-                }
-                iPlayer.sendChat(I18n.formatText(LangKeys.CANT_REMOVE));
-                return CommandResult.empty();
-            })
-            .build();
+    @Sub(perm = "locket.lock", onlyPlayer = true)
+    public static void remove(SpongeCommand self, CommandSource sender, Paths args) {
+        LocketManager locket = (LocketManager) self.manager;
+        Player player = (Player) sender;
+        Location<World> selection = locket.getSelected(player);
 
-    public static final CommandSpec CMD_LOCKET = CommandSpec.builder()
-            .description(Text.of("Locket"))
-            .permission(Perms.LOCK)
-            .arguments(GenericArguments.optional(GenericArguments.integer(Text.of("line"))),
-                    GenericArguments.optional(GenericArguments.string(Text.of("name"))))
-            .child(CMD_LOCKET_TYPE, "type")
-            .child(CMD_LOCKET_REMOVE, "remove")
-            .child(CMD_LOCKET_RELOAD, "reload")
-            .executor((source, args) -> {
-                if (!(source instanceof Player)) {
-                    source.sendMessage(I18n.formatText(LangKeys.ONLY_PLAYER));
-                    return CommandResult.empty();
+        if (selection != null) {
+            try {
+                int line = Integer.valueOf(args.first());
+                if (line != 3 && line != 4) {
+                    locket.sendKey(sender, "cantRemoveLine");
+                } else if (player.hasPermission(locket.defAdminPerm())) {
+                    locket.removeLine(player, line);
+                    //iPlayer.unLockSign(selection, line);
+                } else if (!player.hasPermission(Perms.LOCK)) {
+                    locket.sendKey(sender, LangKeys.NEED_PERM, Perms.LOCK);
+                    return;
                 }
-                WrappedPlayer iPlayer = LocketAPI.getPlayer((Player) source);
-                Location<World> selection = iPlayer.selection();
-                if (selection == null) {
-                    iPlayer.sendChat(I18n.formatText(LangKeys.SELECT_FIRST));
-                    return CommandResult.empty();
+                Result result = locket.tryAccess(player);
+                if (result == Result.SIGN_OWNER) {
+                    locket.removeLine(player, line);
+                    locket.sendKey(player, LangKeys.MANU_REMOVE);
+                    return;
                 }
-                Integer line = args.<Integer>getOne("line").orElse(null);
-                String name = args.<String>getOne("name").orElse(null);
-                if (iPlayer.hasPerm(Perms.ADMIN_LOCK)) {
-                    iPlayer.lockSign(selection, line, name);
-                    iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
-                    return CommandResult.success();
-                }
-                if (!LocketAPI.isLockable(LocketAPI.getAttached(selection))) {
-                    iPlayer.sendChat(I18n.formatText(LangKeys.CANT_LOCK));
-                    return CommandResult.empty();
-                }
-                if (!iPlayer.hasPerm(Perms.LOCK)) {
-                    iPlayer.sendChat(I18n.formatText(LangKeys.NEED_PERM, Perms.LOCK));
-                    return CommandResult.empty();
-                }
-                Result result = iPlayer.tryAccess(selection);
-                if (result == Result.SIGN_OWNER || result == Result.SIGN_NOT_LOCK) {
-                    iPlayer.lockSign(selection, line, name);
-                    iPlayer.sendChat(I18n.formatText(LangKeys.MANU_LOCK));
-                    return CommandResult.success();
-                }
-                iPlayer.sendChat(I18n.formatText(LangKeys.CANT_LOCK));
-                return CommandResult.empty();
-            })
-            .build();
+                locket.sendKey(player, LangKeys.CANT_REMOVE);
+            } catch (Throwable ignored) {
+                locket.sendKey(sender, "invalidInt");
+            }
+        } else locket.sendKey(player, "selectFirst");
+    }
+
+    @Sub(perm = "locket.lock", onlyPlayer = true)
+    public static void lock(SpongeCommand self, CommandSource sender, Paths args) {
+        LocketManager locket = (LocketManager) self.manager;
+        Player player = (Player) sender;
+
+        WrappedPlayer iPlayer = LocketAPI.getPlayer((Player) sender);
+        Location<World> selection = locket.getSelected(player);//iPlayer.selection();
+        if (selection == null) {
+            locket.sendKey(player, "LangKeys.SELECT_FIRST");
+            return;
+        }
+        int line = Integer.valueOf(args.get(0));
+        String name = args.get(1);
+
+        if (player.hasPermission(Perms.ADMIN_LOCK)) {
+            locket.lockSign(player, line, name);
+            //iPlayer.lockSign(selection, line, name);
+            return;
+        }
+        if (!LocketAPI.isLockable(LocketAPI.getAttached(selection))) {
+            locket.sendKey(player, LangKeys.CANT_LOCK);
+            return;
+        }
+        if (!iPlayer.hasPerm(Perms.LOCK)) {
+            locket.sendKey(player, LangKeys.NEED_PERM, Perms.LOCK);
+            return;
+        }
+        Result result = iPlayer.tryAccess(selection);
+        if (result == Result.SIGN_OWNER || result == Result.SIGN_NOT_LOCK) {
+            locket.lockSign(player, line, name);
+            //iPlayer.lockSign(selection, line, name);
+            locket.sendKey(player, LangKeys.MANU_LOCK);
+            return;
+        }
+        locket.sendKey(player, LangKeys.CANT_LOCK);
+    }
 }

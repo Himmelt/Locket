@@ -11,6 +11,7 @@ quickLock = "&7快速锁牌成功."
 cantLock = "你无法对目标方块添加保护锁."
 manuRemove = "手动移除用户."
 cantRemove = "你无法手动移除用户."
+cantRemoveLine = "此行无法手动移除"
 
 noAccess = "你没有这么做的权限."
 multiOwners = "目标保护锁含有多个用户,这是不允许的,请联系管理员."

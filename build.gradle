@@ -17,13 +17,10 @@ plugins {
 }
 
 group = 'org.soraworld'
-version =  '1.0.7'
+version = '1.1.7'
 description = 'Locket Plugin'
 
-sourceCompatibility = targetCompatibility = '1.8'
-compileJava {
-    sourceCompatibility = targetCompatibility = '1.8'
-}
+sourceCompatibility = targetCompatibility = 1.8
 
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
@@ -31,4 +28,5 @@ tasks.withType(JavaCompile) {
 
 dependencies {
     compile 'org.spongepowered:spongeapi:7.1.0-SNAPSHOT'
+    compile files('lib/SpongeViolet-2.3.1-hocon.jar')
 }

@@ -1,7 +1,7 @@
 package org.soraworld.locket.listener;
 
 import org.soraworld.locket.api.LocketAPI;
-import org.soraworld.locket.config.I18n;
+import org.soraworld.locket.config.LocketManager;
 import org.soraworld.locket.constant.LangKeys;
 import org.soraworld.locket.constant.Perms;
 import org.soraworld.locket.constant.Result;
@@ -20,7 +20,6 @@ import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
 import org.spongepowered.api.event.filter.cause.ContextValue;
 import org.spongepowered.api.event.filter.cause.First;
-import org.spongepowered.api.event.game.GameReloadEvent;
 import org.spongepowered.api.event.item.inventory.ChangeInventoryEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
 import org.spongepowered.api.event.world.ExplosionEvent;
@@ -33,8 +32,13 @@ import org.spongepowered.api.world.World;
 
 import java.util.List;
 
-public class SpongeEventListener {
+public class EventListener {
 
+    private final LocketManager locket;
+
+    public EventListener(LocketManager locket) {
+        this.locket = locket;
+    }
 
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onBlockChange(ChangeBlockEvent event) {
@@ -94,18 +98,16 @@ public class SpongeEventListener {
     public void onPlayerBreakBlock(ChangeBlockEvent.Pre event, @ContextValue("PLAYER_BREAK") @First Player player) {
         WrappedPlayer iPlayer = LocketAPI.getPlayer(player);
         for (Location<World> block : event.getLocations()) {
-            Result result = iPlayer.tryAccess(block);
-            iPlayer.adminNotify("result:" + block + "|" + result);
-            if (result != Result.SIGN_NOT_LOCK && iPlayer.hasPerm(Perms.ADMIN_LOCK)) {
+            Result result = locket.tryAccess(player, block);
+            if (result != Result.SIGN_NOT_LOCK && player.hasPermission(Perms.ADMIN_LOCK)) {
                 //iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
-                iPlayer.adminNotify("line 93");
                 return;
                 //break;
             }
             switch (result) {
                 case SIGN_OWNER:
-                    if (!iPlayer.hasPerm(Perms.LOCK)) {
-                        iPlayer.sendChat(I18n.formatText(LangKeys.NEED_PERM, Perms.LOCK));
+                    if (!player.hasPermission(Perms.LOCK)) {
+                        locket.sendKey(player, LangKeys.NEED_PERM, Perms.LOCK);
                         event.setCancelled(true);
                         return;
                     }
@@ -172,7 +174,7 @@ public class SpongeEventListener {
         List<Transaction<BlockSnapshot>> transactions = event.getTransactions();
         for (Transaction<BlockSnapshot> transaction : transactions) {
             Location<World> location = transaction.getOriginal().getLocation().orElse(null);
-            if (location != null && LocketAPI.isLocked(location)) {
+            if (location != null && locket.isLocked(location)) {
                 System.out.println("onModify Cancel");
                 event.setCancelled(true);
                 return;
@@ -183,7 +185,7 @@ public class SpongeEventListener {
     // TODO 爆炸保护
     //@Listener(order = Order.FIRST, beforeModifications = true)
     public void onExplosion(ExplosionEvent.Detonate event) {
-        event.getAffectedLocations().removeIf(location -> location != null && LocketAPI.isLocked(location));
+        event.getAffectedLocations().removeIf(location -> location != null && locket.isLocked(location));
     }
 
     // TODO 容器传输事件(取消依然监控)
@@ -203,40 +205,37 @@ public class SpongeEventListener {
         if (face == Direction.UP || face == Direction.DOWN || face == Direction.NONE) return;
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
         if (block == null) return;
-        if (!LocketAPI.isLockable(block) || block.getRelative(face).getBlockType() != BlockTypes.AIR) return;
+        if (!locket.isLockable(block) || block.getRelative(face).getBlockType() != BlockTypes.AIR) return;
 
         System.out.println("onPlayerLockBlock cancel");
         event.setCancelled(true);
 
-        WrappedPlayer iPlayer = LocketAPI.getPlayer(player);
         if (player.hasPermission(Perms.ADMIN_LOCK)) {
-            //iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
-            iPlayer.adminNotify("line 201");
-            iPlayer.placeLock(block, face, event.getHandType());
+            locket.placeLock(block, face, event.getHandType());
             return;
         }
         if (!player.hasPermission(Perms.LOCK)) {
-            iPlayer.sendChat(I18n.formatText(LangKeys.NEED_PERM, Perms.LOCK));
+            locket.sendKey(player, LangKeys.NEED_PERM, Perms.LOCK);
             return;
         }
-        if (iPlayer.otherProtected(block)) {
-            iPlayer.sendChat(I18n.formatText(LangKeys.OTHER_PROTECT));
+        if (locket.otherProtected(player, block)) {
+            locket.sendKey(player, LangKeys.OTHER_PROTECT);
             return;
         }
-        switch (iPlayer.tryAccess(block)) {
+        switch (locket.tryAccess(player, block)) {
             case SIGN_OWNER:
             case SIGN_NOT_LOCK:
-                iPlayer.placeLock(block, face, event.getHandType());
-                iPlayer.sendChat(I18n.formatText(LangKeys.QUICK_LOCK));
+                locket.placeLock(block, face, event.getHandType());
+                locket.sendKey(player, LangKeys.QUICK_LOCK);
                 return;
             case SIGN_M_OWNERS:
-                iPlayer.sendChat(I18n.formatText(LangKeys.MULTI_OWNERS));
+                locket.sendKey(player, LangKeys.MULTI_OWNERS);
                 return;
             case M_BLOCKS:
-                iPlayer.sendChat(I18n.formatText(LangKeys.MULTI_BLOCKS));
+                locket.sendKey(player, LangKeys.MULTI_BLOCKS);
                 return;
             default:
-                iPlayer.sendChat(I18n.formatText(LangKeys.NO_ACCESS));
+                locket.sendKey(player, LangKeys.NO_ACCESS);
         }
     }
 
@@ -247,11 +246,11 @@ public class SpongeEventListener {
         if (block != null && block.getBlockType() == BlockTypes.WALL_SIGN) {
             WrappedPlayer iPlayer = LocketAPI.getPlayer(player);
             if (!player.hasPermission(Perms.LOCK)) {
-                iPlayer.sendChat(I18n.formatText(LangKeys.NEED_PERM, Perms.LOCK));
+                locket.sendKey(player, LangKeys.NEED_PERM, Perms.LOCK);
                 return;
             }
-            iPlayer.select(block);
-            iPlayer.sendChat(I18n.formatText(LangKeys.SELECT_SIGN));
+            locket.setSelected(player, block);
+            locket.sendKey(player, LangKeys.SELECT_SIGN);
         }
     }
 
@@ -263,53 +262,45 @@ public class SpongeEventListener {
         String line_1 = data.get(1).orElse(Text.EMPTY).toPlain();
         String line_2 = data.get(2).orElse(Text.EMPTY).toPlain();
         String line_3 = data.get(3).orElse(Text.EMPTY).toPlain();
-        if (LocketAPI.isPrivate(line_0)) {
+        if (locket.isPrivate(line_0)) {
             Sign sign = event.getTargetTile();
-            WrappedPlayer iPlayer = LocketAPI.getPlayer(player);
-            Location<World> block = LocketAPI.getAttached(sign.getLocation());
-            if (iPlayer.hasPerm(Perms.ADMIN_LOCK)) {
+            Location<World> block = locket.getAttached(sign.getLocation());
+            if (player.hasPermission(Perms.ADMIN_LOCK)) {
                 //iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
-                iPlayer.adminNotify("line 259");
-                data.setElement(0, LocketAPI.CONFIG.getPrivateText());
-                data.setElement(1, LocketAPI.CONFIG.getOwnerText(line_1.isEmpty() ? player.getName() : line_1));
-                data.setElement(2, LocketAPI.CONFIG.getUserText(line_2));
-                data.setElement(3, LocketAPI.CONFIG.getUserText(line_3));
+                data.setElement(0, locket.getPrivateText());
+                data.setElement(1, locket.getOwnerText(line_1.isEmpty() ? player.getName() : line_1));
+                data.setElement(2, locket.getUserText(line_2));
+                data.setElement(3, locket.getUserText(line_3));
                 sign.offer(data);
                 return;
             }
-            if (!LocketAPI.isLockable(block)) {
-                iPlayer.sendChat(I18n.formatText(LangKeys.CANT_LOCK));
+            if (!locket.isLockable(block)) {
+                locket.sendKey(player, LangKeys.CANT_LOCK);
                 event.setCancelled(true);
                 return;
             }
             if (!player.hasPermission(Perms.LOCK)) {
-                iPlayer.sendChat(I18n.formatText(LangKeys.NEED_PERM, Perms.LOCK));
+                locket.sendKey(player, LangKeys.NEED_PERM, Perms.LOCK);
                 event.setCancelled(true);
                 return;
             }
-            if (iPlayer.otherProtected(block)) {
-                iPlayer.sendChat(I18n.formatText(LangKeys.OTHER_PROTECT));
+            if (locket.otherProtected(player, block)) {
+                locket.sendKey(player, LangKeys.OTHER_PROTECT);
                 event.setCancelled(true);
                 return;
             }
-            data.setElement(0, LocketAPI.CONFIG.getPrivateText());
-            data.setElement(1, LocketAPI.CONFIG.getOwnerText(player.getName()));
-            data.setElement(2, LocketAPI.formatText(line_2));
-            data.setElement(3, LocketAPI.formatText(line_3));
+            data.setElement(0, locket.getPrivateText());
+            data.setElement(1, locket.getOwnerText(player.getName()));
+            // TODO check format
+            data.setElement(2, Text.of(line_2));
+            data.setElement(3, Text.of(line_3));
             sign.offer(data);
         }
     }
 
     // 玩家登出
-    //@Listener
+    @Listener
     public void onPlayerLogout(ClientConnectionEvent.Disconnect event, @First Player player) {
-        LocketAPI.removePlayer(player);
+        locket.cleanPlayer(player);
     }
-
-    // 重载配置
-    //@Listener
-    public void onReload(GameReloadEvent event) {
-        LocketAPI.CONFIG.load();
-    }
-
 }
