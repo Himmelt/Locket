@@ -27,9 +27,9 @@ import java.nio.file.Path;
 import java.util.List;
 
 @Plugin(
-        id = Constants.MOD_ID,
-        name = Constants.NAME,
-        version = Constants.VERSION)
+        id = "locket",
+        name = Constants.PLUGIN_NAME,
+        version = Constants.PLUGIN_VERSION)
 public class Locket extends SpongePlugin {
 
     @Inject
@@ -38,7 +38,7 @@ public class Locket extends SpongePlugin {
                   @ConfigDir(sharedRoot = false) Path path,
                   @DefaultConfig(sharedRoot = false) ConfigurationLoader<CommentedConfigurationNode> loader) {
         LocketAPI.PLUGIN = plugin;
-        LocketAPI.LOGGER = LoggerFactory.getLogger(Constants.NAME);
+        LocketAPI.LOGGER = LoggerFactory.getLogger(Constants.PLUGIN_NAME);
         LocketAPI.CONFIG = new LocketManager(path, loader, factory);
     }
 

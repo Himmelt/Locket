@@ -2,8 +2,6 @@ package org.soraworld.locket.command;
 
 import org.soraworld.locket.api.LocketAPI;
 import org.soraworld.locket.config.LocketManager;
-import org.soraworld.locket.constant.LangKeys;
-import org.soraworld.locket.constant.Perms;
 import org.soraworld.locket.constant.Result;
 import org.soraworld.locket.core.WrappedPlayer;
 import org.soraworld.violet.command.Paths;
@@ -30,17 +28,17 @@ public final class CommandSpecs {
                 } else if (player.hasPermission(locket.defAdminPerm())) {
                     locket.removeLine(player, line);
                     //iPlayer.unLockSign(selection, line);
-                } else if (!player.hasPermission(Perms.LOCK)) {
-                    locket.sendKey(sender, LangKeys.NEED_PERM, Perms.LOCK);
+                } else if (!player.hasPermission("locket" + ".lock")) {
+                    locket.sendKey(sender, "needPerm", "locket" + ".lock");
                     return;
                 }
                 Result result = locket.tryAccess(player);
                 if (result == Result.SIGN_OWNER) {
                     locket.removeLine(player, line);
-                    locket.sendKey(player, LangKeys.MANU_REMOVE);
+                    locket.sendKey(player, "manuRemove");
                     return;
                 }
-                locket.sendKey(player, LangKeys.CANT_REMOVE);
+                locket.sendKey(player, "cantRemove");
             } catch (Throwable ignored) {
                 locket.sendKey(sender, "invalidInt");
             }
@@ -61,26 +59,26 @@ public final class CommandSpecs {
         int line = Integer.valueOf(args.get(0));
         String name = args.get(1);
 
-        if (player.hasPermission(Perms.ADMIN_LOCK)) {
+        if (player.hasPermission(("locket" + ".admin") + ".lock")) {
             locket.lockSign(player, line, name);
             //iPlayer.lockSign(selection, line, name);
             return;
         }
         if (!LocketAPI.isLockable(LocketAPI.getAttached(selection))) {
-            locket.sendKey(player, LangKeys.CANT_LOCK);
+            locket.sendKey(player, "cantLock");
             return;
         }
-        if (!iPlayer.hasPerm(Perms.LOCK)) {
-            locket.sendKey(player, LangKeys.NEED_PERM, Perms.LOCK);
+        if (!iPlayer.hasPerm("locket" + ".lock")) {
+            locket.sendKey(player, "needPerm", "locket" + ".lock");
             return;
         }
         Result result = iPlayer.tryAccess(selection);
         if (result == Result.SIGN_OWNER || result == Result.SIGN_NOT_LOCK) {
             locket.lockSign(player, line, name);
             //iPlayer.lockSign(selection, line, name);
-            locket.sendKey(player, LangKeys.MANU_LOCK);
+            locket.sendKey(player, "manuLock");
             return;
         }
-        locket.sendKey(player, LangKeys.CANT_LOCK);
+        locket.sendKey(player, "cantLock");
     }
 }

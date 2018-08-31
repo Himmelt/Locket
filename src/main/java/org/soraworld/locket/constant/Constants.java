@@ -1,23 +1,15 @@
 package org.soraworld.locket.constant;
 
-import com.google.common.reflect.TypeToken;
-import org.soraworld.locket.config.LocketManager;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Direction;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 public final class Constants {
-    public static final String MOD_ID = "locket";
-    public static final String NAME = "Locket";
-    public static final String VERSION = "1.0.7";
+    public static final String PLUGIN_NAME = "Locket";
+    public static final String PLUGIN_VERSION = "1.0.7";
     public static final Text DEFAULT_PRIVATE = Text.of("[Private]");
 
     public static final List<Direction> FACES = Arrays.asList(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST);
-
-    public static final TypeToken<HashMap<String, String>> TOKEN_HASH_MAP = new TypeToken<HashMap<String, String>>() {
-    };
-    public static final TypeToken<LocketManager> TOKEN_CONFIG = TypeToken.of(LocketManager.class);
 }

@@ -2,8 +2,6 @@ package org.soraworld.locket.listener;
 
 import org.soraworld.locket.api.LocketAPI;
 import org.soraworld.locket.config.LocketManager;
-import org.soraworld.locket.constant.LangKeys;
-import org.soraworld.locket.constant.Perms;
 import org.soraworld.locket.constant.Result;
 import org.soraworld.locket.core.WrappedPlayer;
 import org.spongepowered.api.block.BlockSnapshot;
@@ -53,7 +51,7 @@ public class EventListener {
         WrappedPlayer iPlayer = LocketAPI.getPlayer(player);
         Result result = iPlayer.tryAccess(block);
         iPlayer.adminNotify("==" + block + "|" + result);
-        if (result != Result.SIGN_NOT_LOCK && iPlayer.hasPerm(Perms.ADMIN_INTERACT)) {
+        if (result != Result.SIGN_NOT_LOCK && iPlayer.hasPerm(("locket" + ".admin") + ".interact")) {
             /////////////////////////////////////////////////////////////////////
             //iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
             iPlayer.adminNotify("line 49");
@@ -66,15 +64,15 @@ public class EventListener {
             case SIGN_NOT_LOCK:
                 return;
             case SIGN_M_OWNERS:
-                iPlayer.sendChat(I18n.formatText(LangKeys.MULTI_OWNERS));
+                iPlayer.sendChat(I18n.formatText("multiOwners"));
                 event.setCancelled(true);
                 return;
             case M_BLOCKS:
-                iPlayer.sendChat(I18n.formatText(LangKeys.MULTI_BLOCKS));
+                iPlayer.sendChat(I18n.formatText("multiBlocks"));
                 event.setCancelled(true);
                 return;
             case SIGN_NO_ACCESS:
-                iPlayer.sendChat(I18n.formatText(LangKeys.NO_ACCESS));
+                iPlayer.sendChat(I18n.formatText("noAccess"));
                 event.setCancelled(true);
         }
     }
@@ -83,7 +81,7 @@ public class EventListener {
     //@Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerPlaceBlock(ChangeBlockEvent.Place event, @First Player player) {
         WrappedPlayer iPlayer = LocketAPI.getPlayer(player);
-        if (player.hasPermission(Perms.ADMIN_INTERFERE)) {
+        if (player.hasPermission(("locket" + ".admin") + ".interfere")) {
             //iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
             iPlayer.adminNotify("line 77");
             return;
@@ -99,15 +97,15 @@ public class EventListener {
         WrappedPlayer iPlayer = LocketAPI.getPlayer(player);
         for (Location<World> block : event.getLocations()) {
             Result result = locket.tryAccess(player, block);
-            if (result != Result.SIGN_NOT_LOCK && player.hasPermission(Perms.ADMIN_LOCK)) {
+            if (result != Result.SIGN_NOT_LOCK && player.hasPermission(("locket" + ".admin") + ".lock")) {
                 //iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
                 return;
                 //break;
             }
             switch (result) {
                 case SIGN_OWNER:
-                    if (!player.hasPermission(Perms.LOCK)) {
-                        locket.sendKey(player, LangKeys.NEED_PERM, Perms.LOCK);
+                    if (!player.hasPermission("locket" + ".lock")) {
+                        locket.sendKey(player, "needPerm", "locket" + ".lock");
                         event.setCancelled(true);
                         return;
                     }
@@ -115,15 +113,15 @@ public class EventListener {
                 case SIGN_NOT_LOCK:
                     break;
                 case M_BLOCKS:
-                    iPlayer.sendChat(I18n.formatText(LangKeys.MULTI_BLOCKS));
+                    iPlayer.sendChat(I18n.formatText("multiBlocks"));
                     event.setCancelled(true);
                     return;
                 case SIGN_M_OWNERS:
-                    iPlayer.sendChat(I18n.formatText(LangKeys.MULTI_OWNERS));
+                    iPlayer.sendChat(I18n.formatText("multiOwners"));
                     event.setCancelled(true);
                     return;
                 default:
-                    iPlayer.sendChat(I18n.formatText(LangKeys.NO_ACCESS));
+                    iPlayer.sendChat(I18n.formatText("noAccess"));
                     event.setCancelled(true);
                     return;
             }
@@ -210,32 +208,32 @@ public class EventListener {
         System.out.println("onPlayerLockBlock cancel");
         event.setCancelled(true);
 
-        if (player.hasPermission(Perms.ADMIN_LOCK)) {
+        if (player.hasPermission(("locket" + ".admin") + ".lock")) {
             locket.placeLock(block, face, event.getHandType());
             return;
         }
-        if (!player.hasPermission(Perms.LOCK)) {
-            locket.sendKey(player, LangKeys.NEED_PERM, Perms.LOCK);
+        if (!player.hasPermission("locket" + ".lock")) {
+            locket.sendKey(player, "needPerm", "locket" + ".lock");
             return;
         }
         if (locket.otherProtected(player, block)) {
-            locket.sendKey(player, LangKeys.OTHER_PROTECT);
+            locket.sendKey(player, "otherProtect");
             return;
         }
         switch (locket.tryAccess(player, block)) {
             case SIGN_OWNER:
             case SIGN_NOT_LOCK:
                 locket.placeLock(block, face, event.getHandType());
-                locket.sendKey(player, LangKeys.QUICK_LOCK);
+                locket.sendKey(player, "quickLock");
                 return;
             case SIGN_M_OWNERS:
-                locket.sendKey(player, LangKeys.MULTI_OWNERS);
+                locket.sendKey(player, "multiOwners");
                 return;
             case M_BLOCKS:
-                locket.sendKey(player, LangKeys.MULTI_BLOCKS);
+                locket.sendKey(player, "multiBlocks");
                 return;
             default:
-                locket.sendKey(player, LangKeys.NO_ACCESS);
+                locket.sendKey(player, "noAccess");
         }
     }
 
@@ -245,12 +243,12 @@ public class EventListener {
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
         if (block != null && block.getBlockType() == BlockTypes.WALL_SIGN) {
             WrappedPlayer iPlayer = LocketAPI.getPlayer(player);
-            if (!player.hasPermission(Perms.LOCK)) {
-                locket.sendKey(player, LangKeys.NEED_PERM, Perms.LOCK);
+            if (!player.hasPermission("locket" + ".lock")) {
+                locket.sendKey(player, "needPerm", "locket" + ".lock");
                 return;
             }
             locket.setSelected(player, block);
-            locket.sendKey(player, LangKeys.SELECT_SIGN);
+            locket.sendKey(player, "selectSign");
         }
     }
 
@@ -265,7 +263,7 @@ public class EventListener {
         if (locket.isPrivate(line_0)) {
             Sign sign = event.getTargetTile();
             Location<World> block = locket.getAttached(sign.getLocation());
-            if (player.hasPermission(Perms.ADMIN_LOCK)) {
+            if (player.hasPermission(("locket" + ".admin") + ".lock")) {
                 //iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
                 data.setElement(0, locket.getPrivateText());
                 data.setElement(1, locket.getOwnerText(line_1.isEmpty() ? player.getName() : line_1));
@@ -275,17 +273,17 @@ public class EventListener {
                 return;
             }
             if (!locket.isLockable(block)) {
-                locket.sendKey(player, LangKeys.CANT_LOCK);
+                locket.sendKey(player, "cantLock");
                 event.setCancelled(true);
                 return;
             }
-            if (!player.hasPermission(Perms.LOCK)) {
-                locket.sendKey(player, LangKeys.NEED_PERM, Perms.LOCK);
+            if (!player.hasPermission("locket" + ".lock")) {
+                locket.sendKey(player, "needPerm", "locket" + ".lock");
                 event.setCancelled(true);
                 return;
             }
             if (locket.otherProtected(player, block)) {
-                locket.sendKey(player, LangKeys.OTHER_PROTECT);
+                locket.sendKey(player, "otherProtect");
                 event.setCancelled(true);
                 return;
             }
