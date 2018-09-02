@@ -1,8 +1,8 @@
 package org.soraworld.locket;
 
 import org.soraworld.locket.command.CommandLocket;
-import org.soraworld.locket.config.LocketManager;
 import org.soraworld.locket.listener.EventListener;
+import org.soraworld.locket.manager.LocketManager;
 import org.soraworld.violet.Violet;
 import org.soraworld.violet.command.SpongeBaseSubs;
 import org.soraworld.violet.command.SpongeCommand;
@@ -10,7 +10,6 @@ import org.soraworld.violet.manager.SpongeManager;
 import org.soraworld.violet.plugin.SpongePlugin;
 import org.spongepowered.api.plugin.Dependency;
 import org.spongepowered.api.plugin.Plugin;
-import org.spongepowered.api.text.Text;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -32,10 +31,9 @@ import java.util.List;
 )
 public class Locket extends SpongePlugin {
 
-    public static final String PLUGIN_ID = "locket";
-    public static final String PLUGIN_NAME = "Locket";
-    public static final String PLUGIN_VERSION = "1.0.7";
-    public static final Text DEFAULT_PRIVATE = Text.of("[Private]");
+    static final String PLUGIN_ID = "locket";
+    static final String PLUGIN_NAME = "Locket";
+    static final String PLUGIN_VERSION = "1.0.7";
 
     @Nonnull
     protected SpongeManager registerManager(Path path) {

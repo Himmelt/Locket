@@ -25,3 +25,13 @@ typeAddFailed = "方块类型解析失败."
 typeRemoveSuccess = "方块 [&7%s&r] 已从保护列表移除."
 dTypeAddSuccess = "方块 [&7%s&r] 已标记为双联方块(大箱子)."
 dTypeRemoveSuccess = "方块 [&7%s&r] 已取消标记双联方块(大箱子)."
+
+comment {
+  protectTile = "Whether protect all tileentities."
+  protectCarrier = "Whether protect all containers."
+  chatType = "ChatType: chat,action_bar,system."
+  defaultSign = "Default Private text."
+  acceptSigns = "Acceptable Private texts."
+  lockables = "Lockable Block ID(s)."
+  doubleBlocks = "The double-chest like blocks, which can be accessed from neighbors."
+}

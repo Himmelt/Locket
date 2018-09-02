@@ -1,7 +1,6 @@
-package org.soraworld.locket.config;
+package org.soraworld.locket.manager;
 
 import org.soraworld.hocon.node.Setting;
-import org.soraworld.locket.Locket;
 import org.soraworld.locket.data.LockData;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.serializers.ChatTypeSerializer;
@@ -35,19 +34,19 @@ import java.util.*;
 
 public class LocketManager extends SpongeManager {
 
-    @Setting(comment = "Whether protect all tileentities")
+    @Setting(comment = "comment.protectTile")
     private boolean protectTile = false;
-    @Setting(comment = "Whether protect all containers")
+    @Setting(comment = "comment.protectCarrier")
     private boolean protectCarrier = false;
-    @Setting(comment = "ChatType: chat,action-bar")
+    @Setting(comment = "chatType")
     private ChatType chatType = ChatTypes.CHAT;
-    @Setting(comment = "Default Private text")
-    private Text defaultSign = Locket.DEFAULT_PRIVATE;
-    @Setting(comment = "Acceptable Private texts")
+    @Setting(comment = "comment.defaultSign")
+    private Text defaultSign = Text.of("[Private]");
+    @Setting(comment = "comment.acceptSigns")
     private Set<String> acceptSigns = new HashSet<>();
-    @Setting(comment = "Lockable Block ID(s)")
+    @Setting(comment = "comment.lockables")
     private Set<String> lockables = new HashSet<>();
-    @Setting(comment = "The double-chest like blocks, which can be accessed from neighbors")
+    @Setting(comment = "comment.doubleBlocks")
     private Set<String> doubleBlocks = new HashSet<>();
 
     private Text privateSign;
@@ -55,8 +54,17 @@ public class LocketManager extends SpongeManager {
 
     private final HashMap<UUID, Location<World>> selections = new HashMap<>();
 
+    /**
+     * 实例化管理器.
+     *
+     * @param plugin 插件实例
+     * @param path   配置保存路径
+     */
     public LocketManager(SpongePlugin plugin, Path path) {
         super(plugin, path);
+    }
+
+    public void beforeLoad() {
         options.registerType(new ChatTypeSerializer());
     }
 
@@ -66,12 +74,12 @@ public class LocketManager extends SpongeManager {
     }
 
     public void afterLoad() {
-        // TODO fix
-        //privateSign = I18n.formatText(LangKeys.PRIVATE_SIGN);
+        String text = trans("privateSign");
+        if (text.equals("privateSign")) privateSign = defaultSign;
+        else privateSign = Text.of(text);
         acceptSigns.add(defaultSign.toPlain());
         acceptSigns.add(privateSign.toPlain());
 
-        // TODO Init ???
         lockables.add(BlockTypes.CHEST.getId());
         lockables.add(BlockTypes.TRAPPED_CHEST.getId());
         doubleBlocks.add(BlockTypes.CHEST.getId());
@@ -300,7 +308,7 @@ public class LocketManager extends SpongeManager {
                 data.append(parseSign((Sign) tile));
             }
         }
-        return data.getAccess(player.getName());
+        return data.accessBy(player.getName());
     }
 
     private LockData parseSign(Sign tile) {

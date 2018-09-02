@@ -1,7 +1,7 @@
 package org.soraworld.locket.listener;
 
-import org.soraworld.locket.config.LocketManager;
 import org.soraworld.locket.data.Result;
+import org.soraworld.locket.manager.LocketManager;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;

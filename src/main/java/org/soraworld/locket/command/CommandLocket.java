@@ -1,7 +1,7 @@
 package org.soraworld.locket.command;
 
-import org.soraworld.locket.config.LocketManager;
 import org.soraworld.locket.data.Result;
+import org.soraworld.locket.manager.LocketManager;
 import org.soraworld.violet.command.Paths;
 import org.soraworld.violet.command.SpongeCommand;
 import org.soraworld.violet.command.Sub;

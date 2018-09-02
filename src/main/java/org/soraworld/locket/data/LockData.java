@@ -18,12 +18,11 @@ public class LockData {
         users.add(user2);
     }
 
-    public Result getAccess(String username) {
+    public Result accessBy(String username) {
         if (owners.size() <= 0) return Result.SIGN_NOT_LOCK;
         if (owners.size() >= 2) return Result.SIGN_M_OWNERS;
         if (owners.contains(username)) return Result.SIGN_OWNER;
         if (users.contains(username)) return Result.SIGN_USER;
         return Result.SIGN_NO_ACCESS;
     }
-
 }
