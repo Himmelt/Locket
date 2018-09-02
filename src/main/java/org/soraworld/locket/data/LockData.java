@@ -1,15 +1,13 @@
 package org.soraworld.locket.data;
 
-import org.soraworld.locket.constant.Result;
-
 import java.util.HashSet;
 
-public class LockSignData {
+public class LockData {
 
     private final HashSet<String> owners = new HashSet<>();
     private final HashSet<String> users = new HashSet<>();
 
-    public void append(LockSignData data) {
+    public void append(LockData data) {
         this.owners.addAll(data.owners);
         this.users.addAll(data.users);
     }

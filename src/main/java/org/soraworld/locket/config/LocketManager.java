@@ -1,9 +1,10 @@
 package org.soraworld.locket.config;
 
 import org.soraworld.hocon.node.Setting;
-import org.soraworld.locket.api.LocketAPI;
-import org.soraworld.locket.constant.Constants;
-import org.soraworld.locket.constant.Result;
+import org.soraworld.locket.Locket;
+import org.soraworld.locket.data.LockData;
+import org.soraworld.locket.data.Result;
+import org.soraworld.locket.serializers.ChatTypeSerializer;
 import org.soraworld.violet.manager.SpongeManager;
 import org.soraworld.violet.plugin.SpongePlugin;
 import org.soraworld.violet.util.ChatColor;
@@ -18,6 +19,8 @@ import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
 import org.spongepowered.api.data.type.HandType;
 import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.entity.living.player.gamemode.GameModes;
+import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.chat.ChatType;
 import org.spongepowered.api.text.chat.ChatTypes;
@@ -32,34 +35,29 @@ import java.util.*;
 
 public class LocketManager extends SpongeManager {
 
-    @Setting(comment = "comment.adminNotify")
-    private boolean adminNotify = false;
     @Setting(comment = "Whether protect all tileentities")
-    private boolean protectTileEntity = false;
+    private boolean protectTile = false;
     @Setting(comment = "Whether protect all containers")
     private boolean protectCarrier = false;
     @Setting(comment = "ChatType: chat,action-bar")
     private ChatType chatType = ChatTypes.CHAT;
     @Setting(comment = "Default Private text")
-    private Text defaultSign = Constants.DEFAULT_PRIVATE;
+    private Text defaultSign = Locket.DEFAULT_PRIVATE;
     @Setting(comment = "Acceptable Private texts")
-    private List<String> acceptSigns = new ArrayList<>();
+    private Set<String> acceptSigns = new HashSet<>();
     @Setting(comment = "Lockable Block ID(s)")
-    private List<String> lockables = new ArrayList<>();
+    private Set<String> lockables = new HashSet<>();
     @Setting(comment = "The double-chest like blocks, which can be accessed from neighbors")
-    private List<String> doubleBlocks = new ArrayList<>();
+    private Set<String> doubleBlocks = new HashSet<>();
 
     private Text privateSign;
     private static final Direction[] FACES = new Direction[]{Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
-
-    // TODO ChatType/Text Serializer
 
     private final HashMap<UUID, Location<World>> selections = new HashMap<>();
 
     public LocketManager(SpongePlugin plugin, Path path) {
         super(plugin, path);
-        // TODO
-        //options.registerType(ChatTypeSerializer);
+        options.registerType(new ChatTypeSerializer());
     }
 
     @Nonnull
@@ -83,12 +81,10 @@ public class LocketManager extends SpongeManager {
     public boolean isLockable(Location<World> block) {
         BlockType type = block.getBlockType();
         if (type == BlockTypes.WALL_SIGN || type == BlockTypes.STANDING_SIGN) return false;
+        if (lockables.contains(type.getId())) return true;
+        if (doubleBlocks.contains(type.getId())) return true;
         TileEntity tile = block.getTileEntity().orElse(null);
-        return protectTileEntity && tile != null || protectCarrier && tile != null && tile instanceof TileEntityCarrier || lockables.contains(type.getId());
-    }
-
-    public boolean isAdminNotify() {
-        return adminNotify;
+        return protectTile && tile != null || protectCarrier && tile instanceof TileEntityCarrier;
     }
 
     public void addType(String id) {
@@ -97,6 +93,10 @@ public class LocketManager extends SpongeManager {
 
     public void addType(BlockType type) {
         lockables.add(type.getId());
+    }
+
+    public void addDType(String id) {
+        doubleBlocks.add(id);
     }
 
     public void addDType(BlockType type) {
@@ -109,6 +109,10 @@ public class LocketManager extends SpongeManager {
 
     public void removeType(BlockType type) {
         lockables.remove(type.getId());
+    }
+
+    public void removeDType(String id) {
+        doubleBlocks.remove(id);
     }
 
     public void removeDType(BlockType type) {
@@ -151,17 +155,8 @@ public class LocketManager extends SpongeManager {
 
     }
 
-    public Result tryAccess(Player player, @Nonnull Location<World> block) {
-        if (block.equals(target) && last + delay > System.currentTimeMillis()) {
-            return latest;
-        }
-        target = block;
-        last = System.currentTimeMillis();
-
-        if (otherProtected(block)) {
-            latest = Result.SIGN_NO_ACCESS;
-            return latest;
-        }
+    public Result tryAccess(Player player, Location<World> block) {
+        if (otherProtected(player, block)) return Result.OTHER_PROTECT;
         BlockType type = block.getBlockType();
         boolean isDBlock = isDBlock(type);
         int count = 0;
@@ -176,34 +171,28 @@ public class LocketManager extends SpongeManager {
             Location<World> relative = block.getRelative(face);
             if (isDBlock && relative.getBlockType() == type) {
                 link = relative;
-                if (++count >= 2) {
-                    latest = Result.M_BLOCKS;
-                    return latest;
-                }
+                if (++count >= 2) return Result.M_BLOCKS;
             } else if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
                 signs.add(relative);
             }
         }
         // 检查相邻双联方块
         if (isDBlock && link != null) {
-            if (otherProtected(link)) {
-                latest = Result.SIGN_NO_ACCESS;
-                return latest;
-            }
+            if (otherProtected(player, link)) return Result.OTHER_PROTECT;
             count = 0;
-            for (Direction face : Constants.FACES) {
+            for (Direction face : FACES) {
                 Location<World> relative = link.getRelative(face);
-                if (relative.getBlockType() == type && ++count >= 2) {
-                    latest = Result.M_BLOCKS;
-                    return latest;
-                }
+                if (relative.getBlockType() == type && ++count >= 2) return Result.M_BLOCKS;
                 if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
                     signs.add(relative);
                 }
             }
         }
-        latest = analyzeSign(signs);
-        return latest;
+        return analyzeSign(player, signs);
+    }
+
+    public boolean otherProtected(Player player, Location<World> block) {
+        return false;
     }
 
     public void lockSign(Player player, int line, String name) {
@@ -212,10 +201,10 @@ public class LocketManager extends SpongeManager {
             TileEntity tile = selected.getTileEntity().orElse(null);
             if (tile instanceof Sign) {
                 SignData data = ((Sign) tile).getSignData();
-                data.setElement(0, LocketAPI.CONFIG.getPrivateText());
-                data.setElement(1, LocketAPI.CONFIG.getOwnerText(plainHead));
+                data.setElement(0, getPrivateText());
+                data.setElement(1, getOwnerText(plainHead));
                 if ((line == 3 || line == 4) && name != null && !name.isEmpty()) {
-                    data.setElement(line - 1, LocketAPI.CONFIG.getUserText(name));
+                    data.setElement(line - 1, getUserText(name));
                 }
                 tile.offer(data);
             }
@@ -225,14 +214,14 @@ public class LocketManager extends SpongeManager {
 
     public void unLockSign(Location<World> location, int line) {
         TileEntity tile = location.getTileEntity().orElse(null);
-        if (tile != null && tile instanceof Sign) {
+        if (tile instanceof Sign) {
             SignData data = ((Sign) tile).getSignData();
             data.setElement(line - 1, Text.EMPTY);
             tile.offer(data);
         }
     }
 
-    public void placeLock(@Nonnull Location<World> loc, Direction face, HandType hand) {
+    public void placeLock(Player player, Location<World> loc, Direction face, HandType hand) {
         Location<World> side = loc.getRelative(face);
         side.setBlockType(BlockTypes.WALL_SIGN, BlockChangeFlags.NONE);
         BlockState state = BlockTypes.WALL_SIGN.getDefaultState();
@@ -240,11 +229,11 @@ public class LocketManager extends SpongeManager {
         TileEntity tile = side.getTileEntity().orElse(null);
         if (tile instanceof Sign) {
             SignData data = ((Sign) tile).getSignData();
-            data.setElement(0, LocketAPI.CONFIG.getPrivateText());
-            data.setElement(1, LocketAPI.CONFIG.getOwnerText(username));
+            data.setElement(0, getPrivateText());
+            data.setElement(1, getOwnerText(player.getName()));
             tile.offer(data);
         }
-        removeOneSign(hand);
+        removeOneItem(player, hand);
         player.playSound(SoundTypes.BLOCK_WOOD_PLACE, loc.getPosition(), 1.0D);
     }
 
@@ -265,7 +254,7 @@ public class LocketManager extends SpongeManager {
             if (duplex && side.getBlockType() == type) {
                 link = side;
                 if (++count >= 2) {
-                    notifyAdmins("Found multi-blocks at " + loc);
+                    consoleKey("MultiBlockNotify", loc.toString());
                     return null;
                 }
             } else if (side.getBlockType() == BlockTypes.WALL_SIGN && side.get(Keys.DIRECTION).orElse(null) == face) {
@@ -277,7 +266,7 @@ public class LocketManager extends SpongeManager {
             for (Direction face : FACES) {
                 side = link.getRelative(face);
                 if (side.getBlockType() == type && ++count >= 2) {
-                    notifyAdmins("Found multi-blocks at " + loc);
+                    consoleKey("MultiBlockNotify", loc.toString());
                     return null;
                 }
                 if (side.getBlockType() == BlockTypes.WALL_SIGN && side.get(Keys.DIRECTION).orElse(null) == face) {
@@ -288,7 +277,7 @@ public class LocketManager extends SpongeManager {
         return signs;
     }
 
-    public boolean isLocked(@Nonnull Location<World> loc) {
+    public boolean isLocked(Location<World> loc) {
         List<Location<World>> signs = getSideSigns(loc);
         if (signs == null) return true;
         for (Location<World> sign : signs) {
@@ -298,12 +287,38 @@ public class LocketManager extends SpongeManager {
         return false;
     }
 
-    public boolean isPrivate(@Nonnull Sign sign) {
+    public boolean isPrivate(Sign sign) {
         return sign.lines().size() >= 1 && isPrivate(sign.lines().get(0).toPlain());
     }
 
-    public Location<World> getAttached(Location<World> selection) {
+    private Result analyzeSign(Player player, HashSet<Location<World>> signs) {
+        if (signs.isEmpty()) return Result.SIGN_NOT_LOCK;
+        LockData data = new LockData();
+        for (Location<World> block : signs) {
+            TileEntity tile = block.getTileEntity().orElse(null);
+            if (tile instanceof Sign) {
+                data.append(parseSign((Sign) tile));
+            }
+        }
+        return data.getAccess(player.getName());
+    }
+
+    private LockData parseSign(Sign tile) {
         return null;
     }
 
+    private void removeOneItem(Player player, HandType hand) {
+        if (GameModes.CREATIVE.equals(player.gameMode().get())) return;
+        ItemStack stack = player.getItemInHand(hand).orElse(null);
+        if (stack != null && stack.getQuantity() > 1) {
+            stack.setQuantity(stack.getQuantity() - 1);
+            player.setItemInHand(hand, stack);
+        } else {
+            player.setItemInHand(hand, null);
+        }
+    }
+
+    public static Location<World> getAttached(Location<World> location) {
+        return location.getRelative(location.getBlock().get(Keys.DIRECTION).orElse(Direction.NONE).getOpposite());
+    }
 }

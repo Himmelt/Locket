@@ -1,17 +1,3 @@
-buildscript {
-    repositories {
-        jcenter()
-        maven {
-            name = 'sponge'
-            url = 'https://repo.spongepowered.org/maven'
-        }
-        maven {
-            name = 'forge'
-            url = 'http://files.minecraftforge.net/maven'
-        }
-    }
-}
-
 plugins {
     id 'org.spongepowered.plugin' version '0.8.1'
 }
@@ -26,7 +12,11 @@ tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
 }
 
+repositories {
+    jcenter()
+}
+
 dependencies {
     compile 'org.spongepowered:spongeapi:7.1.0-SNAPSHOT'
-    compile files('lib/SpongeViolet-2.3.1-hocon.jar')
+    compile 'org.soraworld:violet-sponge:2.3.1'
 }
