@@ -15,63 +15,60 @@ public final class CommandLocket {
     public static void lock(SpongeCommand self, CommandSource sender, Paths args) {
         LocketManager locket = (LocketManager) self.manager;
         Player player = (Player) sender;
+        Location<World> selected = locket.getSelected(player);
 
-        Location<World> selection = locket.getSelected(player);
-        if (selection == null) {
-            locket.sendKey(player, "LangKeys.SELECT_FIRST");
-            return;
-        }
-        int line = Integer.valueOf(args.get(0));
-        String name = args.get(1);
-
-        if (player.hasPermission(locket.defAdminPerm())) {
-            locket.lockSign(player, line, name);
-            return;
-        }
-        if (!locket.isLockable(LocketManager.getAttached(selection))) {
-            locket.sendKey(player, "cantLock");
-            return;
-        }
-        if (!player.hasPermission("locket.lock")) {
-            locket.sendKey(player, "needPerm", "locket.lock");
-            return;
-        }
-        Result result = locket.tryAccess(player, selection);
-        if (result == Result.SIGN_OWNER || result == Result.SIGN_NOT_LOCK) {
-            locket.lockSign(player, line, name);
-            locket.sendKey(player, "manuLock");
-            return;
-        }
-        locket.sendKey(player, "cantLock");
+        if (selected != null) {
+            if (args.empty()) {
+                if (player.hasPermission(locket.defAdminPerm())) {
+                    locket.lockSign(player, selected, 0, null);
+                } else if (locket.tryAccess(player, selected) == Result.SIGN_NOT_LOCK) {
+                    if (locket.isLockable(LocketManager.getAttached(selected))) {
+                        locket.lockSign(player, selected, 0, null);
+                    } else locket.sendKey(player, "cantLock");
+                }
+            } else if (args.size() >= 2) {
+                try {
+                    int line = Integer.valueOf(args.get(0));
+                    String name = args.get(1);
+                    if (player.hasPermission(locket.defAdminPerm())) {
+                        locket.lockSign(player, selected, line, name);
+                    } else if (locket.isLockable(LocketManager.getAttached(selected))) {
+                        Result result = locket.tryAccess(player, selected);
+                        if (result == Result.SIGN_OWNER || result == Result.SIGN_NOT_LOCK) {
+                            locket.lockSign(player, selected, line, name);
+                            locket.sendKey(player, "manuLock");
+                        } else locket.sendKey(player, "noOwnerAccess");
+                    } else locket.sendKey(player, "unLockable");
+                } catch (Throwable e) {
+                    locket.sendKey(player, "invalidInt");
+                }
+            }
+        } else locket.sendKey(player, "selectFirst");
     }
 
     @Sub(perm = "locket.lock", onlyPlayer = true)
     public static void remove(SpongeCommand self, CommandSource sender, Paths args) {
         LocketManager locket = (LocketManager) self.manager;
         Player player = (Player) sender;
-        Location<World> selection = locket.getSelected(player);
+        Location<World> selected = locket.getSelected(player);
 
-        if (selection != null) {
-            try {
-                int line = Integer.valueOf(args.first());
-                if (line != 3 && line != 4) {
-                    locket.sendKey(sender, "cantRemoveLine");
-                } else if (player.hasPermission(locket.defAdminPerm())) {
-                    locket.removeLine(player, line);
-                    //iPlayer.unLockSign(selection, line);
-                } else if (!player.hasPermission("locket.lock")) {
-                    locket.sendKey(sender, "needPerm", "locket.lock");
-                    return;
+        if (selected != null) {
+            if (args.empty()) {
+                if (player.hasPermission(locket.defAdminPerm()) || locket.tryAccess(player, selected) == Result.SIGN_OWNER) {
+                    locket.unLockSign(selected, 0);
                 }
-                Result result = locket.tryAccess(player, selection);
-                if (result == Result.SIGN_OWNER) {
-                    locket.removeLine(player, line);
-                    locket.sendKey(player, "manuRemove");
-                    return;
+            } else if (args.size() >= 1) {
+                try {
+                    int line = Integer.valueOf(args.first());
+                    if (player.hasPermission(locket.defAdminPerm())) {
+                        locket.unLockSign(selected, line);
+                    } else if ((line == 2 || line == 3) && locket.tryAccess(player, selected) == Result.SIGN_OWNER) {
+                        locket.unLockSign(selected, line);
+                        locket.sendKey(player, "manuRemove");
+                    } else locket.sendKey(sender, "cantRemove");
+                } catch (Throwable ignored) {
+                    locket.sendKey(sender, "invalidInt");
                 }
-                locket.sendKey(player, "cantRemove");
-            } catch (Throwable ignored) {
-                locket.sendKey(sender, "invalidInt");
             }
         } else locket.sendKey(player, "selectFirst");
     }

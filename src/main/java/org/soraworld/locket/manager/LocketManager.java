@@ -16,6 +16,7 @@ import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
 import org.spongepowered.api.data.type.HandType;
+import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.gamemode.GameModes;
@@ -30,7 +31,10 @@ import org.spongepowered.api.world.World;
 
 import javax.annotation.Nonnull;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 public class LocketManager extends SpongeManager {
 
@@ -75,7 +79,7 @@ public class LocketManager extends SpongeManager {
 
     public void afterLoad() {
         String text = trans("privateSign");
-        if (text.equals("privateSign")) privateSign = defaultSign;
+        if (text.equals("privateSign") || text.isEmpty()) privateSign = defaultSign;
         else privateSign = Text.of(text);
         acceptSigns.add(defaultSign.toPlain());
         acceptSigns.add(privateSign.toPlain());
@@ -159,14 +163,10 @@ public class LocketManager extends SpongeManager {
         selections.put(player.getUniqueId(), location);
     }
 
-    public void removeLine(Player player, int line) {
-
-    }
-
     public Result tryAccess(Player player, Location<World> block) {
         if (otherProtected(player, block)) return Result.OTHER_PROTECT;
         BlockType type = block.getBlockType();
-        boolean isDBlock = isDBlock(type);
+        boolean isDBlock = doubleBlocks.contains(type.getId());
         int count = 0;
         Location<World> link = null;
         HashSet<Location<World>> signs = new HashSet<>();
@@ -203,28 +203,32 @@ public class LocketManager extends SpongeManager {
         return false;
     }
 
-    public void lockSign(Player player, int line, String name) {
-        Location<World> selected = selections.get(player.getUniqueId());
-        if (selected != null) {
-            TileEntity tile = selected.getTileEntity().orElse(null);
-            if (tile instanceof Sign) {
-                SignData data = ((Sign) tile).getSignData();
-                data.setElement(0, getPrivateText());
-                data.setElement(1, getOwnerText(plainHead));
-                if ((line == 3 || line == 4) && name != null && !name.isEmpty()) {
-                    data.setElement(line - 1, getUserText(name));
-                }
-                tile.offer(data);
+    /**
+     * Lock sign.
+     *
+     * @param player the player
+     * @param line   0,1,2,3
+     * @param name   user
+     */
+    public void lockSign(Player player, Location<World> selected, int line, String name) {
+        TileEntity tile = selected.getTileEntity().orElse(null);
+        if (tile instanceof Sign) {
+            // ??? ((Sign) tile).lines().set()
+            SignData data = ((Sign) tile).getSignData();
+            data.setElement(0, privateSign);
+            data.setElement(1, getOwnerText(player.getName()));
+            if ((line == 2 || line == 3) && name != null && !name.isEmpty()) {
+                data.setElement(line, getUserText(name));
             }
-        }
-        // TODO check ???
+            tile.offer(data);
+        } else sendKey(player, "notSignTile");
     }
 
     public void unLockSign(Location<World> location, int line) {
         TileEntity tile = location.getTileEntity().orElse(null);
         if (tile instanceof Sign) {
             SignData data = ((Sign) tile).getSignData();
-            data.setElement(line - 1, Text.EMPTY);
+            data.setElement(line, Text.EMPTY);
             tile.offer(data);
         }
     }
@@ -249,54 +253,8 @@ public class LocketManager extends SpongeManager {
         selections.remove(player.getUniqueId());
     }
 
-    public List<Location<World>> getSideSigns(Location<World> loc) {
-        byte count = 0;
-        Location<World> link = null, side;
-        BlockType type = loc.getBlockType();
-        boolean duplex = isDBlock(type);
-        ArrayList<Location<World>> signs = new ArrayList<>();
-
-        if (type == BlockTypes.WALL_SIGN || type == BlockTypes.STANDING_SIGN) signs.add(loc);
-        for (Direction face : FACES) {
-            side = loc.getRelative(face);
-            if (duplex && side.getBlockType() == type) {
-                link = side;
-                if (++count >= 2) {
-                    consoleKey("MultiBlockNotify", loc.toString());
-                    return null;
-                }
-            } else if (side.getBlockType() == BlockTypes.WALL_SIGN && side.get(Keys.DIRECTION).orElse(null) == face) {
-                signs.add(side);
-            }
-        }
-        if (duplex && link != null) {
-            count = 0;
-            for (Direction face : FACES) {
-                side = link.getRelative(face);
-                if (side.getBlockType() == type && ++count >= 2) {
-                    consoleKey("MultiBlockNotify", loc.toString());
-                    return null;
-                }
-                if (side.getBlockType() == BlockTypes.WALL_SIGN && side.get(Keys.DIRECTION).orElse(null) == face) {
-                    signs.add(side);
-                }
-            }
-        }
-        return signs;
-    }
-
     public boolean isLocked(Location<World> loc) {
-        List<Location<World>> signs = getSideSigns(loc);
-        if (signs == null) return true;
-        for (Location<World> sign : signs) {
-            TileEntity tile = sign.getTileEntity().orElse(null);
-            if (tile instanceof Sign && isPrivate((Sign) tile)) return true;
-        }
-        return false;
-    }
-
-    public boolean isPrivate(Sign sign) {
-        return sign.lines().size() >= 1 && isPrivate(sign.lines().get(0).toPlain());
+        return tryAccess(null, loc) != Result.SIGN_NOT_LOCK;
     }
 
     private Result analyzeSign(Player player, HashSet<Location<World>> signs) {
@@ -305,20 +263,25 @@ public class LocketManager extends SpongeManager {
         for (Location<World> block : signs) {
             TileEntity tile = block.getTileEntity().orElse(null);
             if (tile instanceof Sign) {
-                data.append(parseSign((Sign) tile));
+                ListValue<Text> lines = ((Sign) tile).lines();
+                String line_0 = lines.get(0).toPlain();
+                String line_1 = lines.get(1).toPlain();
+                String line_2 = lines.get(2).toPlain();
+                String line_3 = lines.get(3).toPlain();
+                // TODO doc mark nonnull return
+                System.out.println(line_0 + line_1 + line_2 + line_3);
+                if (isPrivate(line_0)) {
+                    data.puts(line_1, line_2, line_3);
+                }
             }
         }
-        return data.accessBy(player.getName());
+        return data.accessBy(player);
     }
 
-    private LockData parseSign(Sign tile) {
-        return null;
-    }
-
-    private void removeOneItem(Player player, HandType hand) {
+    private static void removeOneItem(Player player, HandType hand) {
         if (GameModes.CREATIVE.equals(player.gameMode().get())) return;
         ItemStack stack = player.getItemInHand(hand).orElse(null);
-        if (stack != null && stack.getQuantity() > 1) {
+        if (stack != null && stack.getQuantity() >= 1) {
             stack.setQuantity(stack.getQuantity() - 1);
             player.setItemInHand(hand, stack);
         } else {

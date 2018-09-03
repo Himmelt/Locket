@@ -1,6 +1,5 @@
 package org.soraworld.locket.listener;
 
-import org.soraworld.locket.data.Result;
 import org.soraworld.locket.manager.LocketManager;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
@@ -21,14 +20,15 @@ import org.spongepowered.api.event.item.inventory.ChangeInventoryEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
 import org.spongepowered.api.event.world.ExplosionEvent;
 import org.spongepowered.api.item.ItemTypes;
+import org.spongepowered.api.item.inventory.BlockCarrier;
+import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.item.inventory.type.TileEntityInventory;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.util.Tristate;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
-
-import java.util.List;
 
 public class EventListener {
 
@@ -52,12 +52,8 @@ public class EventListener {
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerInteractBlock(InteractBlockEvent event, @First Player player) {
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
-        if (block == null) return;
-        Result result = locket.tryAccess(player, block);
-        if (result != Result.SIGN_NOT_LOCK && player.hasPermission(locket.defAdminPerm())) {
-            return;
-        }
-        switch (result) {
+        if (block == null || player.hasPermission(locket.defAdminPerm())) return;
+        switch (locket.tryAccess(player, block)) {
             case SIGN_USER:
             case SIGN_OWNER:
             case SIGN_NOT_LOCK:
@@ -84,12 +80,14 @@ public class EventListener {
      */
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerPlaceBlock(ChangeBlockEvent.Place event, @First Player player) {
-        if (player.hasPermission(locket.defAdminPerm())) {
-            return;
-        }
-        for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
-            Location<World> block = transaction.getOriginal().getLocation().orElse(null);
-            // TODO
+        if (!player.hasPermission(locket.defAdminPerm())) {
+            for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
+                Location<World> block = transaction.getOriginal().getLocation().orElse(null);
+                if (!locket.tryAccess(player, block).canUse()) {
+                    event.setCancelled(true);
+                    return;
+                }
+            }
         }
     }
 
@@ -101,35 +99,12 @@ public class EventListener {
      */
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerBreakBlock(ChangeBlockEvent.Pre event, @ContextValue("PLAYER_BREAK") @First Player player) {
-        for (Location<World> block : event.getLocations()) {
-            Result result = locket.tryAccess(player, block);
-            if (result != Result.SIGN_NOT_LOCK && player.hasPermission(("locket" + ".admin") + ".lock")) {
-                //iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
-                return;
-                //break;
-            }
-            switch (result) {
-                case SIGN_OWNER:
-                    if (!player.hasPermission("locket.lock")) {
-                        locket.sendKey(player, "needPerm", "locket.lock");
-                        event.setCancelled(true);
-                        return;
-                    }
-                    break;
-                case SIGN_NOT_LOCK:
-                    break;
-                case M_BLOCKS:
-                    locket.sendKey(player, "multiBlocks");
+        if (!player.hasPermission(locket.defAdminPerm())) {
+            for (Location<World> location : event.getLocations()) {
+                if (!locket.tryAccess(player, location).canUse()) {
                     event.setCancelled(true);
                     return;
-                case SIGN_M_OWNERS:
-                    locket.sendKey(player, "multiOwners");
-                    event.setCancelled(true);
-                    return;
-                default:
-                    locket.sendKey(player, "noAccess");
-                    event.setCancelled(true);
-                    return;
+                }
             }
         }
     }
@@ -142,9 +117,9 @@ public class EventListener {
      */
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPistonExtend(ChangeBlockEvent.Pre event, @ContextValue("PISTON_EXTEND") @First Object cause) {
-        for (Location<World> block : event.getLocations()) {
-            if (locket.isLocked(block)) {
-                System.out.println("onPistonExtend Cancel:" + block);
+        for (Location<World> location : event.getLocations()) {
+            if (!locket.tryAccess(null, location).canUse()) {
+                System.out.println("onPistonExtend Cancel:" + location);
                 event.setCancelled(true);
                 return;
             }
@@ -159,8 +134,8 @@ public class EventListener {
      */
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPistonRetract(ChangeBlockEvent.Pre event, @ContextValue("PISTON_RETRACT") @First Object cause) {
-        for (Location<World> block : event.getLocations()) {
-            if (locket.isLocked(block)) {
+        for (Location<World> location : event.getLocations()) {
+            if (!locket.tryAccess(null, location).canUse()) {
                 System.out.println("onPistonRetract Cancel");
                 event.setCancelled(true);
                 return;
@@ -175,10 +150,9 @@ public class EventListener {
      */
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onStructureGrow(ChangeBlockEvent.Grow event) {
-        List<Transaction<BlockSnapshot>> transactions = event.getTransactions();
-        for (Transaction<BlockSnapshot> transaction : transactions) {
-            Location<World> location = transaction.getOriginal().getLocation().orElse(null);
-            if (location != null && locket.isLocked(location)) {
+        for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
+            Location<World> block = transaction.getOriginal().getLocation().orElse(null);
+            if (!locket.tryAccess(null, block).canUse()) {
                 System.out.println("onStructureGrow Cancel");
                 event.setCancelled(true);
                 return;
@@ -193,10 +167,9 @@ public class EventListener {
      */
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onModify(ChangeBlockEvent.Modify event) {
-        List<Transaction<BlockSnapshot>> transactions = event.getTransactions();
-        for (Transaction<BlockSnapshot> transaction : transactions) {
-            Location<World> location = transaction.getOriginal().getLocation().orElse(null);
-            if (location != null && locket.isLocked(location)) {
+        for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
+            Location<World> block = transaction.getOriginal().getLocation().orElse(null);
+            if (!locket.tryAccess(null, block).canUse()) {
                 System.out.println("onModify Cancel");
                 event.setCancelled(true);
                 return;
@@ -221,8 +194,27 @@ public class EventListener {
      */
     @Listener(order = Order.FIRST, beforeModifications = true)
     @IsCancelled(value = Tristate.UNDEFINED)
-    public void onInventoryTransfer(ChangeInventoryEvent.Transfer event) {
+    public void onInventoryTransfer(ChangeInventoryEvent.Transfer.Pre event) {
         System.out.println("onInventoryTransfer");
+        Inventory source = event.getSourceInventory();
+        if (source instanceof TileEntityInventory) {
+            Object carrier = ((TileEntityInventory) source).getCarrier().orElse(null);
+            if (carrier instanceof BlockCarrier) {
+                if (locket.isLocked(((BlockCarrier) carrier).getLocation())) {
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+        }
+        Inventory target = event.getTargetInventory();
+        if (target instanceof TileEntityInventory) {
+            Object carrier = ((TileEntityInventory) target).getCarrier().orElse(null);
+            if (carrier instanceof BlockCarrier) {
+                if (locket.isLocked(((BlockCarrier) carrier).getLocation())) {
+                    event.setCancelled(true);
+                }
+            }
+        }
     }
 
     /**
@@ -234,7 +226,7 @@ public class EventListener {
     @Listener(order = Order.LAST)
     public void onPlayerLockBlock(InteractBlockEvent.Secondary event, @First Player player) {
         ItemStack stack = player.getItemInHand(event.getHandType()).orElse(null);
-        if (stack == null || ItemTypes.SIGN != stack.getType()) return;
+        if (stack == null || stack.getType() != ItemTypes.SIGN) return;
         if (player.get(Keys.IS_SNEAKING).orElse(false)) return;
         Direction face = event.getTargetSide();
         if (face == Direction.UP || face == Direction.DOWN || face == Direction.NONE) return;
@@ -245,7 +237,7 @@ public class EventListener {
         System.out.println("onPlayerLockBlock cancel");
         event.setCancelled(true);
 
-        if (player.hasPermission(("locket" + ".admin") + ".lock")) {
+        if (player.hasPermission(locket.defAdminPerm())) {
             locket.placeLock(player, block, face, event.getHandType());
             return;
         }
@@ -284,10 +276,6 @@ public class EventListener {
     public void onPlayerSelectSign(InteractBlockEvent.Secondary event, @First Player player) {
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
         if (block != null && block.getBlockType() == BlockTypes.WALL_SIGN) {
-            if (!player.hasPermission("locket.lock")) {
-                locket.sendKey(player, "needPerm", "locket.lock");
-                return;
-            }
             locket.setSelected(player, block);
             locket.sendKey(player, "selectSign");
         }
@@ -309,8 +297,7 @@ public class EventListener {
         if (locket.isPrivate(line_0)) {
             Sign sign = event.getTargetTile();
             Location<World> block = LocketManager.getAttached(sign.getLocation());
-            if (player.hasPermission(("locket" + ".admin") + ".lock")) {
-                //iPlayer.adminNotify(I18n.formatText(LangKeys.USING_ADMIN_PERM));
+            if (player.hasPermission(locket.defAdminPerm())) {
                 data.setElement(0, locket.getPrivateText());
                 data.setElement(1, locket.getOwnerText(line_1.isEmpty() ? player.getName() : line_1));
                 data.setElement(2, locket.getUserText(line_2));

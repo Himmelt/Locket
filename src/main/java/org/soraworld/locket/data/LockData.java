@@ -1,5 +1,7 @@
 package org.soraworld.locket.data;
 
+import org.spongepowered.api.entity.living.player.Player;
+
 import java.util.HashSet;
 
 public class LockData {
@@ -18,11 +20,13 @@ public class LockData {
         users.add(user2);
     }
 
-    public Result accessBy(String username) {
+    public Result accessBy(Player player) {
         if (owners.size() <= 0) return Result.SIGN_NOT_LOCK;
         if (owners.size() >= 2) return Result.SIGN_M_OWNERS;
-        if (owners.contains(username)) return Result.SIGN_OWNER;
-        if (users.contains(username)) return Result.SIGN_USER;
+        if (player != null) {
+            if (owners.contains(player.getName())) return Result.SIGN_OWNER;
+            if (users.contains(player.getName())) return Result.SIGN_USER;
+        }
         return Result.SIGN_NO_ACCESS;
     }
 }
