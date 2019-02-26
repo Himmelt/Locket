@@ -1,22 +1,24 @@
 package org.soraworld.locket.command;
 
+import org.soraworld.locket.Locket;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.manager.LocketManager;
-import org.soraworld.violet.command.Paths;
-import org.soraworld.violet.command.SpongeCommand;
 import org.soraworld.violet.command.Sub;
-import org.spongepowered.api.command.CommandSource;
+import org.soraworld.violet.command.SubExecutor;
+import org.soraworld.violet.inject.Command;
+import org.soraworld.violet.inject.Inject;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-public final class CommandLocket {
-    @Sub(perm = "locket.lock", onlyPlayer = true)
-    public static void lock(SpongeCommand self, CommandSource sender, Paths args) {
-        LocketManager locket = (LocketManager) self.manager;
-        Player player = (Player) sender;
-        Location<World> selected = locket.getSelected(player);
+@Command(name = Locket.PLUGIN_ID, aliases = {"lock"}, usage = "/locket lock|remove")
+public class CommandLocket {
+    @Inject
+    private LocketManager locket;
 
+    @Sub(perm = "locket.lock")
+    public final SubExecutor<Player> lock = (cmd, player, args) -> {
+        Location<World> selected = locket.getSelected(player);
         if (selected != null) {
             if (args.empty()) {
                 if (player.hasPermission(locket.defAdminPerm())) {
@@ -44,14 +46,11 @@ public final class CommandLocket {
                 }
             }
         } else locket.sendKey(player, "selectFirst");
-    }
+    };
 
-    @Sub(perm = "locket.lock", onlyPlayer = true)
-    public static void remove(SpongeCommand self, CommandSource sender, Paths args) {
-        LocketManager locket = (LocketManager) self.manager;
-        Player player = (Player) sender;
+    @Sub(perm = "locket.lock")
+    public final SubExecutor<Player> remove = (cmd, player, args) -> {
         Location<World> selected = locket.getSelected(player);
-
         if (selected != null) {
             if (args.empty()) {
                 if (player.hasPermission(locket.defAdminPerm()) || locket.tryAccess(player, selected) == Result.SIGN_OWNER) {
@@ -65,11 +64,11 @@ public final class CommandLocket {
                     } else if ((line == 2 || line == 3) && locket.tryAccess(player, selected) == Result.SIGN_OWNER) {
                         locket.unLockSign(selected, line);
                         locket.sendKey(player, "manuRemove");
-                    } else locket.sendKey(sender, "cantRemove");
+                    } else locket.sendKey(player, "cantRemove");
                 } catch (Throwable ignored) {
-                    locket.sendKey(sender, "invalidInt");
+                    locket.sendKey(player, "invalidInt");
                 }
             }
         } else locket.sendKey(player, "selectFirst");
-    }
+    };
 }

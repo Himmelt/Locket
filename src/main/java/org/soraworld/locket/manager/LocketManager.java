@@ -1,10 +1,12 @@
 package org.soraworld.locket.manager;
 
+import org.soraworld.hocon.exception.SerializerException;
 import org.soraworld.hocon.node.Setting;
 import org.soraworld.locket.data.LockData;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.serializers.ChatTypeSerializer;
-import org.soraworld.violet.manager.SpongeManager;
+import org.soraworld.violet.inject.MainManager;
+import org.soraworld.violet.manager.VManager;
 import org.soraworld.violet.plugin.SpongePlugin;
 import org.soraworld.violet.util.ChatColor;
 import org.spongepowered.api.block.BlockState;
@@ -36,13 +38,14 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-public class LocketManager extends SpongeManager {
+@MainManager
+public class LocketManager extends VManager {
 
     @Setting(comment = "comment.protectTile")
     private boolean protectTile = false;
     @Setting(comment = "comment.protectCarrier")
     private boolean protectCarrier = false;
-    @Setting(comment = "chatType")
+    @Setting(comment = "comment.chatType")
     private ChatType chatType = ChatTypes.CHAT;
     @Setting(comment = "comment.defaultSign")
     private Text defaultSign = Text.of("[Private]");
@@ -58,18 +61,16 @@ public class LocketManager extends SpongeManager {
 
     private final HashMap<UUID, Location<World>> selections = new HashMap<>();
 
-    /**
-     * 实例化管理器.
-     *
-     * @param plugin 插件实例
-     * @param path   配置保存路径
-     */
     public LocketManager(SpongePlugin plugin, Path path) {
         super(plugin, path);
     }
 
     public void beforeLoad() {
-        options.registerType(new ChatTypeSerializer());
+        try {
+            options.registerType(new ChatTypeSerializer());
+        } catch (SerializerException e) {
+            e.printStackTrace();
+        }
     }
 
     @Nonnull
