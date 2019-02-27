@@ -5,6 +5,7 @@ import org.soraworld.hocon.node.Setting;
 import org.soraworld.locket.data.LockData;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.serializers.ChatTypeSerializer;
+import org.soraworld.locket.serializers.TextSerializer;
 import org.soraworld.violet.inject.MainManager;
 import org.soraworld.violet.manager.VManager;
 import org.soraworld.violet.plugin.SpongePlugin;
@@ -47,9 +48,9 @@ public class LocketManager extends VManager {
     private boolean protectCarrier = false;
     @Setting(comment = "comment.chatType")
     private ChatType chatType = ChatTypes.CHAT;
-    @Setting(comment = "comment.defaultSign")
+    @Setting(comment = "comment.defaultSign", trans = 0b1000)
     private Text defaultSign = Text.of("[Private]");
-    @Setting(comment = "comment.acceptSigns")
+    @Setting(comment = "comment.acceptSigns", trans = 0b1000)
     private Set<String> acceptSigns = new HashSet<>();
     @Setting(comment = "comment.lockables")
     private Set<String> lockables = new HashSet<>();
@@ -63,11 +64,13 @@ public class LocketManager extends VManager {
 
     public LocketManager(SpongePlugin plugin, Path path) {
         super(plugin, path);
-    }
-
-    public void beforeLoad() {
         try {
             options.registerType(new ChatTypeSerializer());
+        } catch (SerializerException e) {
+            e.printStackTrace();
+        }
+        try {
+            options.registerType(new TextSerializer());
         } catch (SerializerException e) {
             e.printStackTrace();
         }
@@ -82,9 +85,12 @@ public class LocketManager extends VManager {
         String text = trans("privateSign");
         if (text.equals("privateSign") || text.isEmpty()) privateSign = defaultSign;
         else privateSign = Text.of(text);
+        HashSet<String> temp = new HashSet<>();
         acceptSigns.add(defaultSign.toPlain());
         acceptSigns.add(privateSign.toPlain());
-
+        acceptSigns.forEach(sign -> temp.add(ChatColor.stripAllColor(sign)));
+        acceptSigns.clear();
+        acceptSigns.addAll(temp);
         lockables.add(BlockTypes.CHEST.getId());
         lockables.add(BlockTypes.TRAPPED_CHEST.getId());
         doubleBlocks.add(BlockTypes.CHEST.getId());
@@ -164,20 +170,20 @@ public class LocketManager extends VManager {
         selections.put(player.getUniqueId(), location);
     }
 
-    public Result tryAccess(Player player, Location<World> block) {
-        if (otherProtected(player, block)) return Result.OTHER_PROTECT;
-        BlockType type = block.getBlockType();
+    public Result tryAccess(Player player, Location<World> location) {
+        if (otherProtected(player, location)) return Result.OTHER_PROTECT;
+        BlockType type = location.getBlockType();
         boolean isDBlock = doubleBlocks.contains(type.getId());
         int count = 0;
         Location<World> link = null;
         HashSet<Location<World>> signs = new HashSet<>();
 
         // 自身也将参与检查
-        signs.add(block);
+        signs.add(location);
 
         // 检查4个方向是否是 WALL_SIGN 或 DChest
         for (Direction face : FACES) {
-            Location<World> relative = block.getRelative(face);
+            Location<World> relative = location.getRelative(face);
             if (isDBlock && relative.getBlockType() == type) {
                 link = relative;
                 if (++count >= 2) return Result.M_BLOCKS;

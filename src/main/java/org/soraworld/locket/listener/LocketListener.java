@@ -1,5 +1,6 @@
 package org.soraworld.locket.listener;
 
+import org.soraworld.locket.data.Result;
 import org.soraworld.locket.manager.LocketManager;
 import org.soraworld.violet.inject.EventListener;
 import org.soraworld.violet.inject.Inject;
@@ -51,25 +52,26 @@ public class LocketListener {
      */
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerInteractBlock(InteractBlockEvent event, @First Player player) {
-        Location<World> block = event.getTargetBlock().getLocation().orElse(null);
-        if (block == null || player.hasPermission(manager.defAdminPerm())) return;
-        switch (manager.tryAccess(player, block)) {
-            case SIGN_USER:
-            case SIGN_OWNER:
-            case SIGN_NOT_LOCK:
-                return;
-            case SIGN_M_OWNERS:
-                manager.sendKey(player, "multiOwners");
-                event.setCancelled(true);
-                return;
-            case M_BLOCKS:
-                manager.sendKey(player, "multiBlocks");
-                event.setCancelled(true);
-                return;
-            case SIGN_NO_ACCESS:
-                manager.sendKey(player, "noAccess");
-                event.setCancelled(true);
-        }
+        event.getTargetBlock().getLocation().ifPresent(location -> {
+            if (player.hasPermission(manager.defAdminPerm())) return;
+            switch (manager.tryAccess(player, location)) {
+                case SIGN_USER:
+                case SIGN_OWNER:
+                case SIGN_NOT_LOCK:
+                    return;
+                case SIGN_M_OWNERS:
+                    manager.sendKey(player, "multiOwners");
+                    event.setCancelled(true);
+                    return;
+                case M_BLOCKS:
+                    manager.sendKey(player, "multiBlocks");
+                    event.setCancelled(true);
+                    return;
+                case SIGN_NO_ACCESS:
+                    manager.sendKey(player, "noAccess");
+                    event.setCancelled(true);
+            }
+        });
     }
 
     /**
@@ -79,14 +81,18 @@ public class LocketListener {
      * @param player 玩家
      */
     @Listener(order = Order.FIRST, beforeModifications = true)
+    @IsCancelled(Tristate.UNDEFINED)
     public void onPlayerPlaceBlock(ChangeBlockEvent.Place event, @First Player player) {
+        System.out.println("onPlayerPlaceBlock:" + player + "|" + player.hasPermission(manager.defAdminPerm()));
         if (!player.hasPermission(manager.defAdminPerm())) {
             for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
-                Location<World> block = transaction.getOriginal().getLocation().orElse(null);
-                if (!manager.tryAccess(player, block).canUse()) {
-                    event.setCancelled(true);
-                    return;
-                }
+                transaction.getOriginal().getLocation().ifPresent(location -> {
+                    System.out.println("Location:" + location);
+                    Result result = manager.tryAccess(player, location);
+                    System.out.println(result);
+                    if (!result.canUse()) event.setCancelled(true);
+                });
+                if (event.isCancelled()) return;
             }
         }
     }
@@ -198,22 +204,16 @@ public class LocketListener {
         System.out.println("onInventoryTransfer");
         Inventory source = event.getSourceInventory();
         if (source instanceof TileEntityInventory) {
-            Object carrier = ((TileEntityInventory) source).getCarrier().orElse(null);
-            if (carrier instanceof BlockCarrier) {
-                if (manager.isLocked(((BlockCarrier) carrier).getLocation())) {
-                    event.setCancelled(true);
-                    return;
-                }
-            }
+            ((TileEntityInventory<?>) source).getCarrier().ifPresent(carrier -> {
+                if (carrier instanceof BlockCarrier && manager.isLocked(carrier.getLocation())) event.setCancelled(true);
+            });
+            if (event.isCancelled()) return;
         }
         Inventory target = event.getTargetInventory();
         if (target instanceof TileEntityInventory) {
-            Object carrier = ((TileEntityInventory) target).getCarrier().orElse(null);
-            if (carrier instanceof BlockCarrier) {
-                if (manager.isLocked(((BlockCarrier) carrier).getLocation())) {
-                    event.setCancelled(true);
-                }
-            }
+            ((TileEntityInventory<?>) target).getCarrier().ifPresent(carrier -> {
+                if (carrier instanceof BlockCarrier && manager.isLocked(carrier.getLocation())) event.setCancelled(true);
+            });
         }
     }
 
