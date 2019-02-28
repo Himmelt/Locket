@@ -20,7 +20,6 @@ import org.spongepowered.api.event.filter.IsCancelled;
 import org.spongepowered.api.event.filter.cause.ContextValue;
 import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.event.item.inventory.ChangeInventoryEvent;
-import org.spongepowered.api.event.network.ClientConnectionEvent;
 import org.spongepowered.api.event.world.ExplosionEvent;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.BlockCarrier;
@@ -146,45 +145,16 @@ public class LocketListener {
         }
     }
 
-    /**
-     * TODO 环境生长事件.
-     *
-     * @param event 事件
-     */
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onStructureGrow(ChangeBlockEvent.Grow event) {
-        for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
-            Location<World> block = transaction.getOriginal().getLocation().orElse(null);
-            if (!manager.tryAccess(null, block).canUse()) {
-                System.out.println("onStructureGrow Cancel");
-                event.setCancelled(true);
-                return;
-            }
-        }
+        event.filter(manager::notLocked);
     }
 
-    /**
-     * TODO 方块变化事件.
-     *
-     * @param event 事件
-     */
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onModify(ChangeBlockEvent.Modify event) {
-        for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
-            Location<World> block = transaction.getOriginal().getLocation().orElse(null);
-            if (!manager.tryAccess(null, block).canUse()) {
-                System.out.println("onModify Cancel");
-                event.setCancelled(true);
-                return;
-            }
-        }
+        event.filter(manager::notLocked);
     }
 
-    /**
-     * TODO 爆炸保护.
-     *
-     * @param event 事件
-     */
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onExplosion(ExplosionEvent.Detonate event) {
         event.getAffectedLocations().removeIf(location -> location != null && manager.isLocked(location));
@@ -324,16 +294,5 @@ public class LocketListener {
             data.setElement(3, Text.of(line_3));
             sign.offer(data);
         }
-    }
-
-    /**
-     * 玩家登出.
-     *
-     * @param event  事件
-     * @param player 玩家
-     */
-    @Listener
-    public void onPlayerLogout(ClientConnectionEvent.Disconnect event, @First Player player) {
-        manager.cleanPlayer(player);
     }
 }

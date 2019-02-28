@@ -7,6 +7,7 @@ import org.soraworld.locket.data.LockData;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.serializers.ChatTypeSerializer;
 import org.soraworld.locket.serializers.TextSerializer;
+import org.soraworld.violet.data.DataAPI;
 import org.soraworld.violet.inject.MainManager;
 import org.soraworld.violet.manager.VManager;
 import org.soraworld.violet.plugin.SpongePlugin;
@@ -35,10 +36,8 @@ import org.spongepowered.api.world.World;
 
 import javax.annotation.Nonnull;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 @MainManager
 public class LocketManager extends VManager {
@@ -62,9 +61,9 @@ public class LocketManager extends VManager {
     @Setting(comment = "comment.doubleBlocks")
     private Set<String> doubleBlocks = new HashSet<>();
 
-    private static final Direction[] FACES = new Direction[]{Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
+    private static final String SELECTED_KEY = "lock:selected";
 
-    private final HashMap<UUID, Location<World>> selections = new HashMap<>();
+    private static final Direction[] FACES = new Direction[]{Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
 
     public LocketManager(SpongePlugin plugin, Path path) {
         super(plugin, path);
@@ -139,6 +138,7 @@ public class LocketManager extends VManager {
         doubleBlocks.remove(type.getId());
     }
 
+    /* TODO 提示信息位置 */
     public ChatType getChatType() {
         return chatType;
     }
@@ -164,11 +164,11 @@ public class LocketManager extends VManager {
     }
 
     public Location<World> getSelected(Player player) {
-        return selections.get(player.getUniqueId());
+        return DataAPI.getTemp(player.getUniqueId(), SELECTED_KEY, Location.class);
     }
 
     public void setSelected(Player player, Location<World> location) {
-        selections.put(player.getUniqueId(), location);
+        DataAPI.setTemp(player.getUniqueId(), SELECTED_KEY, location);
     }
 
     public Result tryAccess(@Nullable Player player, Location<World> location) {
@@ -248,10 +248,6 @@ public class LocketManager extends VManager {
         }
         removeOneItem(player, hand);
         player.playSound(SoundTypes.BLOCK_WOOD_PLACE, loc.getPosition(), 1.0D);
-    }
-
-    public void cleanPlayer(Player player) {
-        selections.remove(player.getUniqueId());
     }
 
     public boolean isLocked(Location<World> location) {
