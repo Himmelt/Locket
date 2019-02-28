@@ -50,7 +50,11 @@ public class LocketManager extends VManager {
     @Setting(comment = "comment.chatType")
     private ChatType chatType = ChatTypes.CHAT;
     @Setting(comment = "comment.defaultSign", trans = 0b1000)
-    private Text defaultSign = Text.of("[Private]");
+    private Text privateSign = Text.of("" + ChatColor.DARK_RED + ChatColor.BOLD + "[Private]");
+    @Setting(comment = "comment.ownerFormat", trans = 0b1000)
+    private String ownerFormat = ChatColor.GREEN + "{$owner}";
+    @Setting(comment = "comment.userFormat", trans = 0b1000)
+    private String userFormat = "" + ChatColor.DARK_GRAY + ChatColor.ITALIC + "{$user}";
     @Setting(comment = "comment.acceptSigns", trans = 0b1000)
     private Set<String> acceptSigns = new HashSet<>();
     @Setting(comment = "comment.lockables")
@@ -58,7 +62,6 @@ public class LocketManager extends VManager {
     @Setting(comment = "comment.doubleBlocks")
     private Set<String> doubleBlocks = new HashSet<>();
 
-    private Text privateSign;
     private static final Direction[] FACES = new Direction[]{Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
 
     private final HashMap<UUID, Location<World>> selections = new HashMap<>();
@@ -83,12 +86,9 @@ public class LocketManager extends VManager {
     }
 
     public void afterLoad() {
-        String text = trans("privateSign");
-        if (text.equals("privateSign") || text.isEmpty()) privateSign = defaultSign;
-        else privateSign = Text.of(text);
-        HashSet<String> temp = new HashSet<>();
-        acceptSigns.add(defaultSign.toPlain());
+        if (privateSign == null) privateSign = Text.of("[Private]");
         acceptSigns.add(privateSign.toPlain());
+        HashSet<String> temp = new HashSet<>();
         acceptSigns.forEach(sign -> temp.add(ChatColor.stripAllColor(sign)));
         acceptSigns.clear();
         acceptSigns.addAll(temp);
@@ -152,11 +152,11 @@ public class LocketManager extends VManager {
     }
 
     public Text getOwnerText(String owner) {
-        return Text.of(trans("ownerFormat", owner));
+        return Text.of(ownerFormat.replace("{$owner}", owner));
     }
 
     public Text getUserText(String user) {
-        return Text.of(trans("userFormat", user));
+        return Text.of(userFormat.replace("{$user}", user));
     }
 
     public boolean isDBlock(BlockType type) {
@@ -211,13 +211,6 @@ public class LocketManager extends VManager {
         return false;
     }
 
-    /**
-     * Lock sign.
-     *
-     * @param player the player
-     * @param line   0,1,2,3
-     * @param name   user
-     */
     public void lockSign(Player player, Location<World> selected, int line, String name) {
         TileEntity tile = selected.getTileEntity().orElse(null);
         if (tile instanceof Sign) {

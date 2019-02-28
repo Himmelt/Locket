@@ -1,17 +1,27 @@
 package org.soraworld.locket.command;
 
+import org.jetbrains.annotations.NotNull;
 import org.soraworld.locket.Locket;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.manager.LocketManager;
+import org.soraworld.violet.command.Args;
 import org.soraworld.violet.command.Sub;
 import org.soraworld.violet.command.SubExecutor;
 import org.soraworld.violet.inject.Command;
 import org.soraworld.violet.inject.Inject;
+import org.spongepowered.api.Sponge;
+import org.spongepowered.api.block.BlockType;
+import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.command.CommandSource;
+import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-@Command(name = Locket.PLUGIN_ID, aliases = {"lock"}, usage = "/locket remove")
+import java.util.function.Consumer;
+
+@Command(name = Locket.PLUGIN_ID, aliases = {"lock"}, usage = "usage.lock")
 public class CommandLocket {
     @Inject
     private LocketManager locket;
@@ -48,7 +58,7 @@ public class CommandLocket {
         } else locket.sendKey(player, "selectFirst");
     };
 
-    @Sub(perm = "locket.lock")
+    @Sub(perm = "locket.lock", usage = "usage.remove")
     public final SubExecutor<Player> remove = (cmd, player, args) -> {
         Location<World> selected = locket.getSelected(player);
         if (selected != null) {
@@ -71,4 +81,52 @@ public class CommandLocket {
             }
         } else locket.sendKey(player, "selectFirst");
     };
+
+    @Sub(perm = "admin", virtual = true, usage = "usage.type")
+    public final SubExecutor type = null;
+
+    @Sub(path = "type.+", perm = "admin")
+    public final SubExecutor type_plus = (cmd, sender, args) -> {
+        processType(sender, args, locket::addType, "typeAdd");
+    };
+
+    @Sub(path = "type.-", perm = "admin")
+    public final SubExecutor type_minus = (cmd, sender, args) -> {
+        processType(sender, args, locket::removeType, "typeRemove");
+    };
+
+    @Sub(path = "type.++", perm = "admin")
+    public final SubExecutor type_dplus = (cmd, sender, args) -> {
+        processType(sender, args, locket::addDType, "dTypeAdd");
+    };
+
+    @Sub(path = "type.--", perm = "admin")
+    public final SubExecutor type_dminus = (cmd, sender, args) -> {
+        processType(sender, args, locket::removeDType, "dTypeRemove");
+    };
+
+    private void processType(@NotNull CommandSource sender, @NotNull Args args, @NotNull Consumer<BlockType> consumer, @NotNull String key) {
+        BlockType type;
+        if (args.notEmpty()) {
+            type = Sponge.getRegistry().getType(BlockType.class, args.first()).orElse(null);
+        } else if (sender instanceof Player) {
+            ItemStack stack = ((Player) sender).getItemInHand(HandTypes.MAIN_HAND).orElse(null);
+            type = stack == null ? null : stack.getType().getBlock().orElse(null);
+        } else {
+            locket.sendKey(sender, "emptyArgs");
+            return;
+        }
+        if (type == null) {
+            locket.sendKey(sender, "nullBlockType");
+            return;
+        }
+        if (type == BlockTypes.AIR || type == BlockTypes.WALL_SIGN || type == BlockTypes.STANDING_SIGN) {
+            locket.sendKey(sender, "illegalType");
+            return;
+        }
+        String typeName = type.getTranslation().get();
+        consumer.accept(type);
+        locket.sendKey(sender, key, typeName);
+        locket.asyncSave(null);
+    }
 }

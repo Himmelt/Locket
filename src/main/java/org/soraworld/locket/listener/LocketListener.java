@@ -86,9 +86,7 @@ public class LocketListener {
         if (!player.hasPermission(manager.defAdminPerm())) {
             for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
                 transaction.getOriginal().getLocation().ifPresent(location -> {
-                    System.out.println("Location:" + location);
                     Result result = manager.tryAccess(player, location);
-                    System.out.println(result);
                     if (!result.canUse()) event.setCancelled(true);
                 });
                 if (event.isCancelled()) return;
