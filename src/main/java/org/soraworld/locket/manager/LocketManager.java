@@ -269,15 +269,11 @@ public class LocketManager extends VManager {
             TileEntity tile = block.getTileEntity().orElse(null);
             if (tile instanceof Sign) {
                 ListValue<Text> lines = ((Sign) tile).lines();
-                String line_0 = lines.get(0).toPlain();
-                String line_1 = lines.get(1).toPlain();
-                String line_2 = lines.get(2).toPlain();
-                String line_3 = lines.get(3).toPlain();
-                // TODO doc mark nonnull return
-                System.out.println(line_0 + line_1 + line_2 + line_3);
-                if (isPrivate(line_0)) {
-                    data.puts(line_1, line_2, line_3);
-                }
+                String line_0 = ChatColor.stripAllColor(lines.get(0).toPlain()).trim();
+                String line_1 = ChatColor.stripAllColor(lines.get(1).toPlain()).trim();
+                String line_2 = ChatColor.stripAllColor(lines.get(2).toPlain()).trim();
+                String line_3 = ChatColor.stripAllColor(lines.get(3).toPlain()).trim();
+                if (isPrivate(line_0)) data.puts(line_1, line_2, line_3);
             }
         }
         return data.accessBy(player);
