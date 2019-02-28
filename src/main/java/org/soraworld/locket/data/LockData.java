@@ -1,5 +1,6 @@
 package org.soraworld.locket.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.api.entity.living.player.Player;
 
 import java.util.HashSet;
@@ -20,7 +21,7 @@ public class LockData {
         users.add(user2);
     }
 
-    public Result accessBy(Player player) {
+    public Result accessBy(@Nullable Player player) {
         if (owners.size() <= 0) return Result.SIGN_NOT_LOCK;
         if (owners.size() >= 2) return Result.SIGN_M_OWNERS;
         if (player != null) {

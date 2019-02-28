@@ -1,5 +1,6 @@
 package org.soraworld.locket.manager;
 
+import org.jetbrains.annotations.Nullable;
 import org.soraworld.hocon.exception.SerializerException;
 import org.soraworld.hocon.node.Setting;
 import org.soraworld.locket.data.LockData;
@@ -170,7 +171,7 @@ public class LocketManager extends VManager {
         selections.put(player.getUniqueId(), location);
     }
 
-    public Result tryAccess(Player player, Location<World> location) {
+    public Result tryAccess(@Nullable Player player, Location<World> location) {
         if (otherProtected(player, location)) return Result.OTHER_PROTECT;
         BlockType type = location.getBlockType();
         boolean isDBlock = doubleBlocks.contains(type.getId());
@@ -260,11 +261,15 @@ public class LocketManager extends VManager {
         selections.remove(player.getUniqueId());
     }
 
-    public boolean isLocked(Location<World> loc) {
-        return tryAccess(null, loc) != Result.SIGN_NOT_LOCK;
+    public boolean isLocked(Location<World> location) {
+        return tryAccess(null, location) != Result.SIGN_NOT_LOCK;
     }
 
-    private Result analyzeSign(Player player, HashSet<Location<World>> signs) {
+    public boolean notLocked(Location<World> location) {
+        return tryAccess(null, location) == Result.SIGN_NOT_LOCK;
+    }
+
+    private Result analyzeSign(@Nullable Player player, HashSet<Location<World>> signs) {
         if (signs.isEmpty()) return Result.SIGN_NOT_LOCK;
         LockData data = new LockData();
         for (Location<World> block : signs) {

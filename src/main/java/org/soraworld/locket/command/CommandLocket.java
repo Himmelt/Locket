@@ -11,12 +11,12 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-@Command(name = Locket.PLUGIN_ID, aliases = {"lock"}, usage = "/locket lock|remove")
+@Command(name = Locket.PLUGIN_ID, aliases = {"lock"}, usage = "/locket remove")
 public class CommandLocket {
     @Inject
     private LocketManager locket;
 
-    @Sub(perm = "locket.lock")
+    @Sub(path = ".", perm = "locket.lock")
     public final SubExecutor<Player> lock = (cmd, player, args) -> {
         Location<World> selected = locket.getSelected(player);
         if (selected != null) {

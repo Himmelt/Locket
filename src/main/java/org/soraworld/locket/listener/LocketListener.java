@@ -41,7 +41,7 @@ public class LocketListener {
 
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onChangeBlock(ChangeBlockEvent event) {
-        event.filter(manager::isLocked);
+        event.filter(manager::notLocked);
     }
 
     /**
@@ -83,7 +83,6 @@ public class LocketListener {
     @Listener(order = Order.FIRST, beforeModifications = true)
     @IsCancelled(Tristate.UNDEFINED)
     public void onPlayerPlaceBlock(ChangeBlockEvent.Place event, @First Player player) {
-        System.out.println("onPlayerPlaceBlock:" + player + "|" + player.hasPermission(manager.defAdminPerm()));
         if (!player.hasPermission(manager.defAdminPerm())) {
             for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
                 transaction.getOriginal().getLocation().ifPresent(location -> {
