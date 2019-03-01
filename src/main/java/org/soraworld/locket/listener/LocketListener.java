@@ -4,6 +4,7 @@ import org.soraworld.locket.data.Result;
 import org.soraworld.locket.manager.LocketManager;
 import org.soraworld.violet.inject.EventListener;
 import org.soraworld.violet.inject.Inject;
+import org.soraworld.violet.util.ChatColor;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -59,15 +60,15 @@ public class LocketListener {
                 case SIGN_NOT_LOCK:
                     return;
                 case SIGN_M_OWNERS:
-                    manager.sendKey(player, "multiOwners");
+                    manager.sendHint(player, "multiOwners");
                     event.setCancelled(true);
                     return;
                 case M_BLOCKS:
-                    manager.sendKey(player, "multiBlocks");
+                    manager.sendHint(player, "multiBlocks");
                     event.setCancelled(true);
                     return;
                 case SIGN_NO_ACCESS:
-                    manager.sendKey(player, "noAccess");
+                    manager.sendHint(player, "noAccess");
                     event.setCancelled(true);
             }
         });
@@ -209,27 +210,27 @@ public class LocketListener {
             return;
         }
         if (!player.hasPermission("locket.lock")) {
-            manager.sendKey(player, "needPerm", "locket.lock");
+            manager.sendHint(player, "needPerm", "locket.lock");
             return;
         }
         if (manager.otherProtected(player, block)) {
-            manager.sendKey(player, "otherProtect");
+            manager.sendHint(player, "otherProtect");
             return;
         }
         switch (manager.tryAccess(player, block)) {
             case SIGN_OWNER:
             case SIGN_NOT_LOCK:
                 manager.placeLock(player, block, face, event.getHandType());
-                manager.sendKey(player, "quickLock");
+                manager.sendHint(player, "quickLock");
                 return;
             case SIGN_M_OWNERS:
-                manager.sendKey(player, "multiOwners");
+                manager.sendHint(player, "multiOwners");
                 return;
             case M_BLOCKS:
-                manager.sendKey(player, "multiBlocks");
+                manager.sendHint(player, "multiBlocks");
                 return;
             default:
-                manager.sendKey(player, "noAccess");
+                manager.sendHint(player, "noAccess");
         }
     }
 
@@ -244,7 +245,7 @@ public class LocketListener {
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
         if (block != null && block.getBlockType() == BlockTypes.WALL_SIGN) {
             manager.setSelected(player, block);
-            manager.sendKey(player, "selectSign");
+            manager.sendHint(player, "selectSign");
         }
     }
 
@@ -257,42 +258,43 @@ public class LocketListener {
     @Listener(order = Order.LAST)
     public void onPlayerChangeSign(ChangeSignEvent event, @First Player player) {
         SignData data = event.getText();
-        String line_0 = data.get(0).orElse(Text.EMPTY).toPlain();
-        String line_1 = data.get(1).orElse(Text.EMPTY).toPlain();
-        String line_2 = data.get(2).orElse(Text.EMPTY).toPlain();
-        String line_3 = data.get(3).orElse(Text.EMPTY).toPlain();
+        String line_0 = ChatColor.stripAllColor(data.get(0).orElse(Text.EMPTY).toPlain()).trim();
+        String line_1 = ChatColor.stripAllColor(data.get(1).orElse(Text.EMPTY).toPlain()).trim();
+        String line_2 = ChatColor.stripAllColor(data.get(2).orElse(Text.EMPTY).toPlain()).trim();
+        String line_3 = ChatColor.stripAllColor(data.get(3).orElse(Text.EMPTY).toPlain()).trim();
         if (manager.isPrivate(line_0)) {
             Sign sign = event.getTargetTile();
-            Location<World> block = LocketManager.getAttached(sign.getLocation());
             if (player.hasPermission(manager.defAdminPerm())) {
                 data.setElement(0, manager.getPrivateText());
                 data.setElement(1, manager.getOwnerText(line_1.isEmpty() ? player.getName() : line_1));
                 data.setElement(2, manager.getUserText(line_2));
                 data.setElement(3, manager.getUserText(line_3));
                 sign.offer(data);
+                manager.sendHint(player, "manuLock");
                 return;
             }
+            Location<World> block = LocketManager.getAttached(sign.getLocation());
             if (!manager.isLockable(block)) {
-                manager.sendKey(player, "cantLock");
+                manager.sendHint(player, "cantLock");
                 event.setCancelled(true);
                 return;
             }
             if (!player.hasPermission("locket.lock")) {
-                manager.sendKey(player, "needPerm", "locket.lock");
+                manager.sendHint(player, "needPerm", "locket.lock");
                 event.setCancelled(true);
                 return;
             }
             if (manager.otherProtected(player, block)) {
-                manager.sendKey(player, "otherProtect");
+                manager.sendHint(player, "otherProtect");
                 event.setCancelled(true);
                 return;
             }
             data.setElement(0, manager.getPrivateText());
             data.setElement(1, manager.getOwnerText(player.getName()));
-            // TODO check format
-            data.setElement(2, Text.of(line_2));
-            data.setElement(3, Text.of(line_3));
+            data.setElement(2, manager.getUserText(line_2));
+            data.setElement(3, manager.getUserText(line_3));
             sign.offer(data);
+            manager.sendHint(player, "manuLock");
         }
     }
 }

@@ -138,9 +138,16 @@ public class LocketManager extends VManager {
         doubleBlocks.remove(type.getId());
     }
 
-    /* TODO 提示信息位置 */
     public ChatType getChatType() {
         return chatType;
+    }
+
+    public void sendHint(Player player, String key, Object... args) {
+        if (chatType == ChatTypes.CHAT || chatType == ChatTypes.SYSTEM) {
+            sendKey(player, key, args);
+        } else {
+            sendActionKey(player, key, args);
+        }
     }
 
     public boolean isPrivate(String line) {
@@ -222,7 +229,8 @@ public class LocketManager extends VManager {
                 data.setElement(line, getUserText(name));
             }
             tile.offer(data);
-        } else sendKey(player, "notSignTile");
+            sendHint(player, "manuLock");
+        } else sendHint(player, "notSignTile");
     }
 
     public void unLockSign(Location<World> location, int line) {
@@ -248,6 +256,7 @@ public class LocketManager extends VManager {
         }
         removeOneItem(player, hand);
         player.playSound(SoundTypes.BLOCK_WOOD_PLACE, loc.getPosition(), 1.0D);
+        sendHint(player, "quickLock");
     }
 
     public boolean isLocked(Location<World> location) {

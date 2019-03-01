@@ -31,13 +31,12 @@ public class CommandLocket {
         Location<World> selected = manager.getSelected(player);
         if (selected != null) {
             if (args.empty()) {
-                // TODO BUG empty args do nothing
                 if (player.hasPermission(manager.defAdminPerm())) {
                     manager.lockSign(player, selected, 0, null);
                 } else if (manager.tryAccess(player, selected) == Result.SIGN_NOT_LOCK) {
                     if (manager.isLockable(LocketManager.getAttached(selected))) {
                         manager.lockSign(player, selected, 0, null);
-                    } else manager.sendKey(player, "cantLock");
+                    } else manager.sendHint(player, "cantLock");
                 }
             } else if (args.size() >= 2) {
                 try {
@@ -49,14 +48,14 @@ public class CommandLocket {
                         Result result = manager.tryAccess(player, selected);
                         if (result == Result.SIGN_OWNER || result == Result.SIGN_NOT_LOCK) {
                             manager.lockSign(player, selected, line, name);
-                            manager.sendKey(player, "manuLock");
-                        } else manager.sendKey(player, "noOwnerAccess");
-                    } else manager.sendKey(player, "unLockable");
+                            manager.sendHint(player, "manuLock");
+                        } else manager.sendHint(player, "noOwnerAccess");
+                    } else manager.sendHint(player, "unLockable");
                 } catch (Throwable e) {
-                    manager.sendKey(player, "invalidInt");
+                    manager.sendHint(player, "invalidInt");
                 }
             }
-        } else manager.sendKey(player, "selectFirst");
+        } else manager.sendHint(player, "selectFirst");
     };
 
     @Sub(perm = "locket.lock", usage = "usage.remove")
@@ -74,13 +73,13 @@ public class CommandLocket {
                         manager.unLockSign(selected, line);
                     } else if ((line == 2 || line == 3) && manager.tryAccess(player, selected) == Result.SIGN_OWNER) {
                         manager.unLockSign(selected, line);
-                        manager.sendKey(player, "manuRemove");
-                    } else manager.sendKey(player, "cantRemove");
+                        manager.sendHint(player, "manuRemove");
+                    } else manager.sendHint(player, "cantRemove");
                 } catch (Throwable ignored) {
-                    manager.sendKey(player, "invalidInt");
+                    manager.sendHint(player, "invalidInt");
                 }
             }
-        } else manager.sendKey(player, "selectFirst");
+        } else manager.sendHint(player, "selectFirst");
     };
 
     @Sub(perm = "admin", virtual = true, usage = "usage.type")
