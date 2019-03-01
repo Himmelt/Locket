@@ -1,10 +1,13 @@
 package org.soraworld.locket.manager;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soraworld.hocon.exception.SerializerException;
 import org.soraworld.hocon.node.Setting;
 import org.soraworld.locket.data.LockData;
 import org.soraworld.locket.data.Result;
+import org.soraworld.locket.data.State;
+import org.soraworld.locket.serializers.BlockTypeSerializer;
 import org.soraworld.locket.serializers.ChatTypeSerializer;
 import org.soraworld.locket.serializers.TextSerializer;
 import org.soraworld.violet.data.DataAPI;
@@ -21,7 +24,6 @@ import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
 import org.spongepowered.api.data.type.HandType;
-import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.gamemode.GameModes;
@@ -45,9 +47,9 @@ public class LocketManager extends VManager {
     @Setting(comment = "comment.protectTile")
     private boolean protectTile = false;
     @Setting(comment = "comment.protectCarrier")
-    private boolean protectCarrier = false;
+    private boolean protectCarrier = true;
     @Setting(comment = "comment.chatType")
-    private ChatType chatType = ChatTypes.CHAT;
+    private ChatType chatType = ChatTypes.ACTION_BAR;
     @Setting(comment = "comment.defaultSign", trans = 0b1000)
     private Text privateSign = Text.of("" + ChatColor.DARK_RED + ChatColor.BOLD + "[Private]");
     @Setting(comment = "comment.ownerFormat", trans = 0b1000)
@@ -57,9 +59,9 @@ public class LocketManager extends VManager {
     @Setting(comment = "comment.acceptSigns", trans = 0b1000)
     private Set<String> acceptSigns = new HashSet<>();
     @Setting(comment = "comment.lockables")
-    private Set<String> lockables = new HashSet<>();
+    private Set<BlockType> lockables = new HashSet<>();
     @Setting(comment = "comment.doubleBlocks")
-    private Set<String> doubleBlocks = new HashSet<>();
+    private Set<BlockType> doubleBlocks = new HashSet<>();
 
     private static final String SELECTED_KEY = "lock:selected";
 
@@ -69,6 +71,11 @@ public class LocketManager extends VManager {
         super(plugin, path);
         try {
             options.registerType(new ChatTypeSerializer());
+        } catch (SerializerException e) {
+            e.printStackTrace();
+        }
+        try {
+            options.registerType(new BlockTypeSerializer());
         } catch (SerializerException e) {
             e.printStackTrace();
         }
@@ -91,55 +98,35 @@ public class LocketManager extends VManager {
         acceptSigns.forEach(sign -> temp.add(ChatColor.stripAllColor(sign)));
         acceptSigns.clear();
         acceptSigns.addAll(temp);
-        lockables.add(BlockTypes.CHEST.getId());
-        lockables.add(BlockTypes.TRAPPED_CHEST.getId());
-        doubleBlocks.add(BlockTypes.CHEST.getId());
-        doubleBlocks.add(BlockTypes.TRAPPED_CHEST.getId());
+        lockables.add(BlockTypes.CHEST);
+        lockables.add(BlockTypes.TRAPPED_CHEST);
+        doubleBlocks.add(BlockTypes.CHEST);
+        doubleBlocks.add(BlockTypes.TRAPPED_CHEST);
     }
 
-    public boolean isLockable(Location<World> block) {
-        BlockType type = block.getBlockType();
+    public boolean isLockable(@NotNull Location<World> location) {
+        BlockType type = location.getBlockType();
         if (type == BlockTypes.WALL_SIGN || type == BlockTypes.STANDING_SIGN) return false;
-        if (lockables.contains(type.getId())) return true;
-        if (doubleBlocks.contains(type.getId())) return true;
-        TileEntity tile = block.getTileEntity().orElse(null);
+        if (lockables.contains(type)) return true;
+        if (doubleBlocks.contains(type)) return true;
+        TileEntity tile = location.getTileEntity().orElse(null);
         return protectTile && tile != null || protectCarrier && tile instanceof TileEntityCarrier;
     }
 
-    public void addType(String id) {
-        lockables.add(id);
+    public void addType(@NotNull BlockType type) {
+        lockables.add(type);
     }
 
-    public void addType(BlockType type) {
-        lockables.add(type.getId());
-    }
-
-    public void addDType(String id) {
-        doubleBlocks.add(id);
-    }
-
-    public void addDType(BlockType type) {
-        doubleBlocks.add(type.getId());
-    }
-
-    public void removeType(String id) {
-        lockables.remove(id);
+    public void addDType(@NotNull BlockType type) {
+        doubleBlocks.add(type);
     }
 
     public void removeType(BlockType type) {
-        lockables.remove(type.getId());
+        lockables.remove(type);
     }
 
-    public void removeDType(String id) {
-        doubleBlocks.remove(id);
-    }
-
-    public void removeDType(BlockType type) {
-        doubleBlocks.remove(type.getId());
-    }
-
-    public ChatType getChatType() {
-        return chatType;
+    public void removeDType(@NotNull BlockType type) {
+        doubleBlocks.remove(type);
     }
 
     public void sendHint(Player player, String key, Object... args) {
@@ -150,7 +137,7 @@ public class LocketManager extends VManager {
         }
     }
 
-    public boolean isPrivate(String line) {
+    public boolean isPrivate(@NotNull String line) {
         return acceptSigns.contains(line);
     }
 
@@ -166,22 +153,24 @@ public class LocketManager extends VManager {
         return Text.of(userFormat.replace("{$user}", user));
     }
 
-    public boolean isDBlock(BlockType type) {
-        return doubleBlocks.contains(type.getId());
+    public boolean isDBlock(@NotNull BlockType type) {
+        return doubleBlocks.contains(type);
     }
 
-    public Location<World> getSelected(Player player) {
+    @Nullable
+    public Location<World> getSelected(@NotNull Player player) {
         return DataAPI.getTemp(player.getUniqueId(), SELECTED_KEY, Location.class);
     }
 
-    public void setSelected(Player player, Location<World> location) {
+    public void setSelected(@NotNull Player player, Location<World> location) {
         DataAPI.setTemp(player.getUniqueId(), SELECTED_KEY, location);
     }
 
-    public Result tryAccess(@Nullable Player player, Location<World> location) {
+    /* TODO Only player access consider third-party plugin */
+    public Result tryAccess(@NotNull Player player, @NotNull Location<World> location) {
         if (otherProtected(player, location)) return Result.OTHER_PROTECT;
         BlockType type = location.getBlockType();
-        boolean isDBlock = doubleBlocks.contains(type.getId());
+        boolean isDBlock = doubleBlocks.contains(type);
         int count = 0;
         Location<World> link = null;
         HashSet<Location<World>> signs = new HashSet<>();
@@ -259,29 +248,50 @@ public class LocketManager extends VManager {
         sendHint(player, "quickLock");
     }
 
-    public boolean isLocked(Location<World> location) {
-        return tryAccess(null, location) != Result.SIGN_NOT_LOCK;
+    public boolean isLocked(@NotNull Location<World> location) {
+        return checkState(location) != State.NOT_LOCKED;
     }
 
-    public boolean notLocked(Location<World> location) {
-        return tryAccess(null, location) == Result.SIGN_NOT_LOCK;
+    public boolean notLocked(@NotNull Location<World> location) {
+        return checkState(location) == State.NOT_LOCKED;
     }
 
-    private Result analyzeSign(@Nullable Player player, HashSet<Location<World>> signs) {
-        if (signs.isEmpty()) return Result.SIGN_NOT_LOCK;
-        LockData data = new LockData();
-        for (Location<World> block : signs) {
-            TileEntity tile = block.getTileEntity().orElse(null);
-            if (tile instanceof Sign) {
-                ListValue<Text> lines = ((Sign) tile).lines();
-                String line_0 = ChatColor.stripAllColor(lines.get(0).toPlain()).trim();
-                String line_1 = ChatColor.stripAllColor(lines.get(1).toPlain()).trim();
-                String line_2 = ChatColor.stripAllColor(lines.get(2).toPlain()).trim();
-                String line_3 = ChatColor.stripAllColor(lines.get(3).toPlain()).trim();
-                if (isPrivate(line_0)) data.puts(line_1, line_2, line_3);
+    private State checkState(@NotNull Location<World> location) {
+        BlockType type = location.getBlockType();
+        boolean isDBlock = doubleBlocks.contains(type);
+        int count = 0;
+        Location<World> link = null;
+        HashSet<Location<World>> signs = new HashSet<>();
+        signs.add(location);
+
+        for (Direction face : FACES) {
+            Location<World> relative = location.getRelative(face);
+            if (isDBlock && relative.getBlockType() == type) {
+                link = relative;
+                if (++count >= 2) return State.MULTI_BLOCKS;
+            } else if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+                signs.add(relative);
             }
         }
-        return data.accessBy(player);
+
+        if (isDBlock && link != null) {
+            count = 0;
+            for (Direction face : FACES) {
+                Location<World> relative = link.getRelative(face);
+                if (relative.getBlockType() == type && ++count >= 2) return State.MULTI_BLOCKS;
+                if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+                    signs.add(relative);
+                }
+            }
+        }
+
+        return new LockData(signs).getState();
+    }
+
+    private Result analyzeSign(@NotNull Player player, HashSet<Location<World>> signs) {
+        if (signs.isEmpty()) return Result.NOT_LOCKED;
+        LockData data = new LockData(signs);
+        return data.tryAccess(player);
     }
 
     private static void removeOneItem(Player player, HandType hand) {
@@ -295,7 +305,7 @@ public class LocketManager extends VManager {
         }
     }
 
-    public static Location<World> getAttached(Location<World> location) {
+    public static Location<World> getAttached(@NotNull Location<World> location) {
         return location.getRelative(location.getBlock().get(Keys.DIRECTION).orElse(Direction.NONE).getOpposite());
     }
 }

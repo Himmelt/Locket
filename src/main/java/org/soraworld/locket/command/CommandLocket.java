@@ -33,7 +33,7 @@ public class CommandLocket {
             if (args.empty()) {
                 if (player.hasPermission(manager.defAdminPerm())) {
                     manager.lockSign(player, selected, 0, null);
-                } else if (manager.tryAccess(player, selected) == Result.SIGN_NOT_LOCK) {
+                } else if (manager.tryAccess(player, selected) == Result.NOT_LOCKED) {
                     if (manager.isLockable(LocketManager.getAttached(selected))) {
                         manager.lockSign(player, selected, 0, null);
                     } else manager.sendHint(player, "cantLock");
@@ -46,7 +46,7 @@ public class CommandLocket {
                         manager.lockSign(player, selected, line, name);
                     } else if (manager.isLockable(LocketManager.getAttached(selected))) {
                         Result result = manager.tryAccess(player, selected);
-                        if (result == Result.SIGN_OWNER || result == Result.SIGN_NOT_LOCK) {
+                        if (result == Result.SIGN_OWNER || result == Result.NOT_LOCKED) {
                             manager.lockSign(player, selected, line, name);
                             manager.sendHint(player, "manuLock");
                         } else manager.sendHint(player, "noOwnerAccess");

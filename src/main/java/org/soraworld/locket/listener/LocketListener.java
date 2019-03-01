@@ -57,9 +57,9 @@ public class LocketListener {
             switch (manager.tryAccess(player, location)) {
                 case SIGN_USER:
                 case SIGN_OWNER:
-                case SIGN_NOT_LOCK:
+                case NOT_LOCKED:
                     return;
-                case SIGN_M_OWNERS:
+                case MULTI_OWNERS:
                     manager.sendHint(player, "multiOwners");
                     event.setCancelled(true);
                     return;
@@ -67,19 +67,13 @@ public class LocketListener {
                     manager.sendHint(player, "multiBlocks");
                     event.setCancelled(true);
                     return;
-                case SIGN_NO_ACCESS:
+                case NO_ACCESS:
                     manager.sendHint(player, "noAccess");
                     event.setCancelled(true);
             }
         });
     }
 
-    /**
-     * 玩家放置方块事件.
-     *
-     * @param event  事件
-     * @param player 玩家
-     */
     @Listener(order = Order.FIRST, beforeModifications = true)
     @IsCancelled(Tristate.UNDEFINED)
     public void onPlayerPlaceBlock(ChangeBlockEvent.Place event, @First Player player) {
@@ -94,12 +88,6 @@ public class LocketListener {
         }
     }
 
-    /**
-     * 玩家破坏方块事件.
-     *
-     * @param event  事件
-     * @param player 玩家
-     */
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerBreakBlock(ChangeBlockEvent.Pre event, @ContextValue("PLAYER_BREAK") @First Player player) {
         if (!player.hasPermission(manager.defAdminPerm())) {
@@ -112,16 +100,10 @@ public class LocketListener {
         }
     }
 
-    /**
-     * 活塞推出事件.
-     *
-     * @param event 事件
-     * @param cause 原因
-     */
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPistonExtend(ChangeBlockEvent.Pre event, @ContextValue("PISTON_EXTEND") @First Object cause) {
         for (Location<World> location : event.getLocations()) {
-            if (!manager.tryAccess(null, location).canUse()) {
+            if (manager.isLocked(location)) {
                 System.out.println("onPistonExtend Cancel:" + location);
                 event.setCancelled(true);
                 return;
@@ -129,17 +111,12 @@ public class LocketListener {
         }
     }
 
-    /**
-     * 活塞收回事件.
-     *
-     * @param event 事件
-     * @param cause 原因
-     */
+    /* TODO remove this event ? */
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPistonRetract(ChangeBlockEvent.Pre event, @ContextValue("PISTON_RETRACT") @First Object cause) {
         for (Location<World> location : event.getLocations()) {
-            if (!manager.tryAccess(null, location).canUse()) {
-                System.out.println("onPistonRetract Cancel");
+            if (manager.isLocked(location)) {
+                System.out.println("onPistonRetract Cancel:" + location);
                 event.setCancelled(true);
                 return;
             }
@@ -147,25 +124,10 @@ public class LocketListener {
     }
 
     @Listener(order = Order.FIRST, beforeModifications = true)
-    public void onStructureGrow(ChangeBlockEvent.Grow event) {
-        event.filter(manager::notLocked);
-    }
-
-    @Listener(order = Order.FIRST, beforeModifications = true)
-    public void onModify(ChangeBlockEvent.Modify event) {
-        event.filter(manager::notLocked);
-    }
-
-    @Listener(order = Order.FIRST, beforeModifications = true)
     public void onExplosion(ExplosionEvent.Detonate event) {
         event.getAffectedLocations().removeIf(location -> location != null && manager.isLocked(location));
     }
 
-    /**
-     * TODO 容器传输事件(取消依然监控).
-     *
-     * @param event 事件
-     */
     @Listener(order = Order.FIRST, beforeModifications = true)
     @IsCancelled(value = Tristate.UNDEFINED)
     public void onInventoryTransfer(ChangeInventoryEvent.Transfer.Pre event) {
@@ -185,12 +147,6 @@ public class LocketListener {
         }
     }
 
-    /**
-     * 右键锁箱子.
-     *
-     * @param event  事件
-     * @param player 玩家
-     */
     @Listener(order = Order.LAST)
     public void onPlayerLockBlock(InteractBlockEvent.Secondary event, @First Player player) {
         ItemStack stack = player.getItemInHand(event.getHandType()).orElse(null);
@@ -219,11 +175,11 @@ public class LocketListener {
         }
         switch (manager.tryAccess(player, block)) {
             case SIGN_OWNER:
-            case SIGN_NOT_LOCK:
+            case NOT_LOCKED:
                 manager.placeLock(player, block, face, event.getHandType());
                 manager.sendHint(player, "quickLock");
                 return;
-            case SIGN_M_OWNERS:
+            case MULTI_OWNERS:
                 manager.sendHint(player, "multiOwners");
                 return;
             case M_BLOCKS:
@@ -234,12 +190,6 @@ public class LocketListener {
         }
     }
 
-    /**
-     * 右键选择告示牌.
-     *
-     * @param event  事件
-     * @param player 玩家
-     */
     @Listener(order = Order.LAST)
     public void onPlayerSelectSign(InteractBlockEvent.Secondary event, @First Player player) {
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
@@ -249,12 +199,6 @@ public class LocketListener {
         }
     }
 
-    /**
-     * 玩家修改告示牌事件.
-     *
-     * @param event  事件
-     * @param player 玩家
-     */
     @Listener(order = Order.LAST)
     public void onPlayerChangeSign(ChangeSignEvent event, @First Player player) {
         SignData data = event.getText();

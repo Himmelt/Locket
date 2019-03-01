@@ -1,33 +1,57 @@
 package org.soraworld.locket.data;
 
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.soraworld.locket.manager.LocketManager;
+import org.soraworld.violet.inject.Inject;
+import org.soraworld.violet.util.ChatColor;
+import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
 import java.util.HashSet;
 
+@Inject
 public class LockData {
 
     private final HashSet<String> owners = new HashSet<>();
     private final HashSet<String> users = new HashSet<>();
 
-    public void append(LockData data) {
-        this.owners.addAll(data.owners);
-        this.users.addAll(data.users);
+    @Inject
+    private static LocketManager manager;
+
+    public LockData(@NotNull HashSet<Location<World>> signs) {
+        signs.forEach(sign -> {
+            sign.getTileEntity().ifPresent(tile -> {
+                if (tile instanceof Sign) {
+                    ListValue<Text> lines = ((Sign) tile).lines();
+                    String line_0 = ChatColor.stripAllColor(lines.get(0).toPlain()).trim();
+                    String line_1 = ChatColor.stripAllColor(lines.get(1).toPlain()).trim();
+                    String line_2 = ChatColor.stripAllColor(lines.get(2).toPlain()).trim();
+                    String line_3 = ChatColor.stripAllColor(lines.get(3).toPlain()).trim();
+                    if (manager.isPrivate(line_0)) {
+                        owners.add(line_1);
+                        users.add(line_2);
+                        users.add(line_3);
+                    }
+                }
+            });
+        });
     }
 
-    public void puts(String owner, String user1, String user2) {
-        owners.add(owner);
-        users.add(user1);
-        users.add(user2);
+    public Result tryAccess(@NotNull Player player) {
+        if (owners.size() <= 0) return Result.NOT_LOCKED;
+        if (owners.size() >= 2) return Result.MULTI_OWNERS;
+        if (owners.contains(player.getName())) return Result.SIGN_OWNER;
+        if (users.contains(player.getName())) return Result.SIGN_USER;
+        return Result.NO_ACCESS;
     }
 
-    public Result accessBy(@Nullable Player player) {
-        if (owners.size() <= 0) return Result.SIGN_NOT_LOCK;
-        if (owners.size() >= 2) return Result.SIGN_M_OWNERS;
-        if (player != null) {
-            if (owners.contains(player.getName())) return Result.SIGN_OWNER;
-            if (users.contains(player.getName())) return Result.SIGN_USER;
-        }
-        return Result.SIGN_NO_ACCESS;
+    public State getState() {
+        if (owners.size() <= 0) return State.NOT_LOCKED;
+        if (owners.size() >= 2) return State.MULTI_OWNERS;
+        return State.LOCKED;
     }
 }
