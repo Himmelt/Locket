@@ -3,10 +3,10 @@ package org.soraworld.locket.data;
 public enum Result {
     SIGN_USER(false, true),
     SIGN_OWNER(true, true),
+    LOCKED(false, false),
     NOT_LOCKED(true, true),
     MULTI_OWNERS(false, false),
-    NO_ACCESS(false, false),
-    M_BLOCKS(false, false),
+    MULTI_BLOCKS(false, false),
     OTHER_PROTECT(false, false);
 
     private boolean edit, use;

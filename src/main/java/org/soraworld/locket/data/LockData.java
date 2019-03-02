@@ -46,7 +46,7 @@ public class LockData {
         if (owners.size() >= 2) return Result.MULTI_OWNERS;
         if (owners.contains(player.getName())) return Result.SIGN_OWNER;
         if (users.contains(player.getName())) return Result.SIGN_USER;
-        return Result.NO_ACCESS;
+        return Result.LOCKED;
     }
 
     public State getState() {

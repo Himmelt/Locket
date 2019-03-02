@@ -183,7 +183,7 @@ public class LocketManager extends VManager {
             Location<World> relative = location.getRelative(face);
             if (isDBlock && relative.getBlockType() == type) {
                 link = relative;
-                if (++count >= 2) return Result.M_BLOCKS;
+                if (++count >= 2) return Result.MULTI_BLOCKS;
             } else if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
                 signs.add(relative);
             }
@@ -194,7 +194,7 @@ public class LocketManager extends VManager {
             count = 0;
             for (Direction face : FACES) {
                 Location<World> relative = link.getRelative(face);
-                if (relative.getBlockType() == type && ++count >= 2) return Result.M_BLOCKS;
+                if (relative.getBlockType() == type && ++count >= 2) return Result.MULTI_BLOCKS;
                 if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
                     signs.add(relative);
                 }

@@ -44,12 +44,6 @@ public class LocketListener {
         event.filter(manager::notLocked);
     }
 
-    /**
-     * 玩家方块交互事件(主要行为保护).
-     *
-     * @param event  事件
-     * @param player 玩家
-     */
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerInteractBlock(InteractBlockEvent event, @First Player player) {
         event.getTargetBlock().getLocation().ifPresent(location -> {
@@ -63,11 +57,11 @@ public class LocketListener {
                     manager.sendHint(player, "multiOwners");
                     event.setCancelled(true);
                     return;
-                case M_BLOCKS:
+                case MULTI_BLOCKS:
                     manager.sendHint(player, "multiBlocks");
                     event.setCancelled(true);
                     return;
-                case NO_ACCESS:
+                case LOCKED:
                     manager.sendHint(player, "noAccess");
                     event.setCancelled(true);
             }
@@ -92,7 +86,10 @@ public class LocketListener {
     public void onPlayerBreakBlock(ChangeBlockEvent.Pre event, @ContextValue("PLAYER_BREAK") @First Player player) {
         if (!player.hasPermission(manager.defAdminPerm())) {
             for (Location<World> location : event.getLocations()) {
-                if (!manager.tryAccess(player, location).canUse()) {
+                Result result = manager.tryAccess(player, location);
+                System.out.println(result);
+                // TODO BUG 可以直接打掉告示牌
+                if (!result.canEdit()) {
                     event.setCancelled(true);
                     return;
                 }
@@ -111,7 +108,6 @@ public class LocketListener {
         }
     }
 
-    /* TODO remove this event ? */
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPistonRetract(ChangeBlockEvent.Pre event, @ContextValue("PISTON_RETRACT") @First Object cause) {
         for (Location<World> location : event.getLocations()) {
@@ -182,7 +178,7 @@ public class LocketListener {
             case MULTI_OWNERS:
                 manager.sendHint(player, "multiOwners");
                 return;
-            case M_BLOCKS:
+            case MULTI_BLOCKS:
                 manager.sendHint(player, "multiBlocks");
                 return;
             default:

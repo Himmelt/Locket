@@ -4,11 +4,10 @@ import org.jetbrains.annotations.NotNull;
 import org.soraworld.locket.Locket;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.manager.LocketManager;
-import org.soraworld.violet.command.Args;
-import org.soraworld.violet.command.Sub;
-import org.soraworld.violet.command.SubExecutor;
+import org.soraworld.violet.command.*;
 import org.soraworld.violet.inject.Command;
 import org.soraworld.violet.inject.Inject;
+import org.soraworld.violet.util.ListUtils;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
@@ -19,12 +18,16 @@ import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 
 @Command(name = Locket.PLUGIN_ID, aliases = {"lock"}, usage = "usage.lock")
 public class CommandLocket {
     @Inject
     private LocketManager manager;
+    private static final List<String> LINE_2_3 = new ArrayList<>(Arrays.asList("2", "3"));
 
     @Sub(path = ".", perm = "locket.lock")
     public final SubExecutor<Player> lock = (cmd, player, args) -> {
@@ -56,6 +59,17 @@ public class CommandLocket {
                 }
             }
         } else manager.sendHint(player, "selectFirst");
+    };
+
+    @Tab(path = ".")
+    public final TabExecutor<Player> lock_tab = (cmd, player, args) -> {
+        if (args.size() <= 1) return LINE_2_3;
+        if (args.size() == 2) {
+            List<String> players = new ArrayList<>();
+            Sponge.getServer().getOnlinePlayers().forEach(p -> players.add(p.getName()));
+            return ListUtils.getMatchList(args.get(1), players);
+        }
+        return new ArrayList<>();
     };
 
     @Sub(perm = "locket.lock", usage = "usage.remove")
