@@ -166,9 +166,7 @@ public class LocketManager extends VManager {
         DataAPI.setTemp(player.getUniqueId(), SELECTED_KEY, location);
     }
 
-    /* TODO Only player access consider third-party plugin */
     public Result tryAccess(@NotNull Player player, @NotNull Location<World> location) {
-        if (otherProtected(player, location)) return Result.OTHER_PROTECT;
         BlockType type = location.getBlockType();
         boolean isDBlock = doubleBlocks.contains(type);
         int count = 0;
@@ -190,7 +188,6 @@ public class LocketManager extends VManager {
         }
         // 检查相邻双联方块
         if (isDBlock && link != null) {
-            if (otherProtected(player, link)) return Result.OTHER_PROTECT;
             count = 0;
             for (Direction face : FACES) {
                 Location<World> relative = link.getRelative(face);

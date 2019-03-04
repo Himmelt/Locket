@@ -67,7 +67,7 @@ public class CommandLocket {
         if (args.size() == 2) {
             List<String> players = new ArrayList<>();
             Sponge.getServer().getOnlinePlayers().forEach(p -> players.add(p.getName()));
-            return ListUtils.getMatchList(args.get(1), players);
+            return ListUtils.getMatchListIgnoreCase(args.get(1), players);
         }
         return new ArrayList<>();
     };

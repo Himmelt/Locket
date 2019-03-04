@@ -1,24 +1,22 @@
 package org.soraworld.locket.listener;
 
-import org.soraworld.locket.data.Result;
 import org.soraworld.locket.manager.LocketManager;
 import org.soraworld.violet.inject.EventListener;
 import org.soraworld.violet.inject.Inject;
 import org.soraworld.violet.util.ChatColor;
-import org.spongepowered.api.block.BlockSnapshot;
+import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
-import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.entity.living.player.gamemode.GameModes;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
 import org.spongepowered.api.event.filter.IsCancelled;
-import org.spongepowered.api.event.filter.cause.ContextValue;
 import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.event.item.inventory.ChangeInventoryEvent;
 import org.spongepowered.api.event.world.ExplosionEvent;
@@ -41,17 +39,30 @@ public class LocketListener {
 
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onChangeBlock(ChangeBlockEvent event) {
-        event.filter(manager::notLocked);
+        Player player = event.getCause().first(Player.class).orElse(null);
+        if (player == null) event.filter(manager::notLocked);
+        else event.filter(l -> manager.tryAccess(player, l).canEdit());
     }
 
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerInteractBlock(InteractBlockEvent event, @First Player player) {
         event.getTargetBlock().getLocation().ifPresent(location -> {
             if (player.hasPermission(manager.defAdminPerm())) return;
+            BlockType type = location.getBlockType();
             switch (manager.tryAccess(player, location)) {
                 case SIGN_USER:
+                    if (event instanceof InteractBlockEvent.Primary || type == BlockTypes.WALL_SIGN) {
+                        event.setCancelled(true);
+                    }
                 case SIGN_OWNER:
+                    if (event instanceof InteractBlockEvent.Primary && type != BlockTypes.WALL_SIGN && player.gameMode().get().equals(GameModes.CREATIVE)) {
+                        event.setCancelled(true);
+                    }
                 case NOT_LOCKED:
+                    return;
+                case LOCKED:
+                    manager.sendHint(player, "noAccess");
+                    event.setCancelled(true);
                     return;
                 case MULTI_OWNERS:
                     manager.sendHint(player, "multiOwners");
@@ -60,63 +71,8 @@ public class LocketListener {
                 case MULTI_BLOCKS:
                     manager.sendHint(player, "multiBlocks");
                     event.setCancelled(true);
-                    return;
-                case LOCKED:
-                    manager.sendHint(player, "noAccess");
-                    event.setCancelled(true);
             }
         });
-    }
-
-    @Listener(order = Order.FIRST, beforeModifications = true)
-    @IsCancelled(Tristate.UNDEFINED)
-    public void onPlayerPlaceBlock(ChangeBlockEvent.Place event, @First Player player) {
-        if (!player.hasPermission(manager.defAdminPerm())) {
-            for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
-                transaction.getOriginal().getLocation().ifPresent(location -> {
-                    Result result = manager.tryAccess(player, location);
-                    if (!result.canUse()) event.setCancelled(true);
-                });
-                if (event.isCancelled()) return;
-            }
-        }
-    }
-
-    @Listener(order = Order.FIRST, beforeModifications = true)
-    public void onPlayerBreakBlock(ChangeBlockEvent.Pre event, @ContextValue("PLAYER_BREAK") @First Player player) {
-        if (!player.hasPermission(manager.defAdminPerm())) {
-            for (Location<World> location : event.getLocations()) {
-                Result result = manager.tryAccess(player, location);
-                System.out.println(result);
-                // TODO BUG 可以直接打掉告示牌
-                if (!result.canEdit()) {
-                    event.setCancelled(true);
-                    return;
-                }
-            }
-        }
-    }
-
-    @Listener(order = Order.FIRST, beforeModifications = true)
-    public void onPistonExtend(ChangeBlockEvent.Pre event, @ContextValue("PISTON_EXTEND") @First Object cause) {
-        for (Location<World> location : event.getLocations()) {
-            if (manager.isLocked(location)) {
-                System.out.println("onPistonExtend Cancel:" + location);
-                event.setCancelled(true);
-                return;
-            }
-        }
-    }
-
-    @Listener(order = Order.FIRST, beforeModifications = true)
-    public void onPistonRetract(ChangeBlockEvent.Pre event, @ContextValue("PISTON_RETRACT") @First Object cause) {
-        for (Location<World> location : event.getLocations()) {
-            if (manager.isLocked(location)) {
-                System.out.println("onPistonRetract Cancel:" + location);
-                event.setCancelled(true);
-                return;
-            }
-        }
     }
 
     @Listener(order = Order.FIRST, beforeModifications = true)
@@ -154,7 +110,6 @@ public class LocketListener {
         if (block == null) return;
         if (!manager.isLockable(block) || block.getRelative(face).getBlockType() != BlockTypes.AIR) return;
 
-        System.out.println("onPlayerLockBlock cancel");
         event.setCancelled(true);
 
         if (player.hasPermission(manager.defAdminPerm())) {
