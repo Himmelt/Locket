@@ -12,7 +12,12 @@ tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
 }
 
+repositories {
+    jcenter()
+}
+
 dependencies {
     compile 'org.spongepowered:spongeapi:7.1.0-SNAPSHOT'
-    compile files('lib/SpongeViolet-2.4.0-shadow.jar')
+    //compile files('lib/SpongeViolet-2.4.0-shadow.jar')
+    compile 'org.soraworld:violet-sponge:2.4.0'
 }
