@@ -19,7 +19,6 @@ import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -27,14 +26,13 @@ import java.util.function.Consumer;
 public class CommandLocket {
     @Inject
     private LocketManager manager;
-    private static final List<String> LINE_2_3 = new ArrayList<>(Arrays.asList("2", "3"));
 
     @Sub(path = ".", perm = "locket.lock")
     public final SubExecutor<Player> lock = (cmd, player, args) -> {
         Location<World> selected = manager.getSelected(player);
         if (selected != null) {
             if (args.empty()) {
-                if (player.hasPermission(manager.defAdminPerm())) {
+                if (manager.bypassPerm(player)) {
                     manager.lockSign(player, selected, 0, null);
                 } else if (manager.tryAccess(player, selected) == Result.NOT_LOCKED) {
                     if (manager.isLockable(LocketManager.getAttached(selected))) {
@@ -45,7 +43,7 @@ public class CommandLocket {
                 try {
                     int line = Integer.valueOf(args.get(0));
                     String name = args.get(1);
-                    if (player.hasPermission(manager.defAdminPerm())) {
+                    if (manager.bypassPerm(player)) {
                         manager.lockSign(player, selected, line, name);
                     } else if (manager.isLockable(LocketManager.getAttached(selected))) {
                         Result result = manager.tryAccess(player, selected);
@@ -63,14 +61,17 @@ public class CommandLocket {
 
     @Tab(path = ".")
     public final TabExecutor<Player> lock_tab = (cmd, player, args) -> {
-        // TODO complete
         if (args.size() <= 1) {
-            List<String> list = cmd.tabComplete(player, args);
-            list.add(0, "3");
-            list.add(0, "2");
+            List<String> list = cmd.tabComplete(player, args, true);
+            if (args.first().isEmpty()) {
+                list.add(0, "3");
+                list.add(0, "2");
+            }
             return list;
         }
-        if (args.size() == 2) {
+        if (args.size() >= 2) {
+            VCommand sub = cmd.getSub(args.first());
+            if (sub != null) return sub.tabComplete(player, args.next(), false);
             List<String> players = new ArrayList<>();
             Sponge.getServer().getOnlinePlayers().forEach(p -> players.add(p.getName()));
             return ListUtils.getMatchListIgnoreCase(args.get(1), players);
@@ -83,13 +84,13 @@ public class CommandLocket {
         Location<World> selected = manager.getSelected(player);
         if (selected != null) {
             if (args.empty()) {
-                if (player.hasPermission(manager.defAdminPerm()) || manager.tryAccess(player, selected) == Result.SIGN_OWNER) {
+                if (manager.bypassPerm(player) || manager.tryAccess(player, selected) == Result.SIGN_OWNER) {
                     manager.unLockSign(selected, 0);
                 }
             } else if (args.size() >= 1) {
                 try {
                     int line = Integer.valueOf(args.first());
-                    if (player.hasPermission(manager.defAdminPerm())) {
+                    if (manager.bypassPerm(player)) {
                         manager.unLockSign(selected, line);
                     } else if ((line == 2 || line == 3) && manager.tryAccess(player, selected) == Result.SIGN_OWNER) {
                         manager.unLockSign(selected, line);
@@ -127,7 +128,7 @@ public class CommandLocket {
 
     private void processType(@NotNull CommandSource sender, @NotNull Args args, @NotNull Consumer<BlockType> consumer, @NotNull String key) {
         BlockType type;
-        // TODO args look
+        // TODO +/-/++/-- block look at
         if (args.notEmpty()) {
             type = Sponge.getRegistry().getType(BlockType.class, args.first()).orElse(null);
         } else if (sender instanceof Player) {

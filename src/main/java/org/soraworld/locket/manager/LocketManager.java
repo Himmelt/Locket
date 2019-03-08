@@ -21,6 +21,7 @@ import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
+import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
 import org.spongepowered.api.data.type.HandType;
@@ -38,7 +39,9 @@ import org.spongepowered.api.world.World;
 
 import javax.annotation.Nonnull;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @MainManager
@@ -188,7 +191,7 @@ public class LocketManager extends VManager {
         HashSet<Location<World>> signs = new HashSet<>();
 
         // 自身也将参与检查
-        signs.add(location);
+        if (type == BlockTypes.WALL_SIGN) signs.add(location);
 
         // 检查4个方向是否是 WALL_SIGN 或 DChest
         for (Direction face : FACES) {
@@ -211,49 +214,45 @@ public class LocketManager extends VManager {
                 }
             }
         }
-        // Check up doors
-        Location<World> doorLoc = location.getRelative(Direction.UP);
-        BlockType doorType = doorLoc.getBlockType();
-        if (highDoors.contains(doorType)) {
+        // 检查相连的门
+        for (Location<World> door : getDoors(location)) {
             for (Direction face : FACES) {
-                Location<World> relative = doorLoc.getRelative(face);
-                if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
-                    signs.add(relative);
-                }
-            }
-        }
-        doorLoc = doorLoc.getRelative(Direction.UP);
-        doorType = doorLoc.getBlockType();
-        if (highDoors.contains(doorType)) {
-            for (Direction face : FACES) {
-                Location<World> relative = doorLoc.getRelative(face);
-                if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
-                    signs.add(relative);
-                }
-            }
-        }
-        // Check down doors
-        doorLoc = location.getRelative(Direction.DOWN);
-        doorType = doorLoc.getBlockType();
-        if (highDoors.contains(doorType)) {
-            for (Direction face : FACES) {
-                Location<World> relative = doorLoc.getRelative(face);
-                if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
-                    signs.add(relative);
-                }
-            }
-        }
-        doorLoc = doorLoc.getRelative(Direction.DOWN);
-        doorType = doorLoc.getBlockType();
-        if (highDoors.contains(doorType)) {
-            for (Direction face : FACES) {
-                Location<World> relative = doorLoc.getRelative(face);
+                Location<World> relative = door.getRelative(face);
                 if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
                     signs.add(relative);
                 }
             }
         }
         return analyzeSign(player, signs);
+    }
+
+    private List<Location<World>> getDoors(@NotNull Location<World> location) {
+        BlockType type = location.getBlockType();
+        Location<World> up = location.getRelative(Direction.UP);
+        Location<World> down = location.getRelative(Direction.DOWN);
+        ArrayList<Location<World>> list = new ArrayList<>();
+        if (highDoors.contains(type)) {
+            list.add(up);
+            list.add(down);
+            if (highDoors.contains(up.getBlockType())) {
+                list.add(up.getRelative(Direction.UP));
+            }
+            if (highDoors.contains(down.getBlockType())) {
+                list.add(down.getRelative(Direction.DOWN));
+            }
+        } else {
+            if (highDoors.contains(up.getBlockType())) {
+                list.add(up);
+                list.add(up.getRelative(Direction.UP));
+                list.add(up.getRelative(Direction.UP).getRelative(Direction.UP));
+            }
+            if (highDoors.contains(down.getBlockType())) {
+                list.add(down);
+                list.add(down.getRelative(Direction.DOWN));
+                list.add(down.getRelative(Direction.DOWN).getRelative(Direction.DOWN));
+            }
+        }
+        return list;
     }
 
     public boolean otherProtected(Player player, Location<World> block) {
@@ -360,5 +359,9 @@ public class LocketManager extends VManager {
 
     public static Location<World> getAttached(@NotNull Location<World> location) {
         return location.getRelative(location.getBlock().get(Keys.DIRECTION).orElse(Direction.NONE).getOpposite());
+    }
+
+    public boolean bypassPerm(CommandSource sender) {
+        return sender.hasPermission(plugin.getId() + ".bypass");
     }
 }

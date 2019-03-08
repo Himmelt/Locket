@@ -41,13 +41,16 @@ public class LocketListener {
     public void onChangeBlock(ChangeBlockEvent event) {
         Player player = event.getCause().first(Player.class).orElse(null);
         if (player == null) event.filter(manager::notLocked);
-        else event.filter(l -> manager.tryAccess(player, l).canEdit());
+        else {
+            if (manager.bypassPerm(player)) return;
+            event.filter(l -> manager.tryAccess(player, l).canEdit());
+        }
     }
 
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerInteractBlock(InteractBlockEvent event, @First Player player) {
         event.getTargetBlock().getLocation().ifPresent(location -> {
-            if (player.hasPermission(manager.defAdminPerm())) return;
+            if (manager.bypassPerm(player)) return;
             BlockType type = location.getBlockType();
             switch (manager.tryAccess(player, location)) {
                 case SIGN_USER:
@@ -112,7 +115,7 @@ public class LocketListener {
 
         event.setCancelled(true);
 
-        if (player.hasPermission(manager.defAdminPerm())) {
+        if (manager.bypassPerm(player)) {
             manager.placeLock(player, block, face, event.getHandType());
             return;
         }
@@ -159,7 +162,7 @@ public class LocketListener {
         String line_3 = ChatColor.stripAllColor(data.get(3).orElse(Text.EMPTY).toPlain()).trim();
         if (manager.isPrivate(line_0)) {
             Sign sign = event.getTargetTile();
-            if (player.hasPermission(manager.defAdminPerm())) {
+            if (manager.bypassPerm(player)) {
                 data.setElement(0, manager.getPrivateText());
                 data.setElement(1, manager.getOwnerText(line_1.isEmpty() ? player.getName() : line_1));
                 data.setElement(2, manager.getUserText(line_2));
