@@ -36,6 +36,7 @@ comment {
   acceptSigns = "Acceptable Private texts."
   lockables = "Lockable Block ID(s)."
   doubleBlocks = "The double-chest like blocks, which can be accessed from neighbors."
+  highDoors = "High Door Block ID(s)."
 }
 
 usage {

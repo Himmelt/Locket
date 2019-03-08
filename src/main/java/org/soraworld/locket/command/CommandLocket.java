@@ -63,7 +63,13 @@ public class CommandLocket {
 
     @Tab(path = ".")
     public final TabExecutor<Player> lock_tab = (cmd, player, args) -> {
-        if (args.size() <= 1) return LINE_2_3;
+        // TODO complete
+        if (args.size() <= 1) {
+            List<String> list = cmd.tabComplete(player, args);
+            list.add(0, "3");
+            list.add(0, "2");
+            return list;
+        }
         if (args.size() == 2) {
             List<String> players = new ArrayList<>();
             Sponge.getServer().getOnlinePlayers().forEach(p -> players.add(p.getName()));
@@ -121,6 +127,7 @@ public class CommandLocket {
 
     private void processType(@NotNull CommandSource sender, @NotNull Args args, @NotNull Consumer<BlockType> consumer, @NotNull String key) {
         BlockType type;
+        // TODO args look
         if (args.notEmpty()) {
             type = Sponge.getRegistry().getType(BlockType.class, args.first()).orElse(null);
         } else if (sender instanceof Player) {

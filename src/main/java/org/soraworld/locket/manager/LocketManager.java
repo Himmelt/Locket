@@ -62,6 +62,8 @@ public class LocketManager extends VManager {
     private Set<BlockType> lockables = new HashSet<>();
     @Setting(comment = "comment.doubleBlocks")
     private Set<BlockType> doubleBlocks = new HashSet<>();
+    @Setting(comment = "comment.highDoors")
+    private Set<BlockType> highDoors = new HashSet<>();
 
     private static final String SELECTED_KEY = "lock:selected";
 
@@ -102,6 +104,13 @@ public class LocketManager extends VManager {
         lockables.add(BlockTypes.TRAPPED_CHEST);
         doubleBlocks.add(BlockTypes.CHEST);
         doubleBlocks.add(BlockTypes.TRAPPED_CHEST);
+        highDoors.add(BlockTypes.WOODEN_DOOR);
+        highDoors.add(BlockTypes.BIRCH_DOOR);
+        highDoors.add(BlockTypes.ACACIA_DOOR);
+        highDoors.add(BlockTypes.JUNGLE_DOOR);
+        highDoors.add(BlockTypes.SPRUCE_DOOR);
+        highDoors.add(BlockTypes.DARK_OAK_DOOR);
+        highDoors.add(BlockTypes.IRON_DOOR);
     }
 
     public boolean isLockable(@NotNull Location<World> location) {
@@ -109,6 +118,11 @@ public class LocketManager extends VManager {
         if (type == BlockTypes.WALL_SIGN || type == BlockTypes.STANDING_SIGN) return false;
         if (lockables.contains(type)) return true;
         if (doubleBlocks.contains(type)) return true;
+        if (highDoors.contains(type)) return true;
+        type = location.getRelative(Direction.UP).getBlockType();
+        if (highDoors.contains(type)) return true;
+        type = location.getRelative(Direction.DOWN).getBlockType();
+        if (highDoors.contains(type)) return true;
         TileEntity tile = location.getTileEntity().orElse(null);
         return protectTile && tile != null || protectCarrier && tile instanceof TileEntityCarrier;
     }
@@ -192,6 +206,48 @@ public class LocketManager extends VManager {
             for (Direction face : FACES) {
                 Location<World> relative = link.getRelative(face);
                 if (relative.getBlockType() == type && ++count >= 2) return Result.MULTI_BLOCKS;
+                if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+                    signs.add(relative);
+                }
+            }
+        }
+        // Check up doors
+        Location<World> doorLoc = location.getRelative(Direction.UP);
+        BlockType doorType = doorLoc.getBlockType();
+        if (highDoors.contains(doorType)) {
+            for (Direction face : FACES) {
+                Location<World> relative = doorLoc.getRelative(face);
+                if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+                    signs.add(relative);
+                }
+            }
+        }
+        doorLoc = doorLoc.getRelative(Direction.UP);
+        doorType = doorLoc.getBlockType();
+        if (highDoors.contains(doorType)) {
+            for (Direction face : FACES) {
+                Location<World> relative = doorLoc.getRelative(face);
+                if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+                    signs.add(relative);
+                }
+            }
+        }
+        // Check down doors
+        doorLoc = location.getRelative(Direction.DOWN);
+        doorType = doorLoc.getBlockType();
+        if (highDoors.contains(doorType)) {
+            for (Direction face : FACES) {
+                Location<World> relative = doorLoc.getRelative(face);
+                if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+                    signs.add(relative);
+                }
+            }
+        }
+        doorLoc = doorLoc.getRelative(Direction.DOWN);
+        doorType = doorLoc.getBlockType();
+        if (highDoors.contains(doorType)) {
+            for (Direction face : FACES) {
+                Location<World> relative = doorLoc.getRelative(face);
                 if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
                     signs.add(relative);
                 }

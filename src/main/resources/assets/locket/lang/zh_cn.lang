@@ -36,6 +36,7 @@ comment {
   acceptSigns = "(历史)可接受的私有告示牌标志列表."
   lockables = "可被保护的方块id列表."
   doubleBlocks = "被标记为双联方块的id列表。如 大箱子."
+  highDoors = "竖立(高)门方块id列表."
 }
 
 usage {
