@@ -14,10 +14,12 @@ tasks.withType(JavaCompile) {
 
 repositories {
     jcenter()
+    maven {
+        url = 'https://oss.jfrog.org/artifactory/libs-snapshot/'
+    }
 }
 
 dependencies {
     compile 'org.spongepowered:spongeapi:7.1.0-SNAPSHOT'
-    //compile files('lib/SpongeViolet-2.4.0-shadow.jar')
-    compile 'org.soraworld:violet-sponge:2.4.0'
+    compile 'org.soraworld:violet-sponge:2.4.0-SNAPSHOT'
 }
