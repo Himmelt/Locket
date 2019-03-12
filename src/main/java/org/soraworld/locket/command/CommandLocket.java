@@ -71,7 +71,7 @@ public class CommandLocket {
         }
         if (args.size() >= 2) {
             VCommand sub = cmd.getSub(args.first());
-            if (sub != null) return sub.tabComplete(player, args.next(), false);
+            if (sub != null) return sub.tabComplete(player, args.next());
             List<String> players = new ArrayList<>();
             Sponge.getServer().getOnlinePlayers().forEach(p -> players.add(p.getName()));
             return ListUtils.getMatchListIgnoreCase(args.get(1), players);
