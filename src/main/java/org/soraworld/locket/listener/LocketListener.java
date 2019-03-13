@@ -47,6 +47,27 @@ public class LocketListener {
         }
     }
 
+    @Listener(order = Order.PRE, beforeModifications = true)
+    public void onChangeBlockPre(ChangeBlockEvent.Pre event) {
+        Player player = event.getCause().first(Player.class).orElse(null);
+        for (Location<World> location : event.getLocations()) {
+            if (location != null) {
+                if (player == null) {
+                    if (manager.isLocked(location)) {
+                        event.setCancelled(true);
+                        return;
+                    }
+                } else {
+                    if (manager.bypassPerm(player)) return;
+                    if (!manager.tryAccess(player, location).canEdit()) {
+                        event.setCancelled(true);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerInteractBlock(InteractBlockEvent event, @First Player player) {
         event.getTargetBlock().getLocation().ifPresent(location -> {
@@ -80,25 +101,28 @@ public class LocketListener {
 
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onExplosion(ExplosionEvent.Detonate event) {
-        event.getAffectedLocations().removeIf(location -> location != null && manager.isLocked(location));
+        if (manager.isProtectExplosion()) {
+            event.getAffectedLocations().removeIf(location -> location != null && manager.isLocked(location));
+        }
     }
 
     @Listener(order = Order.FIRST, beforeModifications = true)
     @IsCancelled(value = Tristate.UNDEFINED)
     public void onInventoryTransfer(ChangeInventoryEvent.Transfer.Pre event) {
-        System.out.println("onInventoryTransfer");
-        Inventory source = event.getSourceInventory();
-        if (source instanceof TileEntityInventory) {
-            ((TileEntityInventory<?>) source).getCarrier().ifPresent(carrier -> {
-                if (carrier instanceof BlockCarrier && manager.isLocked(carrier.getLocation())) event.setCancelled(true);
-            });
-            if (event.isCancelled()) return;
-        }
-        Inventory target = event.getTargetInventory();
-        if (target instanceof TileEntityInventory) {
-            ((TileEntityInventory<?>) target).getCarrier().ifPresent(carrier -> {
-                if (carrier instanceof BlockCarrier && manager.isLocked(carrier.getLocation())) event.setCancelled(true);
-            });
+        if (manager.isProtectTransfer()) {
+            Inventory source = event.getSourceInventory();
+            if (source instanceof TileEntityInventory) {
+                ((TileEntityInventory<?>) source).getCarrier().ifPresent(carrier -> {
+                    if (carrier instanceof BlockCarrier && manager.isLocked(carrier.getLocation())) event.setCancelled(true);
+                });
+                if (event.isCancelled()) return;
+            }
+            Inventory target = event.getTargetInventory();
+            if (target instanceof TileEntityInventory) {
+                ((TileEntityInventory<?>) target).getCarrier().ifPresent(carrier -> {
+                    if (carrier instanceof BlockCarrier && manager.isLocked(carrier.getLocation())) event.setCancelled(true);
+                });
+            }
         }
     }
 

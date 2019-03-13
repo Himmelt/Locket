@@ -51,6 +51,12 @@ public class LocketManager extends VManager {
     private boolean protectTile = false;
     @Setting(comment = "comment.protectCarrier")
     private boolean protectCarrier = true;
+    @Setting(comment = "comment.protectTransfer")
+    private boolean protectTransfer = true;
+    @Setting(comment = "comment.protectExplosion")
+    private boolean protectExplosion = true;
+    @Setting(comment = "comment.preventWorldEdit")
+    private boolean preventWorldEdit = false;
     @Setting(comment = "comment.chatType")
     private ChatType chatType = ChatTypes.ACTION_BAR;
     @Setting(comment = "comment.defaultSign", trans = 0b1000)
@@ -130,6 +136,14 @@ public class LocketManager extends VManager {
         return protectTile && tile != null || protectCarrier && tile instanceof TileEntityCarrier;
     }
 
+    public boolean isProtectTransfer() {
+        return protectTransfer;
+    }
+
+    public boolean isProtectExplosion() {
+        return protectExplosion;
+    }
+
     public void addType(@NotNull BlockType type) {
         lockables.add(type);
     }
@@ -203,6 +217,7 @@ public class LocketManager extends VManager {
                 signs.add(relative);
             }
         }
+
         // 检查相邻双联方块
         if (isDBlock && link != null) {
             count = 0;
@@ -214,6 +229,7 @@ public class LocketManager extends VManager {
                 }
             }
         }
+
         // 检查相连的门
         for (Location<World> door : getDoors(location)) {
             for (Direction face : FACES) {
@@ -223,6 +239,7 @@ public class LocketManager extends VManager {
                 }
             }
         }
+
         return analyzeSign(player, signs);
     }
 
@@ -314,8 +331,11 @@ public class LocketManager extends VManager {
         int count = 0;
         Location<World> link = null;
         HashSet<Location<World>> signs = new HashSet<>();
-        signs.add(location);
 
+        // 自身也将参与检查
+        if (type == BlockTypes.WALL_SIGN) signs.add(location);
+
+        // 检查4个方向是否是 WALL_SIGN 或 DChest
         for (Direction face : FACES) {
             Location<World> relative = location.getRelative(face);
             if (isDBlock && relative.getBlockType() == type) {
@@ -326,11 +346,22 @@ public class LocketManager extends VManager {
             }
         }
 
+        // 检查相邻双联方块
         if (isDBlock && link != null) {
             count = 0;
             for (Direction face : FACES) {
                 Location<World> relative = link.getRelative(face);
                 if (relative.getBlockType() == type && ++count >= 2) return State.MULTI_BLOCKS;
+                if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+                    signs.add(relative);
+                }
+            }
+        }
+
+        // 检查相连的门
+        for (Location<World> door : getDoors(location)) {
+            for (Direction face : FACES) {
+                Location<World> relative = door.getRelative(face);
                 if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
                     signs.add(relative);
                 }
