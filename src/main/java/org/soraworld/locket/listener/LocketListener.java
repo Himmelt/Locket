@@ -101,7 +101,7 @@ public class LocketListener {
 
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onExplosion(ExplosionEvent.Detonate event) {
-        if (manager.isProtectExplosion()) {
+        if (manager.isPreventExplosion()) {
             event.getAffectedLocations().removeIf(location -> location != null && manager.isLocked(location));
         }
     }
@@ -109,7 +109,7 @@ public class LocketListener {
     @Listener(order = Order.FIRST, beforeModifications = true)
     @IsCancelled(value = Tristate.UNDEFINED)
     public void onInventoryTransfer(ChangeInventoryEvent.Transfer.Pre event) {
-        if (manager.isProtectTransfer()) {
+        if (manager.isPreventTransfer()) {
             Inventory source = event.getSourceInventory();
             if (source instanceof TileEntityInventory) {
                 ((TileEntityInventory<?>) source).getCarrier().ifPresent(carrier -> {

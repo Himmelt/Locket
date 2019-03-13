@@ -51,10 +51,11 @@ public class LocketManager extends VManager {
     private boolean protectTile = false;
     @Setting(comment = "comment.protectCarrier")
     private boolean protectCarrier = true;
-    @Setting(comment = "comment.protectTransfer")
-    private boolean protectTransfer = true;
-    @Setting(comment = "comment.protectExplosion")
-    private boolean protectExplosion = true;
+    @Setting(comment = "comment.preventTransfer")
+    private boolean preventTransfer = true;
+    @Setting(comment = "comment.preventExplosion")
+    private boolean preventExplosion = true;
+    // TODO implementation
     @Setting(comment = "comment.preventWorldEdit")
     private boolean preventWorldEdit = false;
     @Setting(comment = "comment.chatType")
@@ -136,12 +137,12 @@ public class LocketManager extends VManager {
         return protectTile && tile != null || protectCarrier && tile instanceof TileEntityCarrier;
     }
 
-    public boolean isProtectTransfer() {
-        return protectTransfer;
+    public boolean isPreventTransfer() {
+        return preventTransfer;
     }
 
-    public boolean isProtectExplosion() {
-        return protectExplosion;
+    public boolean isPreventExplosion() {
+        return preventExplosion;
     }
 
     public void addType(@NotNull BlockType type) {
