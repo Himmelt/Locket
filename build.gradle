@@ -3,8 +3,17 @@ plugins {
 }
 
 group = 'org.soraworld'
-version = '1.1.7'
+version = '1.1.7'.concat(isMasterBranch() ? '' : '-SNAPSHOT')
 description = 'Locket Plugin'
+archivesBaseName = "Locket"
+
+println 'Current Branch  ' + gitBranch()
+println 'Current Version ' + project.version
+
+//def _BINTRAY_USER = System.getenv('BINTRAY_USER') != null ? System.getenv('BINTRAY_USER') : BINTRAY_USER
+//def _BINTRAY_KEY = System.getenv('BINTRAY_KEY') != null ? System.getenv('BINTRAY_KEY') : BINTRAY_KEY
+//def _REPO_KEY = isMasterBranch() ? 'oss-release-local' : 'oss-snapshot-local'
+//def _PUBLISH_CFG = isMasterBranch() ? 'mavenRelease' : 'mavenSnapshot'
 
 sourceCompatibility = targetCompatibility = 1.8
 
@@ -22,4 +31,19 @@ repositories {
 dependencies {
     compile 'org.spongepowered:spongeapi:7.1.0-SNAPSHOT'
     compile 'org.soraworld:violet-sponge:2.4.0-SNAPSHOT'
+}
+
+static String gitBranch() {
+    def branch = System.getenv('CIRCLE_BRANCH')
+    if (branch != null) return branch.trim()
+    branch = System.getenv('TRAVIS_BRANCH')
+    if (branch != null) return branch.trim()
+    branch = 'unknown'
+    def info = 'git branch'.execute().text.trim()
+    info.eachLine { line -> if (line.contains('*')) branch = line.replace('*', '').trim() }
+    return branch
+}
+
+static boolean isMasterBranch() {
+    return gitBranch().equalsIgnoreCase('master')
 }
