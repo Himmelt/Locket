@@ -20,5 +20,5 @@ import org.spongepowered.api.plugin.Plugin;
 public class Locket extends SpongePlugin {
     public static final String PLUGIN_ID = "locket";
     public static final String PLUGIN_NAME = "Locket";
-    public static final String PLUGIN_VERSION = "1.1.7";
+    public static final String PLUGIN_VERSION = "1.1.8";
 }

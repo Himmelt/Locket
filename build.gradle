@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'org.soraworld'
-version = '1.1.7'.concat(isMasterBranch() ? '' : '-SNAPSHOT')
+version = '1.1.8'.concat(isMasterBranch() ? '' : '-SNAPSHOT')
 description = 'Locket Plugin'
 archivesBaseName = "Locket"
 
@@ -30,7 +30,7 @@ repositories {
 
 dependencies {
     compile 'org.spongepowered:spongeapi:7.1.0-SNAPSHOT'
-    compile 'org.soraworld:violet-sponge:2.4.0-SNAPSHOT'
+    compile 'org.soraworld:violet-sponge:2.4.1-SNAPSHOT'
 }
 
 static String gitBranch() {
