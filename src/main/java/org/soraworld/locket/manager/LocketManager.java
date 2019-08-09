@@ -1,5 +1,10 @@
 package org.soraworld.locket.manager;
 
+import me.ryanhamshire.griefprevention.GriefPrevention;
+import me.ryanhamshire.griefprevention.api.GriefPreventionApi;
+import me.ryanhamshire.griefprevention.api.claim.Claim;
+import me.ryanhamshire.griefprevention.api.claim.ClaimFlag;
+import me.ryanhamshire.griefprevention.api.claim.ClaimManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soraworld.hocon.exception.SerializerException;
@@ -79,6 +84,8 @@ public class LocketManager extends VManager {
 
     private static final Direction[] FACES = new Direction[]{Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
 
+    private static Object griefPreventionApi;
+
     public LocketManager(SpongePlugin plugin, Path path) {
         super(plugin, path);
         try {
@@ -95,6 +102,10 @@ public class LocketManager extends VManager {
             options.registerType(new TextSerializer());
         } catch (SerializerException e) {
             e.printStackTrace();
+        }
+        try {
+            griefPreventionApi = GriefPrevention.getApi();
+        } catch (Throwable ignored) {
         }
     }
 
@@ -198,7 +209,10 @@ public class LocketManager extends VManager {
         DataAPI.setTemp(player.getUniqueId(), SELECTED_KEY, location);
     }
 
-    public Result tryAccess(@NotNull Player player, @NotNull Location<World> location) {
+    public Result tryAccess(@NotNull Player player, @NotNull Location<World> location, boolean needEdit) {
+
+        if (needEdit && !canEditOther(player, location)) return Result.OTHER_PROTECT;
+
         BlockType type = location.getBlockType();
         boolean isDBlock = doubleBlocks.contains(type);
         int count = 0;
@@ -324,6 +338,20 @@ public class LocketManager extends VManager {
 
     public boolean notLocked(@NotNull Location<World> location) {
         return checkState(location) == State.NOT_LOCKED;
+    }
+
+    public boolean canEditOther(Player player, Location<World> location) {
+        if (griefPreventionApi != null) {
+            World world = location.getExtent();
+            ClaimManager manager = ((GriefPreventionApi) griefPreventionApi).getClaimManager(world);
+            Claim claim = manager.getClaimAt(location);
+            if (claim != null) {
+                boolean canPlace = claim.getPermissionValue(player, ClaimFlag.BLOCK_PLACE, "any").asBoolean();
+                boolean canBreak = claim.getPermissionValue(player, ClaimFlag.BLOCK_BREAK, "any").asBoolean();
+                return canPlace && canBreak;
+            }
+        }
+        return true;
     }
 
     private State checkState(@NotNull Location<World> location) {

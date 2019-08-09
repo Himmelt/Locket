@@ -43,7 +43,7 @@ public class LocketListener {
         if (player == null) event.filter(manager::notLocked);
         else {
             if (manager.bypassPerm(player)) return;
-            event.filter(l -> manager.tryAccess(player, l).canEdit());
+            event.filter(l -> manager.tryAccess(player, l, true).canEdit());
         }
     }
 
@@ -59,7 +59,7 @@ public class LocketListener {
                     }
                 } else {
                     if (manager.bypassPerm(player)) return;
-                    if (!manager.tryAccess(player, location).canEdit()) {
+                    if (!manager.tryAccess(player, location, true).canEdit()) {
                         event.setCancelled(true);
                         return;
                     }
@@ -73,7 +73,7 @@ public class LocketListener {
         event.getTargetBlock().getLocation().ifPresent(location -> {
             if (manager.bypassPerm(player)) return;
             BlockType type = location.getBlockType();
-            switch (manager.tryAccess(player, location)) {
+            switch (manager.tryAccess(player, location, false)) {
                 case SIGN_USER:
                     if (event instanceof InteractBlockEvent.Primary || type == BlockTypes.WALL_SIGN) {
                         event.setCancelled(true);
@@ -94,6 +94,10 @@ public class LocketListener {
                     return;
                 case MULTI_BLOCKS:
                     manager.sendHint(player, "multiBlocks");
+                    event.setCancelled(true);
+                    return;
+                case OTHER_PROTECT:
+                    manager.sendHint(player, "otherProtect");
                     event.setCancelled(true);
             }
         });
@@ -151,7 +155,7 @@ public class LocketListener {
             manager.sendHint(player, "otherProtect");
             return;
         }
-        switch (manager.tryAccess(player, block)) {
+        switch (manager.tryAccess(player, block, true)) {
             case SIGN_OWNER:
             case NOT_LOCKED:
                 manager.placeLock(player, block, face, event.getHandType());
