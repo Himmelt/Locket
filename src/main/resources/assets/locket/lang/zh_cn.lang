@@ -3,7 +3,7 @@
 
 chatHead = "[告示牌锁] "
 
-needPerm = "&3你需要 <&c%s&6> 权限才能进行该操作."
+needPerm = "&6你需要 <&c%s&6> 权限才能进行该操作."
 manuLock = "&7手动上锁成功."
 quickLock = "&7快速上锁成功."
 cantLock = "你无法对目标方块添加保护锁."

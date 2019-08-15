@@ -1,7 +1,6 @@
 package org.soraworld.locket.manager;
 
 import me.ryanhamshire.griefprevention.GriefPrevention;
-import me.ryanhamshire.griefprevention.api.GriefPreventionApi;
 import me.ryanhamshire.griefprevention.api.claim.Claim;
 import me.ryanhamshire.griefprevention.api.claim.ClaimFlag;
 import me.ryanhamshire.griefprevention.api.claim.ClaimManager;
@@ -84,8 +83,6 @@ public class LocketManager extends VManager {
 
     private static final Direction[] FACES = new Direction[]{Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
 
-    private static Object griefPreventionApi;
-
     public LocketManager(SpongePlugin plugin, Path path) {
         super(plugin, path);
         try {
@@ -102,10 +99,6 @@ public class LocketManager extends VManager {
             options.registerType(new TextSerializer());
         } catch (SerializerException e) {
             e.printStackTrace();
-        }
-        try {
-            griefPreventionApi = GriefPrevention.getApi();
-        } catch (Throwable ignored) {
         }
     }
 
@@ -341,15 +334,16 @@ public class LocketManager extends VManager {
     }
 
     public boolean canEditOther(Player player, Location<World> location) {
-        if (griefPreventionApi != null) {
-            World world = location.getExtent();
-            ClaimManager manager = ((GriefPreventionApi) griefPreventionApi).getClaimManager(world);
+        World world = location.getExtent();
+        try {
+            ClaimManager manager = GriefPrevention.getApi().getClaimManager(world);
             Claim claim = manager.getClaimAt(location);
             if (claim != null) {
                 boolean canPlace = claim.getPermissionValue(player, ClaimFlag.BLOCK_PLACE, "any").asBoolean();
                 boolean canBreak = claim.getPermissionValue(player, ClaimFlag.BLOCK_BREAK, "any").asBoolean();
                 return canPlace && canBreak;
             }
+        } catch (Throwable ignored) {
         }
         return true;
     }
@@ -422,6 +416,6 @@ public class LocketManager extends VManager {
     }
 
     public boolean bypassPerm(CommandSource sender) {
-        return sender.hasPermission(plugin.getId() + ".bypass");
+        return hasPermission(sender, plugin.getId() + ".bypass");
     }
 }

@@ -3,7 +3,7 @@
 
 chatHead = "[Locket] "
 
-needPerm = "You need permission <&c%s&r> to do this."
+needPerm = "&6You need permission <&c%s&6> to do this."
 manuLock = "&7Manual lock success."
 quickLock = "&7Quick lock success."
 cantLock = "You can't lock the target block."

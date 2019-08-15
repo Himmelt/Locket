@@ -37,7 +37,7 @@ public class LocketListener {
     @Inject
     private LocketManager manager;
 
-    @Listener(order = Order.FIRST, beforeModifications = true)
+    @Listener(order = Order.PRE, beforeModifications = true)
     public void onChangeBlock(ChangeBlockEvent event) {
         Player player = event.getCause().first(Player.class).orElse(null);
         if (player == null) event.filter(manager::notLocked);
@@ -48,6 +48,13 @@ public class LocketListener {
     }
 
     @Listener(order = Order.PRE, beforeModifications = true)
+    public void onExplosion(ExplosionEvent.Detonate event) {
+        if (manager.isPreventExplosion()) {
+            event.getAffectedLocations().removeIf(location -> location != null && manager.isLocked(location));
+        }
+    }
+
+    @Listener(order = Order.AFTER_PRE, beforeModifications = true)
     public void onChangeBlockPre(ChangeBlockEvent.Pre event) {
         Player player = event.getCause().first(Player.class).orElse(null);
         for (Location<World> location : event.getLocations()) {
@@ -68,7 +75,7 @@ public class LocketListener {
         }
     }
 
-    @Listener(order = Order.FIRST, beforeModifications = true)
+    @Listener(order = Order.AFTER_PRE, beforeModifications = true)
     public void onPlayerInteractBlock(InteractBlockEvent event, @First Player player) {
         event.getTargetBlock().getLocation().ifPresent(location -> {
             if (manager.bypassPerm(player)) return;
@@ -103,14 +110,7 @@ public class LocketListener {
         });
     }
 
-    @Listener(order = Order.FIRST, beforeModifications = true)
-    public void onExplosion(ExplosionEvent.Detonate event) {
-        if (manager.isPreventExplosion()) {
-            event.getAffectedLocations().removeIf(location -> location != null && manager.isLocked(location));
-        }
-    }
-
-    @Listener(order = Order.FIRST, beforeModifications = true)
+    @Listener(order = Order.AFTER_PRE, beforeModifications = true)
     @IsCancelled(value = Tristate.UNDEFINED)
     public void onInventoryTransfer(ChangeInventoryEvent.Transfer.Pre event) {
         if (manager.isPreventTransfer()) {
@@ -147,8 +147,8 @@ public class LocketListener {
             manager.placeLock(player, block, face, event.getHandType());
             return;
         }
-        if (!player.hasPermission("locket.lock")) {
-            manager.sendHint(player, "needPerm", "locket.lock");
+        if (!manager.hasPermission(player, "locket.lock")) {
+            manager.sendHint(player, "needPerm", manager.mappingPerm("locket.lock"));
             return;
         }
         if (manager.otherProtected(player, block)) {
@@ -172,7 +172,7 @@ public class LocketListener {
         }
     }
 
-    @Listener(order = Order.LAST)
+    @Listener(order = Order.POST)
     public void onPlayerSelectSign(InteractBlockEvent.Secondary event, @First Player player) {
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
         if (block != null && block.getBlockType() == BlockTypes.WALL_SIGN) {
@@ -205,8 +205,8 @@ public class LocketListener {
                 event.setCancelled(true);
                 return;
             }
-            if (!player.hasPermission("locket.lock")) {
-                manager.sendHint(player, "needPerm", "locket.lock");
+            if (!manager.hasPermission(player, "locket.lock")) {
+                manager.sendHint(player, "needPerm", manager.mappingPerm("locket.lock"));
                 event.setCancelled(true);
                 return;
             }
