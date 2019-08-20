@@ -2,8 +2,8 @@ package org.soraworld.locket.manager;
 
 import me.ryanhamshire.griefprevention.GriefPrevention;
 import me.ryanhamshire.griefprevention.api.claim.Claim;
-import me.ryanhamshire.griefprevention.api.claim.ClaimFlag;
 import me.ryanhamshire.griefprevention.api.claim.ClaimManager;
+import me.ryanhamshire.griefprevention.api.claim.TrustType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soraworld.hocon.exception.SerializerException;
@@ -338,12 +338,10 @@ public class LocketManager extends VManager {
         try {
             ClaimManager manager = GriefPrevention.getApi().getClaimManager(world);
             Claim claim = manager.getClaimAt(location);
-            if (claim != null) {
-                boolean canPlace = claim.getPermissionValue(player, ClaimFlag.BLOCK_PLACE, "any").asBoolean();
-                boolean canBreak = claim.getPermissionValue(player, ClaimFlag.BLOCK_BREAK, "any").asBoolean();
-                return canPlace && canBreak;
-            }
-        } catch (Throwable ignored) {
+            if (claim == null || claim == manager.getWildernessClaim()) return true;
+            return claim.isUserTrusted(player, TrustType.BUILDER);
+        } catch (Throwable e) {
+            debug(e);
         }
         return true;
     }

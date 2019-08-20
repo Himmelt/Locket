@@ -12,6 +12,7 @@ cantRemove = "你无法手动移除用户."
 cantRemoveLine = "此行无法手动移除."
 
 noAccess = "你没有这么做的权限."
+noOwnerAccess = "你不是目标方块的所有者."
 multiOwners = "目标保护锁含有多个所有者,这是不允许的,请联系管理员."
 multiBlocks = "保护目标处于多重(箱子)状态,这是不允许的,请联系管理员."
 otherProtect = "目标方块被其他插件保护,你没有操作权限."

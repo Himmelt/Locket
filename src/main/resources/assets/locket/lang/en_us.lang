@@ -12,6 +12,7 @@ cantRemove = "You can't remove the user manually."
 cantRemoveLine = "This line can't be removed."
 
 noAccess = "You have no access."
+noOwnerAccess = "You are not the owner of the block(s)."
 multiOwners = "Target signs have multi owners, this is not allowed, contact your server's OP."
 multiBlocks = "Target blocks are in a multi-blocks state, this is not allowed, contact your server's OP."
 otherProtect = "Target block is being protected by another plugin, you have no access."
