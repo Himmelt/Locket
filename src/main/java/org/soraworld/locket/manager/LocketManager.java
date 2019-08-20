@@ -19,6 +19,7 @@ import org.soraworld.violet.inject.MainManager;
 import org.soraworld.violet.manager.VManager;
 import org.soraworld.violet.plugin.SpongePlugin;
 import org.soraworld.violet.util.ChatColor;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
@@ -78,6 +79,7 @@ public class LocketManager extends VManager {
     private Set<BlockType> doubleBlocks = new HashSet<>();
     @Setting(comment = "comment.highDoors")
     private Set<BlockType> highDoors = new HashSet<>();
+    private boolean usingGriefPrevention = false;
 
     private static final String SELECTED_KEY = "lock:selected";
 
@@ -125,6 +127,7 @@ public class LocketManager extends VManager {
         highDoors.add(BlockTypes.SPRUCE_DOOR);
         highDoors.add(BlockTypes.DARK_OAK_DOOR);
         highDoors.add(BlockTypes.IRON_DOOR);
+        usingGriefPrevention = Sponge.getPluginManager().isLoaded("griefprevention");
     }
 
     public boolean isLockable(@NotNull Location<World> location) {
@@ -333,15 +336,17 @@ public class LocketManager extends VManager {
         return checkState(location) == State.NOT_LOCKED;
     }
 
-    public boolean canEditOther(Player player, Location<World> location) {
-        World world = location.getExtent();
-        try {
-            ClaimManager manager = GriefPrevention.getApi().getClaimManager(world);
-            Claim claim = manager.getClaimAt(location);
-            if (claim == null || claim == manager.getWildernessClaim()) return true;
-            return claim.isUserTrusted(player, TrustType.BUILDER);
-        } catch (Throwable e) {
-            debug(e);
+    private boolean canEditOther(Player player, Location<World> location) {
+        if (usingGriefPrevention) {
+            World world = location.getExtent();
+            try {
+                ClaimManager manager = GriefPrevention.getApi().getClaimManager(world);
+                Claim claim = manager.getClaimAt(location);
+                if (claim == null || claim == manager.getWildernessClaim()) return true;
+                return claim.isUserTrusted(player, TrustType.BUILDER);
+            } catch (Throwable e) {
+                debug(e);
+            }
         }
         return true;
     }

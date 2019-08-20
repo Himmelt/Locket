@@ -31,7 +31,12 @@ repositories {
 dependencies {
     compile 'org.spongepowered:spongeapi:7.1.0-SNAPSHOT'
     compile 'org.soraworld:violet-sponge:2.4.2-SNAPSHOT'
-    compile files('lib/GriefPrevention-1.12.2-4.3.0.692.jar')
+    //compile files('lib/GriefPrevention-1.12.2-4.3.0.692.jar')
+}
+
+jar {
+    includeEmptyDirs = false
+    exclude 'me/ryanhamshire/griefprevention/'
 }
 
 static String gitBranch() {
