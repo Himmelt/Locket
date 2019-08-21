@@ -290,7 +290,6 @@ public class LocketManager extends VManager {
     public void lockSign(Player player, Location<World> selected, int line, String name) {
         TileEntity tile = selected.getTileEntity().orElse(null);
         if (tile instanceof Sign) {
-            // ??? ((Sign) tile).lines().set()
             SignData data = ((Sign) tile).getSignData();
             data.setElement(0, privateSign);
             data.setElement(1, getOwnerText(player.getName()));
