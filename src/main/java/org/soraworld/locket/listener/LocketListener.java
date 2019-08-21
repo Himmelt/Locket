@@ -1,5 +1,6 @@
 package org.soraworld.locket.listener;
 
+import org.soraworld.locket.data.State;
 import org.soraworld.locket.manager.LocketManager;
 import org.soraworld.violet.inject.EventListener;
 import org.soraworld.violet.inject.Inject;
@@ -22,6 +23,7 @@ import org.spongepowered.api.event.item.inventory.ChangeInventoryEvent;
 import org.spongepowered.api.event.world.ExplosionEvent;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.BlockCarrier;
+import org.spongepowered.api.item.inventory.Carrier;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.type.TileEntityInventory;
@@ -114,18 +116,22 @@ public class LocketListener {
     @IsCancelled(value = Tristate.UNDEFINED)
     public void onInventoryTransfer(ChangeInventoryEvent.Transfer.Pre event) {
         if (manager.isPreventTransfer()) {
-            Inventory source = event.getSourceInventory();
-            if (source instanceof TileEntityInventory) {
-                ((TileEntityInventory<?>) source).getCarrier().ifPresent(carrier -> {
-                    if (carrier instanceof BlockCarrier && manager.isLocked(carrier.getLocation())) event.setCancelled(true);
-                });
-                if (event.isCancelled()) return;
+            Inventory sourceInv = event.getSourceInventory();
+            Inventory targetInv = event.getTargetInventory();
+            State source = State.NOT_LOCKED, target = State.NOT_LOCKED;
+
+            if (sourceInv instanceof TileEntityInventory) {
+                Carrier carrier = ((TileEntityInventory<?>) sourceInv).getCarrier().get();
+                if (carrier instanceof BlockCarrier) source = manager.checkState(((BlockCarrier) carrier).getLocation());
             }
-            Inventory target = event.getTargetInventory();
-            if (target instanceof TileEntityInventory) {
-                ((TileEntityInventory<?>) target).getCarrier().ifPresent(carrier -> {
-                    if (carrier instanceof BlockCarrier && manager.isLocked(carrier.getLocation())) event.setCancelled(true);
-                });
+            if (targetInv instanceof TileEntityInventory) {
+                Carrier carrier = ((TileEntityInventory<?>) targetInv).getCarrier().get();
+                if (carrier instanceof BlockCarrier) target = manager.checkState(((BlockCarrier) carrier).getLocation());
+            }
+
+            // 允许情况: 相同所有者 或 都没上锁
+            if ((source != State.NOT_LOCKED || target != State.NOT_LOCKED) && !source.sameOwnerTo(target)) {
+                event.setCancelled(true);
             }
         }
     }

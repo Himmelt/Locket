@@ -351,7 +351,7 @@ public class LocketManager extends VManager {
         return true;
     }
 
-    private State checkState(@NotNull Location<World> location) {
+    public State checkState(@NotNull Location<World> location) {
         BlockType type = location.getBlockType();
         boolean isDBlock = doubleBlocks.contains(type);
         int count = 0;

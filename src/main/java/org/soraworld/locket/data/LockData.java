@@ -52,6 +52,6 @@ public class LockData {
     public State getState() {
         if (owners.size() <= 0) return State.NOT_LOCKED;
         if (owners.size() >= 2) return State.MULTI_OWNERS;
-        return State.LOCKED;
+        return new State(owners.iterator().next());
     }
 }
