@@ -49,6 +49,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.spongepowered.api.block.BlockTypes.*;
+
 @MainManager
 public class LocketManager extends VManager {
 
@@ -419,5 +421,9 @@ public class LocketManager extends VManager {
 
     public boolean bypassPerm(CommandSource sender) {
         return hasPermission(sender, plugin.getId() + ".bypass");
+    }
+
+    public boolean canPlaceLock(@Nonnull BlockType type) {
+        return type == AIR || type == GRASS || type == SNOW_LAYER || type == FLOWING_WATER || type == WATER;
     }
 }

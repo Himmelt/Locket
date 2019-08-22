@@ -145,7 +145,7 @@ public class LocketListener {
         if (face == Direction.UP || face == Direction.DOWN || face == Direction.NONE) return;
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
         if (block == null) return;
-        if (!manager.isLockable(block) || block.getRelative(face).getBlockType() != BlockTypes.AIR) return;
+        if (!manager.isLockable(block) || !manager.canPlaceLock(block.getRelative(face).getBlockType())) return;
 
         event.setCancelled(true);
 
