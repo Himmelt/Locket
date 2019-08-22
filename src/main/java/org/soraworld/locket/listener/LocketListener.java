@@ -56,7 +56,7 @@ public class LocketListener {
         }
     }
 
-    @Listener(order = Order.AFTER_PRE, beforeModifications = true)
+    @Listener(order = Order.FIRST, beforeModifications = true)
     public void onChangeBlockPre(ChangeBlockEvent.Pre event) {
         Player player = event.getCause().first(Player.class).orElse(null);
         for (Location<World> location : event.getLocations()) {
@@ -77,7 +77,7 @@ public class LocketListener {
         }
     }
 
-    @Listener(order = Order.AFTER_PRE, beforeModifications = true)
+    @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerInteractBlock(InteractBlockEvent event, @First Player player) {
         event.getTargetBlock().getLocation().ifPresent(location -> {
             if (manager.bypassPerm(player)) return;
@@ -112,7 +112,7 @@ public class LocketListener {
         });
     }
 
-    @Listener(order = Order.AFTER_PRE, beforeModifications = true)
+    @Listener(order = Order.FIRST, beforeModifications = true)
     @IsCancelled(value = Tristate.UNDEFINED)
     public void onInventoryTransfer(ChangeInventoryEvent.Transfer.Pre event) {
         if (manager.isPreventTransfer()) {
@@ -178,15 +178,6 @@ public class LocketListener {
         }
     }
 
-    @Listener(order = Order.POST)
-    public void onPlayerSelectSign(InteractBlockEvent.Secondary event, @First Player player) {
-        Location<World> block = event.getTargetBlock().getLocation().orElse(null);
-        if (block != null && block.getBlockType() == BlockTypes.WALL_SIGN) {
-            manager.setSelected(player, block);
-            manager.sendHint(player, "selectSign");
-        }
-    }
-
     @Listener(order = Order.LAST)
     public void onPlayerChangeSign(ChangeSignEvent event, @First Player player) {
         SignData data = event.getText();
@@ -207,7 +198,7 @@ public class LocketListener {
             }
             Location<World> block = LocketManager.getAttached(sign.getLocation());
             if (!manager.isLockable(block)) {
-                manager.sendHint(player, "cantLock");
+                manager.sendHint(player, "notLockable");
                 event.setCancelled(true);
                 return;
             }
@@ -227,6 +218,15 @@ public class LocketListener {
             data.setElement(3, manager.getUserText(line_3));
             sign.offer(data);
             manager.sendHint(player, "manuLock");
+        }
+    }
+
+    @Listener(order = Order.POST)
+    public void onPlayerSelectSign(InteractBlockEvent.Secondary event, @First Player player) {
+        Location<World> block = event.getTargetBlock().getLocation().orElse(null);
+        if (block != null && block.getBlockType() == BlockTypes.WALL_SIGN) {
+            manager.setSelected(player, block);
+            manager.sendHint(player, "selectSign");
         }
     }
 }

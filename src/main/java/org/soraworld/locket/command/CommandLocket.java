@@ -37,7 +37,7 @@ public class CommandLocket {
                 } else if (manager.tryAccess(player, selected, true) == Result.NOT_LOCKED) {
                     if (manager.isLockable(LocketManager.getAttached(selected))) {
                         manager.lockSign(player, selected, 0, null);
-                    } else manager.sendHint(player, "cantLock");
+                    } else manager.sendHint(player, "notLockable");
                 } else manager.sendHint(player, "noOwnerAccess");
             } else if (args.size() >= 2) {
                 try {
@@ -51,7 +51,7 @@ public class CommandLocket {
                             manager.lockSign(player, selected, line, name);
                             manager.sendHint(player, "manuLock");
                         } else manager.sendHint(player, "noOwnerAccess");
-                    } else manager.sendHint(player, "unLockable");
+                    } else manager.sendHint(player, "notLockable");
                 } catch (Throwable e) {
                     manager.sendHint(player, "invalidInt");
                 }
