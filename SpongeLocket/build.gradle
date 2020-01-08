@@ -1,0 +1,30 @@
+plugins {
+    id 'org.spongepowered.plugin' version '0.9.0'
+}
+
+group = 'org.soraworld'
+version = '1.2.0'
+archivesBaseName = "Locket-sponge"
+
+sourceCompatibility = targetCompatibility = 1.8
+
+repositories {
+    jcenter()
+    maven {
+        url = 'https://oss.jfrog.org/artifactory/oss-snapshot-local/'
+    }
+}
+
+dependencies {
+    compile 'org.spongepowered:spongeapi:7.1.0-SNAPSHOT'
+    compile 'org.soraworld:violet-sponge:2.4.2-SNAPSHOT'
+}
+
+jar {
+    includeEmptyDirs = false
+    exclude 'me/ryanhamshire/griefprevention/'
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}

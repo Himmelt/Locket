@@ -22,6 +22,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+/**
+ * @author Himmelt
+ */
 @Command(name = Locket.PLUGIN_ID, aliases = {"lock"}, usage = "usage.lock")
 public class CommandLocket {
     @Inject
@@ -37,8 +40,12 @@ public class CommandLocket {
                 } else if (manager.tryAccess(player, selected, true) == Result.NOT_LOCKED) {
                     if (manager.isLockable(LocketManager.getAttached(selected))) {
                         manager.lockSign(player, selected, 0, null);
-                    } else manager.sendHint(player, "notLockable");
-                } else manager.sendHint(player, "noOwnerAccess");
+                    } else {
+                        manager.sendHint(player, "notLockable");
+                    }
+                } else {
+                    manager.sendHint(player, "noOwnerAccess");
+                }
             } else if (args.size() >= 2) {
                 try {
                     int line = Integer.parseInt(args.get(0));
@@ -50,13 +57,19 @@ public class CommandLocket {
                         if (result == Result.SIGN_OWNER || result == Result.NOT_LOCKED) {
                             manager.lockSign(player, selected, line, name);
                             manager.sendHint(player, "manuLock");
-                        } else manager.sendHint(player, "noOwnerAccess");
-                    } else manager.sendHint(player, "notLockable");
+                        } else {
+                            manager.sendHint(player, "noOwnerAccess");
+                        }
+                    } else {
+                        manager.sendHint(player, "notLockable");
+                    }
                 } catch (Throwable e) {
                     manager.sendHint(player, "invalidInt");
                 }
             }
-        } else manager.sendHint(player, "selectFirst");
+        } else {
+            manager.sendHint(player, "selectFirst");
+        }
     };
 
     @Tab(path = ".")
@@ -71,7 +84,9 @@ public class CommandLocket {
         }
         if (args.size() >= 2) {
             VCommand sub = cmd.getSub(args.first());
-            if (sub != null) return sub.tabComplete(player, args.next());
+            if (sub != null) {
+                return sub.tabComplete(player, args.next());
+            }
             List<String> players = new ArrayList<>();
             Sponge.getServer().getOnlinePlayers().forEach(p -> players.add(p.getName()));
             return ListUtils.getMatchListIgnoreCase(args.get(1), players);
@@ -86,7 +101,9 @@ public class CommandLocket {
             if (args.empty()) {
                 if (manager.bypassPerm(player) || manager.tryAccess(player, selected, true) == Result.SIGN_OWNER) {
                     manager.unLockSign(selected, 0);
-                } else manager.sendHint(player, "noOwnerAccess");
+                } else {
+                    manager.sendHint(player, "noOwnerAccess");
+                }
             } else if (args.size() >= 1) {
                 try {
                     int line = Integer.parseInt(args.first());
@@ -95,34 +112,38 @@ public class CommandLocket {
                     } else if ((line == 2 || line == 3) && manager.tryAccess(player, selected, true) == Result.SIGN_OWNER) {
                         manager.unLockSign(selected, line);
                         manager.sendHint(player, "manuRemove");
-                    } else manager.sendHint(player, "cantRemove");
+                    } else {
+                        manager.sendHint(player, "cantRemove");
+                    }
                 } catch (Throwable ignored) {
                     manager.sendHint(player, "invalidInt");
                 }
             }
-        } else manager.sendHint(player, "selectFirst");
+        } else {
+            manager.sendHint(player, "selectFirst");
+        }
     };
 
     @Sub(perm = "admin", virtual = true, usage = "usage.type")
-    public final SubExecutor type = null;
+    public final SubExecutor<CommandSource> type = null;
 
     @Sub(path = "type.+", perm = "admin")
-    public final SubExecutor type_plus = (cmd, sender, args) -> {
+    public final SubExecutor<CommandSource> type_plus = (cmd, sender, args) -> {
         processType(sender, args, manager::addType, "typeAdd");
     };
 
     @Sub(path = "type.-", perm = "admin")
-    public final SubExecutor type_minus = (cmd, sender, args) -> {
+    public final SubExecutor<CommandSource> type_minus = (cmd, sender, args) -> {
         processType(sender, args, manager::removeType, "typeRemove");
     };
 
     @Sub(path = "type.++", perm = "admin")
-    public final SubExecutor type_dplus = (cmd, sender, args) -> {
+    public final SubExecutor<CommandSource> type_dplus = (cmd, sender, args) -> {
         processType(sender, args, manager::addDType, "dTypeAdd");
     };
 
     @Sub(path = "type.--", perm = "admin")
-    public final SubExecutor type_dminus = (cmd, sender, args) -> {
+    public final SubExecutor<CommandSource> type_dminus = (cmd, sender, args) -> {
         processType(sender, args, manager::removeDType, "dTypeRemove");
     };
 

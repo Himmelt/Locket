@@ -1,19 +1,8 @@
-plugins {
-    id 'org.spongepowered.plugin' version '0.9.0'
-}
+apply plugin: 'java'
 
 group = 'org.soraworld'
-version = '1.2.0'.concat(isMasterBranch() ? '' : '-SNAPSHOT')
-description = 'Locket Plugin'
+version = '1.2.0'
 archivesBaseName = "Locket"
-
-println 'Current Branch  ' + gitBranch()
-println 'Current Version ' + project.version
-
-//def _BINTRAY_USER = System.getenv('BINTRAY_USER') != null ? System.getenv('BINTRAY_USER') : BINTRAY_USER
-//def _BINTRAY_KEY = System.getenv('BINTRAY_KEY') != null ? System.getenv('BINTRAY_KEY') : BINTRAY_KEY
-//def _REPO_KEY = isMasterBranch() ? 'oss-release-local' : 'oss-snapshot-local'
-//def _PUBLISH_CFG = isMasterBranch() ? 'mavenRelease' : 'mavenSnapshot'
 
 sourceCompatibility = targetCompatibility = 1.8
 
@@ -22,6 +11,9 @@ tasks.withType(JavaCompile) {
 }
 
 repositories {
+    maven {
+        url = 'https://maven.aliyun.com/repository/public/'
+    }
     jcenter()
     maven {
         url = 'https://oss.jfrog.org/artifactory/oss-snapshot-local/'
@@ -29,27 +21,47 @@ repositories {
 }
 
 dependencies {
-    compile 'org.spongepowered:spongeapi:7.1.0-SNAPSHOT'
-    compile 'org.soraworld:violet-sponge:2.4.2-SNAPSHOT'
-    //compile files('lib/GriefPrevention-1.12.2-4.3.0.692.jar')
+    compile 'org.soraworld:hocon:1.2.1-SNAPSHOT'
 }
 
-jar {
-    includeEmptyDirs = false
-    exclude 'me/ryanhamshire/griefprevention/'
-}
+subprojects {
+    apply plugin: 'java'
 
-static String gitBranch() {
-    def branch = System.getenv('CIRCLE_BRANCH')
-    if (branch != null) return branch.trim()
-    branch = System.getenv('TRAVIS_BRANCH')
-    if (branch != null) return branch.trim()
-    branch = 'unknown'
-    def info = 'git branch'.execute().text.trim()
-    info.eachLine { line -> if (line.contains('*')) branch = line.replace('*', '').trim() }
-    return branch
-}
+    group rootProject.group
+    version rootProject.version
 
-static boolean isMasterBranch() {
-    return gitBranch().equalsIgnoreCase('master')
+    sourceCompatibility = targetCompatibility = 1.8
+
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+    }
+
+    repositories {
+        maven {
+            url = 'https://maven.aliyun.com/repository/public/'
+        }
+        jcenter()
+        maven {
+            url = 'https://oss.jfrog.org/artifactory/oss-snapshot-local/'
+        }
+    }
+
+    configurations {
+        shadow
+        compile.extendsFrom(shadow)
+        shadeOnly
+        compileOnly.extendsFrom(shadeOnly)
+    }
+
+    dependencies {
+        shadeOnly rootProject
+    }
+
+    jar {
+        configurations.shadeOnly.copyRecursive().setTransitive(false).each {
+            artifact -> from(zipTree(artifact))
+        }
+        includeEmptyDirs = false
+        exclude 'net/minecraft/server', 'org/bukkit/craftbukkit'
+    }
 }
