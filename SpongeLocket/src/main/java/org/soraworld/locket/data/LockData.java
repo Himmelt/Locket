@@ -13,6 +13,9 @@ import org.spongepowered.api.world.World;
 
 import java.util.HashSet;
 
+/**
+ * @author Himmelt
+ */
 @Inject
 public class LockData {
 
@@ -23,35 +26,46 @@ public class LockData {
     private static LocketManager manager;
 
     public LockData(@NotNull HashSet<Location<World>> signs) {
-        signs.forEach(sign -> {
-            sign.getTileEntity().ifPresent(tile -> {
-                if (tile instanceof Sign) {
-                    ListValue<Text> lines = ((Sign) tile).lines();
-                    String line_0 = ChatColor.stripAllColor(lines.get(0).toPlain()).trim();
-                    String line_1 = ChatColor.stripAllColor(lines.get(1).toPlain()).trim();
-                    String line_2 = ChatColor.stripAllColor(lines.get(2).toPlain()).trim();
-                    String line_3 = ChatColor.stripAllColor(lines.get(3).toPlain()).trim();
-                    if (manager.isPrivate(line_0)) {
-                        owners.add(line_1);
-                        users.add(line_2);
-                        users.add(line_3);
-                    }
+        signs.forEach(sign -> sign.getTileEntity().ifPresent(tile -> {
+            if (tile instanceof Sign) {
+                ListValue<Text> lines = ((Sign) tile).lines();
+                // TODO support for UUID
+                String line0 = ChatColor.stripAllColor(lines.get(0).toPlain()).trim();
+                String line1 = ChatColor.stripAllColor(lines.get(1).toPlain()).trim();
+                String line2 = ChatColor.stripAllColor(lines.get(2).toPlain()).trim();
+                String line3 = ChatColor.stripAllColor(lines.get(3).toPlain()).trim();
+                if (manager.isPrivate(line0)) {
+                    owners.add(line1);
+                    users.add(line2);
+                    users.add(line3);
                 }
-            });
-        });
+            }
+        }));
     }
 
     public Result tryAccess(@NotNull Player player) {
-        if (owners.size() <= 0) return Result.NOT_LOCKED;
-        if (owners.size() >= 2) return Result.MULTI_OWNERS;
-        if (owners.contains(player.getName())) return Result.SIGN_OWNER;
-        if (users.contains(player.getName())) return Result.SIGN_USER;
+        if (owners.size() <= 0) {
+            return Result.NOT_LOCKED;
+        }
+        if (owners.size() >= 2) {
+            return Result.MULTI_OWNERS;
+        }
+        if (owners.contains(player.getName())) {
+            return Result.SIGN_OWNER;
+        }
+        if (users.contains(player.getName())) {
+            return Result.SIGN_USER;
+        }
         return Result.LOCKED;
     }
 
     public State getState() {
-        if (owners.size() <= 0) return State.NOT_LOCKED;
-        if (owners.size() >= 2) return State.MULTI_OWNERS;
+        if (owners.size() <= 0) {
+            return State.NOT_LOCKED;
+        }
+        if (owners.size() >= 2) {
+            return State.MULTI_OWNERS;
+        }
         return new State(owners.iterator().next());
     }
 }
