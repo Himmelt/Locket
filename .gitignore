@@ -1,8 +1,8 @@
 .gradle/
 .idea/
 build/
-lib/
 out/
+/lib
 
 *.iml
 *.ipr

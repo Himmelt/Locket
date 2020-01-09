@@ -23,11 +23,7 @@ repositories {
 dependencies {
     compile 'org.spongepowered:spongeapi:7.1.0-SNAPSHOT'
     compile 'org.soraworld:violet-sponge:2.4.2-SNAPSHOT'
-}
-
-jar {
-    includeEmptyDirs = false
-    exclude 'me/ryanhamshire/griefprevention/'
+    compile files('lib/GriefPrevention-1.12.2.jar')
 }
 
 tasks.withType(JavaCompile) {
