@@ -25,6 +25,7 @@ import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.block.tileentity.TileEntity;
+import org.spongepowered.api.block.tileentity.carrier.Furnace;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.data.key.Keys;
@@ -48,6 +49,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.spongepowered.api.block.BlockTypes.*;
 
@@ -106,13 +108,17 @@ public class LocketManager extends VManager {
         }
     }
 
+    @Override
     @Nonnull
     public ChatColor defChatColor() {
         return ChatColor.YELLOW;
     }
 
+    @Override
     public void afterLoad() {
-        if (privateSign == null) privateSign = Text.of("[Private]");
+        if (privateSign == null) {
+            privateSign = Text.of("[Private]");
+        }
         acceptSigns.add(privateSign.toPlain());
         HashSet<String> temp = new HashSet<>();
         acceptSigns.forEach(sign -> temp.add(ChatColor.stripAllColor(sign)));
@@ -134,14 +140,26 @@ public class LocketManager extends VManager {
 
     public boolean isLockable(@NotNull Location<World> location) {
         BlockType type = location.getBlockType();
-        if (type == BlockTypes.WALL_SIGN || type == BlockTypes.STANDING_SIGN) return false;
-        if (lockables.contains(type)) return true;
-        if (doubleBlocks.contains(type)) return true;
-        if (highDoors.contains(type)) return true;
+        if (type == BlockTypes.WALL_SIGN || type == BlockTypes.STANDING_SIGN) {
+            return false;
+        }
+        if (lockables.contains(type)) {
+            return true;
+        }
+        if (doubleBlocks.contains(type)) {
+            return true;
+        }
+        if (highDoors.contains(type)) {
+            return true;
+        }
         type = location.getRelative(Direction.UP).getBlockType();
-        if (highDoors.contains(type)) return true;
+        if (highDoors.contains(type)) {
+            return true;
+        }
         type = location.getRelative(Direction.DOWN).getBlockType();
-        if (highDoors.contains(type)) return true;
+        if (highDoors.contains(type)) {
+            return true;
+        }
         TileEntity tile = location.getTileEntity().orElse(null);
         return protectTile && tile != null || protectCarrier && tile instanceof TileEntityCarrier;
     }
@@ -209,7 +227,9 @@ public class LocketManager extends VManager {
 
     public Result tryAccess(@NotNull Player player, @NotNull Location<World> location, boolean needEdit) {
 
-        if (needEdit && !canEditOther(player, location)) return Result.OTHER_PROTECT;
+        if (needEdit && !canEditOther(player, location)) {
+            return Result.OTHER_PROTECT;
+        }
 
         BlockType type = location.getBlockType();
         boolean isDBlock = doubleBlocks.contains(type);
@@ -218,14 +238,18 @@ public class LocketManager extends VManager {
         HashSet<Location<World>> signs = new HashSet<>();
 
         // 自身也将参与检查
-        if (type == BlockTypes.WALL_SIGN) signs.add(location);
+        if (type == BlockTypes.WALL_SIGN) {
+            signs.add(location);
+        }
 
         // 检查4个方向是否是 WALL_SIGN 或 DChest
         for (Direction face : FACES) {
             Location<World> relative = location.getRelative(face);
             if (isDBlock && relative.getBlockType() == type) {
                 link = relative;
-                if (++count >= 2) return Result.MULTI_BLOCKS;
+                if (++count >= 2) {
+                    return Result.MULTI_BLOCKS;
+                }
             } else if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
                 signs.add(relative);
             }
@@ -236,7 +260,9 @@ public class LocketManager extends VManager {
             count = 0;
             for (Direction face : FACES) {
                 Location<World> relative = link.getRelative(face);
-                if (relative.getBlockType() == type && ++count >= 2) return Result.MULTI_BLOCKS;
+                if (relative.getBlockType() == type && ++count >= 2) {
+                    return Result.MULTI_BLOCKS;
+                }
                 if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
                     signs.add(relative);
                 }
@@ -300,7 +326,9 @@ public class LocketManager extends VManager {
             }
             tile.offer(data);
             sendHint(player, "manuLock");
-        } else sendHint(player, "notSignTile");
+        } else {
+            sendHint(player, "notSignTile");
+        }
     }
 
     public void unLockSign(Location<World> location, int line) {
@@ -343,7 +371,9 @@ public class LocketManager extends VManager {
             try {
                 ClaimManager manager = GriefPrevention.getApi().getClaimManager(world);
                 Claim claim = manager.getClaimAt(location);
-                if (claim == null || claim == manager.getWildernessClaim()) return true;
+                if (claim == null || claim == manager.getWildernessClaim()) {
+                    return true;
+                }
                 return claim.isUserTrusted(player, TrustType.BUILDER);
             } catch (Throwable e) {
                 debug(e);
@@ -360,14 +390,18 @@ public class LocketManager extends VManager {
         HashSet<Location<World>> signs = new HashSet<>();
 
         // 自身也将参与检查
-        if (type == BlockTypes.WALL_SIGN) signs.add(location);
+        if (type == BlockTypes.WALL_SIGN) {
+            signs.add(location);
+        }
 
         // 检查4个方向是否是 WALL_SIGN 或 DChest
         for (Direction face : FACES) {
             Location<World> relative = location.getRelative(face);
             if (isDBlock && relative.getBlockType() == type) {
                 link = relative;
-                if (++count >= 2) return State.MULTI_BLOCKS;
+                if (++count >= 2) {
+                    return State.MULTI_BLOCKS;
+                }
             } else if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
                 signs.add(relative);
             }
@@ -378,7 +412,9 @@ public class LocketManager extends VManager {
             count = 0;
             for (Direction face : FACES) {
                 Location<World> relative = link.getRelative(face);
-                if (relative.getBlockType() == type && ++count >= 2) return State.MULTI_BLOCKS;
+                if (relative.getBlockType() == type && ++count >= 2) {
+                    return State.MULTI_BLOCKS;
+                }
                 if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
                     signs.add(relative);
                 }
@@ -399,13 +435,17 @@ public class LocketManager extends VManager {
     }
 
     private Result analyzeSign(@NotNull Player player, HashSet<Location<World>> signs) {
-        if (signs.isEmpty()) return Result.NOT_LOCKED;
+        if (signs.isEmpty()) {
+            return Result.NOT_LOCKED;
+        }
         LockData data = new LockData(signs);
         return data.tryAccess(player);
     }
 
     private static void removeOneItem(Player player, HandType hand) {
-        if (GameModes.CREATIVE.equals(player.gameMode().get())) return;
+        if (GameModes.CREATIVE.equals(player.gameMode().get())) {
+            return;
+        }
         ItemStack stack = player.getItemInHand(hand).orElse(null);
         if (stack != null && stack.getQuantity() >= 1) {
             stack.setQuantity(stack.getQuantity() - 1);
@@ -425,5 +465,13 @@ public class LocketManager extends VManager {
 
     public boolean canPlaceLock(@Nonnull BlockType type) {
         return type == AIR || type == GRASS || type == SNOW_LAYER || type == FLOWING_WATER || type == WATER;
+    }
+
+    public boolean filterModify(@NotNull Location<World> block) {
+        AtomicBoolean filter = new AtomicBoolean(false);
+        block.getTileEntity().ifPresent(tile -> {
+            filter.set(tile instanceof Furnace);
+        });
+        return filter.get();
     }
 }

@@ -5,6 +5,7 @@ import org.soraworld.locket.manager.LocketManager;
 import org.soraworld.violet.inject.EventListener;
 import org.soraworld.violet.inject.Inject;
 import org.soraworld.violet.util.ChatColor;
+import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -33,6 +34,9 @@ import org.spongepowered.api.util.Tristate;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
+/**
+ * @author Himmelt
+ */
 @EventListener
 public class LocketListener {
 
@@ -42,9 +46,18 @@ public class LocketListener {
     @Listener(order = Order.PRE, beforeModifications = true)
     public void onChangeBlock(ChangeBlockEvent event) {
         Player player = event.getCause().first(Player.class).orElse(null);
-        if (player == null) event.filter(manager::notLocked);
-        else {
-            if (manager.bypassPerm(player)) return;
+        if (player == null) {
+            event.filter(manager::notLocked);
+            event.getTransactions().forEach(transaction -> {
+                BlockState origin = transaction.getOriginal().getState();
+                BlockState finals = transaction.getFinal().getState();
+                if (origin.getType() == BlockTypes.FURNACE && finals.getType() == BlockTypes.LIT_FURNACE) {
+                    transaction.setValid(true);
+                } else if (origin.getType() == BlockTypes.LIT_FURNACE && finals.getType() == BlockTypes.FURNACE) {
+                    transaction.setValid(true);
+                }
+            });
+        } else if (!manager.bypassPerm(player)) {
             event.filter(l -> manager.tryAccess(player, l, true).canEdit());
         }
     }
@@ -67,7 +80,9 @@ public class LocketListener {
                         return;
                     }
                 } else {
-                    if (manager.bypassPerm(player)) return;
+                    if (manager.bypassPerm(player)) {
+                        return;
+                    }
                     if (!manager.tryAccess(player, location, true).canEdit()) {
                         event.setCancelled(true);
                         return;
@@ -80,34 +95,40 @@ public class LocketListener {
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onPlayerInteractBlock(InteractBlockEvent event, @First Player player) {
         event.getTargetBlock().getLocation().ifPresent(location -> {
-            if (manager.bypassPerm(player)) return;
+            if (manager.bypassPerm(player)) {
+                return;
+            }
             BlockType type = location.getBlockType();
             switch (manager.tryAccess(player, location, false)) {
                 case SIGN_USER:
                     if (event instanceof InteractBlockEvent.Primary || type == BlockTypes.WALL_SIGN) {
                         event.setCancelled(true);
                     }
+                    break;
                 case SIGN_OWNER:
                     if (event instanceof InteractBlockEvent.Primary && type != BlockTypes.WALL_SIGN && player.gameMode().get().equals(GameModes.CREATIVE)) {
                         event.setCancelled(true);
                     }
+                    break;
                 case NOT_LOCKED:
-                    return;
+                    break;
                 case LOCKED:
                     manager.sendHint(player, "noAccess");
                     event.setCancelled(true);
-                    return;
+                    break;
                 case MULTI_OWNERS:
                     manager.sendHint(player, "multiOwners");
                     event.setCancelled(true);
-                    return;
+                    break;
                 case MULTI_BLOCKS:
                     manager.sendHint(player, "multiBlocks");
                     event.setCancelled(true);
-                    return;
+                    break;
                 case OTHER_PROTECT:
                     manager.sendHint(player, "otherProtect");
                     event.setCancelled(true);
+                    break;
+                default:
             }
         });
     }
@@ -122,11 +143,15 @@ public class LocketListener {
 
             if (sourceInv instanceof TileEntityInventory) {
                 Carrier carrier = ((TileEntityInventory<?>) sourceInv).getCarrier().get();
-                if (carrier instanceof BlockCarrier) source = manager.checkState(((BlockCarrier) carrier).getLocation());
+                if (carrier instanceof BlockCarrier) {
+                    source = manager.checkState(((BlockCarrier) carrier).getLocation());
+                }
             }
             if (targetInv instanceof TileEntityInventory) {
                 Carrier carrier = ((TileEntityInventory<?>) targetInv).getCarrier().get();
-                if (carrier instanceof BlockCarrier) target = manager.checkState(((BlockCarrier) carrier).getLocation());
+                if (carrier instanceof BlockCarrier) {
+                    target = manager.checkState(((BlockCarrier) carrier).getLocation());
+                }
             }
 
             // 允许情况: 相同所有者 或 都没上锁
@@ -139,13 +164,23 @@ public class LocketListener {
     @Listener(order = Order.LAST)
     public void onPlayerLockBlock(InteractBlockEvent.Secondary event, @First Player player) {
         ItemStack stack = player.getItemInHand(event.getHandType()).orElse(null);
-        if (stack == null || stack.getType() != ItemTypes.SIGN) return;
-        if (player.get(Keys.IS_SNEAKING).orElse(false)) return;
+        if (stack == null || stack.getType() != ItemTypes.SIGN) {
+            return;
+        }
+        if (player.get(Keys.IS_SNEAKING).orElse(false)) {
+            return;
+        }
         Direction face = event.getTargetSide();
-        if (face == Direction.UP || face == Direction.DOWN || face == Direction.NONE) return;
+        if (face == Direction.UP || face == Direction.DOWN || face == Direction.NONE) {
+            return;
+        }
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
-        if (block == null) return;
-        if (!manager.isLockable(block) || !manager.canPlaceLock(block.getRelative(face).getBlockType())) return;
+        if (block == null) {
+            return;
+        }
+        if (!manager.isLockable(block) || !manager.canPlaceLock(block.getRelative(face).getBlockType())) {
+            return;
+        }
 
         event.setCancelled(true);
 
@@ -181,17 +216,17 @@ public class LocketListener {
     @Listener(order = Order.LAST)
     public void onPlayerChangeSign(ChangeSignEvent event, @First Player player) {
         SignData data = event.getText();
-        String line_0 = ChatColor.stripAllColor(data.get(0).orElse(Text.EMPTY).toPlain()).trim();
-        String line_1 = ChatColor.stripAllColor(data.get(1).orElse(Text.EMPTY).toPlain()).trim();
-        String line_2 = ChatColor.stripAllColor(data.get(2).orElse(Text.EMPTY).toPlain()).trim();
-        String line_3 = ChatColor.stripAllColor(data.get(3).orElse(Text.EMPTY).toPlain()).trim();
-        if (manager.isPrivate(line_0)) {
+        String line0 = ChatColor.stripAllColor(data.get(0).orElse(Text.EMPTY).toPlain()).trim();
+        String line1 = ChatColor.stripAllColor(data.get(1).orElse(Text.EMPTY).toPlain()).trim();
+        String line2 = ChatColor.stripAllColor(data.get(2).orElse(Text.EMPTY).toPlain()).trim();
+        String line3 = ChatColor.stripAllColor(data.get(3).orElse(Text.EMPTY).toPlain()).trim();
+        if (manager.isPrivate(line0)) {
             Sign sign = event.getTargetTile();
             if (manager.bypassPerm(player)) {
                 data.setElement(0, manager.getPrivateText());
-                data.setElement(1, manager.getOwnerText(line_1.isEmpty() ? player.getName() : line_1));
-                data.setElement(2, manager.getUserText(line_2));
-                data.setElement(3, manager.getUserText(line_3));
+                data.setElement(1, manager.getOwnerText(line1.isEmpty() ? player.getName() : line1));
+                data.setElement(2, manager.getUserText(line2));
+                data.setElement(3, manager.getUserText(line3));
                 sign.offer(data);
                 manager.sendHint(player, "manuLock");
                 return;
@@ -214,8 +249,8 @@ public class LocketListener {
             }
             data.setElement(0, manager.getPrivateText());
             data.setElement(1, manager.getOwnerText(player.getName()));
-            data.setElement(2, manager.getUserText(line_2));
-            data.setElement(3, manager.getUserText(line_3));
+            data.setElement(2, manager.getUserText(line2));
+            data.setElement(3, manager.getUserText(line3));
             sign.offer(data);
             manager.sendHint(player, "manuLock");
         }

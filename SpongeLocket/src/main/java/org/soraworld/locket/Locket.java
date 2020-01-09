@@ -16,16 +16,19 @@ import org.spongepowered.api.plugin.Plugin;
         description = "Locket Plugin",
         url = "https://github.com/Himmelt/Locket",
         authors = {"Himmelt"},
-        dependencies = {@Dependency(
-                id = Violet.PLUGIN_ID,
-                version = Violet.PLUGIN_VERSION
-        ), @Dependency(
-                id = "griefprevention",
-                optional = true
-        )}
+        dependencies = {
+                @Dependency(
+                        id = Violet.PLUGIN_ID,
+                        version = Violet.PLUGIN_VERSION
+                ),
+                @Dependency(
+                        id = "griefprevention",
+                        optional = true
+                )
+        }
 )
 public class Locket extends SpongePlugin<LocketManager> {
     public static final String PLUGIN_ID = "locket";
     public static final String PLUGIN_NAME = "Locket";
-    public static final String PLUGIN_VERSION = "1.2.0";
+    public static final String PLUGIN_VERSION = "1.2.1";
 }
