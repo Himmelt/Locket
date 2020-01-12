@@ -12,6 +12,7 @@ import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import java.util.HashSet;
+import java.util.UUID;
 
 /**
  * @author Himmelt
@@ -31,10 +32,17 @@ public class LockData {
                 ListValue<Text> lines = ((Sign) tile).lines();
                 // TODO support for UUID
                 String line0 = ChatColor.stripAllColor(lines.get(0).toPlain()).trim();
-                String line1 = ChatColor.stripAllColor(lines.get(1).toPlain()).trim();
-                String line2 = ChatColor.stripAllColor(lines.get(2).toPlain()).trim();
-                String line3 = ChatColor.stripAllColor(lines.get(3).toPlain()).trim();
                 if (manager.isPrivate(line0)) {
+                    String raw = lines.get(1).toPlain();
+                    try {
+                        // fe8eabcd-dda6-36f7 -a848-4b13a093e58b
+                        UUID uuid = UUID.fromString(raw.substring(raw.length() - 64));
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+                    String line1 = ChatColor.stripAllColor("").trim();
+                    String line2 = ChatColor.stripAllColor(lines.get(2).toPlain()).trim();
+                    String line3 = ChatColor.stripAllColor(lines.get(3).toPlain()).trim();
                     owners.add(line1);
                     users.add(line2);
                     users.add(line3);
@@ -67,5 +75,15 @@ public class LockData {
             return State.MULTI_OWNERS;
         }
         return new State(owners.iterator().next());
+    }
+
+    public static UUID parseUUID(String hex) {
+        try {
+            long most = Long.parseLong(hex.substring(0, 16), 16);
+            long least = Long.parseLong(hex.substring(16), 16);
+            return new UUID(most, least);
+        } catch (Throwable ignored) {
+            return null;
+        }
     }
 }
