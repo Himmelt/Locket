@@ -1,7 +1,7 @@
 apply plugin: 'java'
 
 group = 'org.soraworld'
-version = '1.2.1'
+version = '1.2.2'
 archivesBaseName = "Locket"
 
 sourceCompatibility = targetCompatibility = 1.8

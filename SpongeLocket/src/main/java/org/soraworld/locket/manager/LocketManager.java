@@ -30,6 +30,7 @@ import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
 import org.spongepowered.api.data.type.HandType;
+import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.User;
@@ -48,6 +49,8 @@ import javax.annotation.Nonnull;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.spongepowered.api.block.BlockTypes.*;
 
@@ -86,7 +89,7 @@ public class LocketManager extends VManager {
     private UserStorageService storageService = null;
     private final HashMap<UUID, Location<World>> selected = new HashMap<>();
 
-    // TODO
+    private static final Pattern HIDE_UUID = Pattern.compile("(\u00A7[0-9a-f]){32}");
     private static final Direction[] FACES = new Direction[]{Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
 
     public LocketManager(SpongePlugin plugin, Path path) {
@@ -208,23 +211,37 @@ public class LocketManager extends VManager {
         return privateSign;
     }
 
-    public User getUser(String name) {
+    public Optional<User> getUser(String name) {
         if (storageService != null) {
-            return storageService.get(name).orElse(null);
+            try {
+                return storageService.get(name);
+            } catch (Throwable ignored) {
+            }
         }
-        return null;
+        return Optional.empty();
+    }
+
+    public Optional<User> getUser(UUID uuid) {
+        if (storageService != null) {
+            return storageService.get(uuid);
+        }
+        return Optional.empty();
     }
 
     public Text getOwnerText(@NotNull User owner) {
         return Text.of(ownerFormat.replace("{$owner}", owner.getName()) + hideUUID(owner.getUniqueId()));
     }
 
-    public Text getUserText(String user) {
-        User u = getUser(user);
-        if (u == null) {
-            return Text.of(userFormat.replace("{$user}", user) + hideUUID(unknownUserId));
+    public Text getUserText(@NotNull User user) {
+        return Text.of(userFormat.replace("{$user}", user.getName()) + hideUUID(user.getUniqueId()));
+    }
+
+    public Text getUserText(@NotNull String name) {
+        Optional<User> user = getUser(name);
+        if (user.isPresent()) {
+            return getUserText(user.get());
         } else {
-            return Text.of(userFormat.replace("{$user}", user) + hideUUID(u.getUniqueId()));
+            return Text.of(userFormat.replace("{$user}", name));
         }
     }
 
@@ -504,13 +521,38 @@ public class LocketManager extends VManager {
         return builder.toString();
     }
 
-    public static UUID parseUUID(String uuid) {
-        try {
-            long most = Long.parseUnsignedLong(uuid.substring(0, 16), 16);
-            long least = Long.parseUnsignedLong(uuid.substring(16), 16);
-            return new UUID(most, least);
-        } catch (Throwable ignored) {
-            return null;
+    public Optional<UUID> parseUserId(String text) {
+        Matcher matcher = HIDE_UUID.matcher(text);
+        if (matcher.find()) {
+            String hex = matcher.group().replace(ChatColor.TRUE_COLOR_STRING, "");
+            if (hex.length() == 32) {
+                long most = Long.parseUnsignedLong(hex.substring(0, 16), 16);
+                long least = Long.parseUnsignedLong(hex.substring(16), 16);
+                return Optional.of(new UUID(most, least));
+            }
+        } else {
+            Optional<User> user = getUser(ChatColor.stripColor(text));
+            if (user.isPresent()) {
+                return Optional.of(user.get().getUniqueId());
+            }
+        }
+        return Optional.empty();
+    }
+
+    public void loadSign(@NotNull Sign sign) {
+        SignData data = sign.getSignData();
+        ListValue<Text> lines = data.lines();
+        String line0 = ChatColor.stripAllColor(lines.get(0).toPlain()).trim();
+        if (isPrivate(line0)) {
+            String line1 = lines.get(1).toPlain().trim();
+            String line2 = lines.get(2).toPlain().trim();
+            String line3 = lines.get(3).toPlain().trim();
+
+            parseUserId(line1).flatMap(this::getUser).ifPresent(owner -> data.setElement(1, getOwnerText(owner)));
+            parseUserId(line2).flatMap(this::getUser).ifPresent(user -> data.setElement(2, getUserText(user)));
+            parseUserId(line3).flatMap(this::getUser).ifPresent(user -> data.setElement(3, getUserText(user)));
+
+            sign.offer(data);
         }
     }
 }

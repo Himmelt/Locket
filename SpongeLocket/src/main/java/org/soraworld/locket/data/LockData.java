@@ -13,8 +13,6 @@ import org.spongepowered.api.world.World;
 import java.util.HashSet;
 import java.util.UUID;
 
-import static org.soraworld.locket.manager.LocketManager.parseUUID;
-
 /**
  * @author Himmelt
  */
@@ -31,32 +29,14 @@ public class LockData {
         signs.forEach(sign -> sign.getTileEntity().ifPresent(tile -> {
             if (tile instanceof Sign) {
                 ListValue<Text> lines = ((Sign) tile).lines();
-                String line0 = ChatColor.stripAllColor(lines.get(0).toPlain()).trim();
+                String line0 = ChatColor.stripColor(lines.get(0).toPlain()).trim();
                 if (manager.isPrivate(line0)) {
-                    String raw1 = lines.get(1).toPlain().trim();
-                    try {
-                        UUID owner = parseUUID(raw1.substring(raw1.length() - 64).replace(ChatColor.TRUE_COLOR_STRING, ""));
-                        if (owner != null) {
-                            owners.add(owner);
-                        }
-                    } catch (Throwable ignored) {
-                    }
-                    String raw2 = lines.get(2).toPlain().trim();
-                    try {
-                        UUID user = parseUUID(raw2.substring(raw2.length() - 64).replace(ChatColor.TRUE_COLOR_STRING, ""));
-                        if (user != null) {
-                            users.add(user);
-                        }
-                    } catch (Throwable ignored) {
-                    }
-                    String raw3 = lines.get(3).toPlain().trim();
-                    try {
-                        UUID user = parseUUID(raw3.substring(raw3.length() - 64).replace(ChatColor.TRUE_COLOR_STRING, ""));
-                        if (user != null) {
-                            users.add(user);
-                        }
-                    } catch (Throwable ignored) {
-                    }
+                    String line1 = lines.get(1).toPlain().trim();
+                    String line2 = lines.get(2).toPlain().trim();
+                    String line3 = lines.get(3).toPlain().trim();
+                    manager.parseUserId(line1).ifPresent(owners::add);
+                    manager.parseUserId(line2).ifPresent(users::add);
+                    manager.parseUserId(line3).ifPresent(users::add);
                 }
             }
         }));
