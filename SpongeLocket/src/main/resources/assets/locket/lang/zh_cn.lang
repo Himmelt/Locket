@@ -28,6 +28,7 @@ dTypeRemove = "方块 [&7%s&r] 已取消标记双联方块(e.g.大箱子)."
 nullBlockType = "参数无效或手持物非方块，类型解析失败."
 illegalType = "此方块为空气或告示牌等非法类型."
 
+invalidUsername = "无效的所有者，目标玩家 %s 必须在线方可设置."
 storageServiceInvalid = "&c用户账户存储服务不可用 !"
 
 comment {

@@ -5,6 +5,7 @@ import org.soraworld.locket.manager.LocketManager;
 import org.soraworld.violet.inject.EventListener;
 import org.soraworld.violet.inject.Inject;
 import org.soraworld.violet.util.ChatColor;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
@@ -13,7 +14,6 @@ import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
 import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.entity.living.player.gamemode.GameModes;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
@@ -37,8 +37,6 @@ import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.util.Tristate;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
-
-import java.util.UUID;
 
 /**
  * @author Himmelt
@@ -221,30 +219,25 @@ public class LocketListener {
 
     @Listener(order = Order.LAST)
     public void onPlayerChangeSign(ChangeSignEvent event, @First Player player) {
-        ListValue<Text> lines = event.getText().lines();
+        SignData data = event.getText();
+        ListValue<Text> lines = data.lines();
         String line0 = ChatColor.stripColor(lines.get(0).toPlain()).trim();
+        Player owner = player;
         if (manager.isPrivate(line0)) {
-            User owner = player;
             String line1 = lines.get(1).toPlain().trim();
-            if (!line1.equals(player.getName()) && manager.bypassPerm(player)) {
-                UUID uuid = manager.parseUserId(line1).orElse(null);
-                if (uuid != null) {
-                    User user = manager.getUser(uuid).orElse(null);
-                    if (user != null) {
-                        owner = user;
-                    } else {
-                        manager.sendKey(player, "invalidUser", line1);
-                        return;
-                    }
+            if (!line1.isEmpty() && !line1.equals(player.getName()) && manager.bypassPerm(player)) {
+                Player user = Sponge.getServer().getPlayer(line1).orElse(null);
+                if (user != null) {
+                    owner = user;
                 } else {
-                    manager.sendKey(player, "invalidUser", line1);
+                    data.setElement(0, Text.EMPTY);
+                    data.setElement(1, Text.EMPTY);
+                    manager.sendKey(player, "invalidUsername", line1);
                     return;
                 }
             }
-
-            Sign sign = event.getTargetTile();
             if (!manager.bypassPerm(player)) {
-                Location<World> block = LocketManager.getAttached(sign.getLocation());
+                Location<World> block = LocketManager.getAttached(event.getTargetTile().getLocation());
                 if (!manager.isLockable(block)) {
                     manager.sendHint(player, "notLockable");
                     event.setCancelled(true);
@@ -262,15 +255,14 @@ public class LocketListener {
                 }
             }
 
-            SignData data = sign.getSignData();
             String line2 = lines.get(2).toPlain().trim();
             String line3 = lines.get(3).toPlain().trim();
             data.setElement(0, manager.getPrivateText());
             data.setElement(1, manager.getOwnerText(owner));
             data.setElement(2, manager.getUserText(line2));
             data.setElement(3, manager.getUserText(line3));
-            sign.offer(data);
             manager.sendHint(player, "manuLock");
+            manager.asyncUpdateSign(event.getTargetTile(), 50);
         }
     }
 
@@ -285,7 +277,7 @@ public class LocketListener {
 
     @Listener
     public void onLoadChunk(LoadChunkEvent event) {
-        event.getTargetChunk().getTileEntities(tile -> tile instanceof Sign).forEach(tile -> manager.loadSign((Sign) tile));
+        event.getTargetChunk().getTileEntities(tile -> tile instanceof Sign).forEach(tile -> manager.asyncUpdateSign((Sign) tile, 50));
     }
 
     @Listener

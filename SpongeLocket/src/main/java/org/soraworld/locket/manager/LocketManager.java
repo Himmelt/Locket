@@ -24,7 +24,6 @@ import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.block.tileentity.TileEntity;
-import org.spongepowered.api.block.tileentity.carrier.Furnace;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.data.key.Keys;
@@ -48,7 +47,7 @@ import org.spongepowered.api.world.World;
 import javax.annotation.Nonnull;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -211,7 +210,7 @@ public class LocketManager extends VManager {
         return privateSign;
     }
 
-    public Optional<User> getUser(String name) {
+    private Optional<User> getUser(String name) {
         if (storageService != null) {
             try {
                 return storageService.get(name);
@@ -221,7 +220,7 @@ public class LocketManager extends VManager {
         return Optional.empty();
     }
 
-    public Optional<User> getUser(UUID uuid) {
+    private Optional<User> getUser(UUID uuid) {
         if (storageService != null) {
             return storageService.get(uuid);
         }
@@ -237,12 +236,7 @@ public class LocketManager extends VManager {
     }
 
     public Text getUserText(@NotNull String name) {
-        Optional<User> user = getUser(name);
-        if (user.isPresent()) {
-            return getUserText(user.get());
-        } else {
-            return Text.of(userFormat.replace("{$user}", name));
-        }
+        return Text.of(userFormat.replace("{$user}", name));
     }
 
     public boolean isDBlock(@NotNull BlockType type) {
@@ -355,6 +349,15 @@ public class LocketManager extends VManager {
     public void lockSign(Player player, Location<World> selected, int line, String name) {
         TileEntity tile = selected.getTileEntity().orElse(null);
         if (tile instanceof Sign) {
+            if (line == 1 && bypassPerm(player) && name != null && !name.equals(player.getName()) && !name.isEmpty()) {
+                Player user = Sponge.getServer().getPlayer(name).orElse(null);
+                if (user != null) {
+                    player = user;
+                } else {
+                    sendKey(player, "invalidUsername", name);
+                    return;
+                }
+            }
             SignData data = ((Sign) tile).getSignData();
             data.setElement(0, getPrivateText());
             data.setElement(1, getOwnerText(player));
@@ -362,6 +365,7 @@ public class LocketManager extends VManager {
                 data.setElement(line, getUserText(name));
             }
             tile.offer(data);
+            asyncUpdateSign((Sign) tile, 50);
             sendHint(player, "manuLock");
         } else {
             sendHint(player, "notSignTile");
@@ -388,6 +392,7 @@ public class LocketManager extends VManager {
             data.setElement(0, getPrivateText());
             data.setElement(1, getOwnerText(player));
             tile.offer(data);
+            asyncUpdateSign((Sign) tile, 50);
         }
         removeOneItem(player, hand);
         player.playSound(SoundTypes.BLOCK_WOOD_PLACE, loc.getPosition(), 1.0D);
@@ -504,14 +509,6 @@ public class LocketManager extends VManager {
         return type == AIR || type == GRASS || type == SNOW_LAYER || type == FLOWING_WATER || type == WATER;
     }
 
-    public boolean filterModify(@NotNull Location<World> block) {
-        AtomicBoolean filter = new AtomicBoolean(false);
-        block.getTileEntity().ifPresent(tile -> {
-            filter.set(tile instanceof Furnace);
-        });
-        return filter.get();
-    }
-
     public static String hideUUID(UUID uuid) {
         String text = uuid.toString().replace("-", "");
         StringBuilder builder = new StringBuilder();
@@ -521,7 +518,7 @@ public class LocketManager extends VManager {
         return builder.toString();
     }
 
-    public Optional<UUID> parseUserId(String text) {
+    public Optional<UUID> parseUuid(String text) {
         Matcher matcher = HIDE_UUID.matcher(text);
         if (matcher.find()) {
             String hex = matcher.group().replace(ChatColor.TRUE_COLOR_STRING, "");
@@ -530,29 +527,41 @@ public class LocketManager extends VManager {
                 long least = Long.parseUnsignedLong(hex.substring(16), 16);
                 return Optional.of(new UUID(most, least));
             }
-        } else {
-            Optional<User> user = getUser(ChatColor.stripColor(text));
-            if (user.isPresent()) {
-                return Optional.of(user.get().getUniqueId());
-            }
         }
         return Optional.empty();
     }
 
-    public void loadSign(@NotNull Sign sign) {
-        SignData data = sign.getSignData();
-        ListValue<Text> lines = data.lines();
-        String line0 = ChatColor.stripAllColor(lines.get(0).toPlain()).trim();
-        if (isPrivate(line0)) {
-            String line1 = lines.get(1).toPlain().trim();
-            String line2 = lines.get(2).toPlain().trim();
-            String line3 = lines.get(3).toPlain().trim();
-
-            parseUserId(line1).flatMap(this::getUser).ifPresent(owner -> data.setElement(1, getOwnerText(owner)));
-            parseUserId(line2).flatMap(this::getUser).ifPresent(user -> data.setElement(2, getUserText(user)));
-            parseUserId(line3).flatMap(this::getUser).ifPresent(user -> data.setElement(3, getUserText(user)));
-
-            sign.offer(data);
+    private Optional<User> parseUser(String text) {
+        Matcher matcher = HIDE_UUID.matcher(text);
+        if (matcher.find()) {
+            String hex = matcher.group().replace(ChatColor.TRUE_COLOR_STRING, "");
+            if (hex.length() == 32) {
+                long most = Long.parseUnsignedLong(hex.substring(0, 16), 16);
+                long least = Long.parseUnsignedLong(hex.substring(16), 16);
+                return getUser(new UUID(most, least));
+            }
+        } else {
+            return getUser(ChatColor.stripColor(text));
         }
+        return Optional.empty();
+    }
+
+    public void asyncUpdateSign(@NotNull final Sign sign, long delay) {
+        Sponge.getScheduler().createAsyncExecutor(plugin).schedule(() -> {
+            final SignData data = sign.getSignData();
+            ListValue<Text> lines = data.lines();
+            String line0 = ChatColor.stripColor(lines.get(0).toPlain()).trim();
+            if (isPrivate(line0)) {
+                String line1 = lines.get(1).toPlain().trim();
+                String line2 = lines.get(2).toPlain().trim();
+                String line3 = lines.get(3).toPlain().trim();
+
+                parseUser(line1).ifPresent(owner -> data.setElement(1, getOwnerText(owner)));
+                parseUser(line2).ifPresent(user -> data.setElement(2, getUserText(user)));
+                parseUser(line3).ifPresent(user -> data.setElement(3, getUserText(user)));
+
+                Sponge.getScheduler().createSyncExecutor(plugin).execute(() -> sign.offer(data));
+            }
+        }, delay, TimeUnit.MILLISECONDS);
     }
 }

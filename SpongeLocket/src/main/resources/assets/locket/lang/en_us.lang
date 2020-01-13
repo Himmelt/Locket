@@ -28,6 +28,7 @@ dTypeRemove = "Block [&7%s&r] has been unmarked from double-block list."
 nullBlockType = "Invalid arguments or NOT block in hand, can't get block id."
 illegalType = "This block type is illegal, like AIR or SIGN."
 
+invalidUsername = "Invalid username, target-player %s need to be online."
 storageServiceInvalid = "&cUser storage service is invalid !"
 
 comment {

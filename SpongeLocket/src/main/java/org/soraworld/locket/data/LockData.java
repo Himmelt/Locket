@@ -34,9 +34,9 @@ public class LockData {
                     String line1 = lines.get(1).toPlain().trim();
                     String line2 = lines.get(2).toPlain().trim();
                     String line3 = lines.get(3).toPlain().trim();
-                    manager.parseUserId(line1).ifPresent(owners::add);
-                    manager.parseUserId(line2).ifPresent(users::add);
-                    manager.parseUserId(line3).ifPresent(users::add);
+                    manager.parseUuid(line1).ifPresent(owners::add);
+                    manager.parseUuid(line2).ifPresent(users::add);
+                    manager.parseUuid(line3).ifPresent(users::add);
                 }
             }
         }));
