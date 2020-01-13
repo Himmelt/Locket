@@ -6,7 +6,6 @@ import org.soraworld.violet.inject.Inject;
 import org.soraworld.violet.util.ChatColor;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.data.value.mutable.ListValue;
-import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -14,14 +13,16 @@ import org.spongepowered.api.world.World;
 import java.util.HashSet;
 import java.util.UUID;
 
+import static org.soraworld.locket.manager.LocketManager.parseUUID;
+
 /**
  * @author Himmelt
  */
 @Inject
 public class LockData {
 
-    private final HashSet<String> owners = new HashSet<>();
-    private final HashSet<String> users = new HashSet<>();
+    private final HashSet<UUID> owners = new HashSet<>();
+    private final HashSet<UUID> users = new HashSet<>();
 
     @Inject
     private static LocketManager manager;
@@ -30,38 +31,48 @@ public class LockData {
         signs.forEach(sign -> sign.getTileEntity().ifPresent(tile -> {
             if (tile instanceof Sign) {
                 ListValue<Text> lines = ((Sign) tile).lines();
-                // TODO support for UUID
                 String line0 = ChatColor.stripAllColor(lines.get(0).toPlain()).trim();
                 if (manager.isPrivate(line0)) {
-                    String raw = lines.get(1).toPlain();
+                    String raw1 = lines.get(1).toPlain().trim();
                     try {
-                        // fe8eabcd-dda6-36f7 -a848-4b13a093e58b
-                        UUID uuid = UUID.fromString(raw.substring(raw.length() - 64));
-                    } catch (Throwable e) {
-                        e.printStackTrace();
+                        UUID owner = parseUUID(raw1.substring(raw1.length() - 64).replace(ChatColor.TRUE_COLOR_STRING, ""));
+                        if (owner != null) {
+                            owners.add(owner);
+                        }
+                    } catch (Throwable ignored) {
                     }
-                    String line1 = ChatColor.stripAllColor("").trim();
-                    String line2 = ChatColor.stripAllColor(lines.get(2).toPlain()).trim();
-                    String line3 = ChatColor.stripAllColor(lines.get(3).toPlain()).trim();
-                    owners.add(line1);
-                    users.add(line2);
-                    users.add(line3);
+                    String raw2 = lines.get(2).toPlain().trim();
+                    try {
+                        UUID user = parseUUID(raw2.substring(raw2.length() - 64).replace(ChatColor.TRUE_COLOR_STRING, ""));
+                        if (user != null) {
+                            users.add(user);
+                        }
+                    } catch (Throwable ignored) {
+                    }
+                    String raw3 = lines.get(3).toPlain().trim();
+                    try {
+                        UUID user = parseUUID(raw3.substring(raw3.length() - 64).replace(ChatColor.TRUE_COLOR_STRING, ""));
+                        if (user != null) {
+                            users.add(user);
+                        }
+                    } catch (Throwable ignored) {
+                    }
                 }
             }
         }));
     }
 
-    public Result tryAccess(@NotNull Player player) {
+    public Result tryAccess(@NotNull UUID uuid) {
         if (owners.size() <= 0) {
             return Result.NOT_LOCKED;
         }
         if (owners.size() >= 2) {
             return Result.MULTI_OWNERS;
         }
-        if (owners.contains(player.getName())) {
+        if (owners.contains(uuid)) {
             return Result.SIGN_OWNER;
         }
-        if (users.contains(player.getName())) {
+        if (users.contains(uuid)) {
             return Result.SIGN_USER;
         }
         return Result.LOCKED;
@@ -75,15 +86,5 @@ public class LockData {
             return State.MULTI_OWNERS;
         }
         return new State(owners.iterator().next());
-    }
-
-    public static UUID parseUUID(String hex) {
-        try {
-            long most = Long.parseLong(hex.substring(0, 16), 16);
-            long least = Long.parseLong(hex.substring(16), 16);
-            return new UUID(most, least);
-        } catch (Throwable ignored) {
-            return null;
-        }
     }
 }

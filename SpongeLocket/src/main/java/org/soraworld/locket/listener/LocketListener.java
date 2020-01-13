@@ -12,16 +12,21 @@ import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.entity.living.player.gamemode.GameModes;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.block.NotifyNeighborBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
+import org.spongepowered.api.event.entity.SpawnEntityEvent;
 import org.spongepowered.api.event.filter.IsCancelled;
 import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.event.item.inventory.ChangeInventoryEvent;
+import org.spongepowered.api.event.network.ClientConnectionEvent;
 import org.spongepowered.api.event.world.ExplosionEvent;
+import org.spongepowered.api.event.world.chunk.LoadChunkEvent;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.BlockCarrier;
 import org.spongepowered.api.item.inventory.Carrier;
@@ -31,6 +36,7 @@ import org.spongepowered.api.item.inventory.type.TileEntityInventory;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.util.Tristate;
+import org.spongepowered.api.world.Chunk;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
@@ -217,42 +223,47 @@ public class LocketListener {
     public void onPlayerChangeSign(ChangeSignEvent event, @First Player player) {
         SignData data = event.getText();
         String line0 = ChatColor.stripAllColor(data.get(0).orElse(Text.EMPTY).toPlain()).trim();
-        String line1 = ChatColor.stripAllColor(data.get(1).orElse(Text.EMPTY).toPlain()).trim();
-        String line2 = ChatColor.stripAllColor(data.get(2).orElse(Text.EMPTY).toPlain()).trim();
-        String line3 = ChatColor.stripAllColor(data.get(3).orElse(Text.EMPTY).toPlain()).trim();
         if (manager.isPrivate(line0)) {
-            Sign sign = event.getTargetTile();
-            if (manager.bypassPerm(player)) {
+            String line1 = ChatColor.stripAllColor(data.get(1).orElse(Text.EMPTY).toPlain()).trim();
+            User user = manager.getUser(line1);
+            if (user != null) {
+                String line2 = ChatColor.stripAllColor(data.get(2).orElse(Text.EMPTY).toPlain()).trim();
+                String line3 = ChatColor.stripAllColor(data.get(3).orElse(Text.EMPTY).toPlain()).trim();
+                Sign sign = event.getTargetTile();
+                if (manager.bypassPerm(player)) {
+                    data.setElement(0, manager.getPrivateText());
+                    data.setElement(1, manager.getOwnerText(user));
+                    data.setElement(2, manager.getUserText(line2));
+                    data.setElement(3, manager.getUserText(line3));
+                    sign.offer(data);
+                    manager.sendHint(player, "manuLock");
+                    return;
+                }
+                Location<World> block = LocketManager.getAttached(sign.getLocation());
+                if (!manager.isLockable(block)) {
+                    manager.sendHint(player, "notLockable");
+                    event.setCancelled(true);
+                    return;
+                }
+                if (!manager.hasPermission(player, "locket.lock")) {
+                    manager.sendHint(player, "needPerm", manager.mappingPerm("locket.lock"));
+                    event.setCancelled(true);
+                    return;
+                }
+                if (manager.otherProtected(player, block)) {
+                    manager.sendHint(player, "otherProtect");
+                    event.setCancelled(true);
+                    return;
+                }
                 data.setElement(0, manager.getPrivateText());
-                data.setElement(1, manager.getOwnerText(line1.isEmpty() ? player.getName() : line1));
+                data.setElement(1, manager.getOwnerText(player));
                 data.setElement(2, manager.getUserText(line2));
                 data.setElement(3, manager.getUserText(line3));
                 sign.offer(data);
                 manager.sendHint(player, "manuLock");
-                return;
+            } else {
+                manager.sendKey(player, "invalidUser", line1);
             }
-            Location<World> block = LocketManager.getAttached(sign.getLocation());
-            if (!manager.isLockable(block)) {
-                manager.sendHint(player, "notLockable");
-                event.setCancelled(true);
-                return;
-            }
-            if (!manager.hasPermission(player, "locket.lock")) {
-                manager.sendHint(player, "needPerm", manager.mappingPerm("locket.lock"));
-                event.setCancelled(true);
-                return;
-            }
-            if (manager.otherProtected(player, block)) {
-                manager.sendHint(player, "otherProtect");
-                event.setCancelled(true);
-                return;
-            }
-            data.setElement(0, manager.getPrivateText());
-            data.setElement(1, manager.getOwnerText(player.getName()));
-            data.setElement(2, manager.getUserText(line2));
-            data.setElement(3, manager.getUserText(line3));
-            sign.offer(data);
-            manager.sendHint(player, "manuLock");
         }
     }
 
@@ -263,5 +274,16 @@ public class LocketListener {
             manager.setSelected(player, block);
             manager.sendHint(player, "selectSign");
         }
+    }
+
+    @Listener
+    public void onLoadChunk(LoadChunkEvent event) {
+        Chunk chunk = event.getTargetChunk();
+        chunk.getTileEntities()
+    }
+
+    @Listener
+    public void onPlayerQuit(ClientConnectionEvent.Disconnect event) {
+        manager.clearSelected(event.getTargetEntity().getUniqueId());
     }
 }

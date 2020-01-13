@@ -14,7 +14,6 @@ import org.soraworld.locket.data.State;
 import org.soraworld.locket.serializers.BlockTypeSerializer;
 import org.soraworld.locket.serializers.ChatTypeSerializer;
 import org.soraworld.locket.serializers.TextSerializer;
-import org.soraworld.violet.data.DataAPI;
 import org.soraworld.violet.inject.MainManager;
 import org.soraworld.violet.manager.VManager;
 import org.soraworld.violet.plugin.SpongePlugin;
@@ -33,8 +32,10 @@ import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
 import org.spongepowered.api.data.type.HandType;
 import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.entity.living.player.gamemode.GameModes;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.service.user.UserStorageService;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.chat.ChatType;
 import org.spongepowered.api.text.chat.ChatTypes;
@@ -45,10 +46,7 @@ import org.spongepowered.api.world.World;
 
 import javax.annotation.Nonnull;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.spongepowered.api.block.BlockTypes.*;
@@ -83,10 +81,12 @@ public class LocketManager extends VManager {
     private Set<BlockType> doubleBlocks = new HashSet<>();
     @Setting(comment = "comment.highDoors")
     private Set<BlockType> highDoors = new HashSet<>();
+
     private boolean usingGriefPrevention = false;
+    private UserStorageService storageService = null;
+    private final HashMap<UUID, Location<World>> selected = new HashMap<>();
 
-    private static final String SELECTED_KEY = "lock:selected";
-
+    // TODO
     private static final Direction[] FACES = new Direction[]{Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
 
     public LocketManager(SpongePlugin plugin, Path path) {
@@ -116,6 +116,10 @@ public class LocketManager extends VManager {
 
     @Override
     public void afterLoad() {
+        Sponge.getServiceManager().provide(UserStorageService.class).ifPresent(s -> storageService = s);
+        if (storageService == null) {
+            consoleKey("storageServiceInvalid");
+        }
         if (privateSign == null) {
             privateSign = Text.of("[Private]");
         }
@@ -204,12 +208,24 @@ public class LocketManager extends VManager {
         return privateSign;
     }
 
-    public Text getOwnerText(String owner) {
-        return Text.of(ownerFormat.replace("{$owner}", owner));
+    public User getUser(String name) {
+        if (storageService != null) {
+            return storageService.get(name).orElse(null);
+        }
+        return null;
+    }
+
+    public Text getOwnerText(@NotNull User owner) {
+        return Text.of(ownerFormat.replace("{$owner}", owner.getName()) + hideUUID(owner.getUniqueId()));
     }
 
     public Text getUserText(String user) {
-        return Text.of(userFormat.replace("{$user}", user));
+        User u = getUser(user);
+        if (u == null) {
+            return Text.of(userFormat.replace("{$user}", user) + hideUUID(unknownUserId));
+        } else {
+            return Text.of(userFormat.replace("{$user}", user) + hideUUID(u.getUniqueId()));
+        }
     }
 
     public boolean isDBlock(@NotNull BlockType type) {
@@ -218,11 +234,15 @@ public class LocketManager extends VManager {
 
     @Nullable
     public Location<World> getSelected(@NotNull Player player) {
-        return DataAPI.getTemp(player.getUniqueId(), SELECTED_KEY, Location.class);
+        return selected.get(player.getUniqueId());
     }
 
     public void setSelected(@NotNull Player player, Location<World> location) {
-        DataAPI.setTemp(player.getUniqueId(), SELECTED_KEY, location);
+        selected.put(player.getUniqueId(), location);
+    }
+
+    public void clearSelected(@NotNull UUID uuid) {
+        selected.remove(uuid);
     }
 
     public Result tryAccess(@NotNull Player player, @NotNull Location<World> location, boolean needEdit) {
@@ -319,8 +339,8 @@ public class LocketManager extends VManager {
         TileEntity tile = selected.getTileEntity().orElse(null);
         if (tile instanceof Sign) {
             SignData data = ((Sign) tile).getSignData();
-            data.setElement(0, privateSign);
-            data.setElement(1, getOwnerText(player.getName()));
+            data.setElement(0, getPrivateText());
+            data.setElement(1, getOwnerText(player));
             if ((line == 2 || line == 3) && name != null && !name.isEmpty()) {
                 data.setElement(line, getUserText(name));
             }
@@ -349,7 +369,7 @@ public class LocketManager extends VManager {
         if (tile instanceof Sign) {
             SignData data = ((Sign) tile).getSignData();
             data.setElement(0, getPrivateText());
-            data.setElement(1, getOwnerText(player.getName()));
+            data.setElement(1, getOwnerText(player));
             tile.offer(data);
         }
         removeOneItem(player, hand);
@@ -439,7 +459,7 @@ public class LocketManager extends VManager {
             return Result.NOT_LOCKED;
         }
         LockData data = new LockData(signs);
-        return data.tryAccess(player);
+        return data.tryAccess(player.getUniqueId());
     }
 
     private static void removeOneItem(Player player, HandType hand) {
@@ -473,5 +493,24 @@ public class LocketManager extends VManager {
             filter.set(tile instanceof Furnace);
         });
         return filter.get();
+    }
+
+    public static String hideUUID(UUID uuid) {
+        String text = uuid.toString().replace("-", "");
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < text.length(); i++) {
+            builder.append(ChatColor.TRUE_COLOR_CHAR).append(text.charAt(i));
+        }
+        return builder.toString();
+    }
+
+    public static UUID parseUUID(String uuid) {
+        try {
+            long most = Long.parseUnsignedLong(uuid.substring(0, 16), 16);
+            long least = Long.parseUnsignedLong(uuid.substring(16), 16);
+            return new UUID(most, least);
+        } catch (Throwable ignored) {
+            return null;
+        }
     }
 }

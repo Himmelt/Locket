@@ -28,6 +28,8 @@ dTypeRemove = "Block [&7%s&r] has been unmarked from double-block list."
 nullBlockType = "Invalid arguments or NOT block in hand, can't get block id."
 illegalType = "This block type is illegal, like AIR or SIGN."
 
+storageServiceInvalid = "&cUser storage service is invalid !"
+
 comment {
   protectTile = "Whether protect all tileentities."
   protectCarrier = "Whether protect all containers."
