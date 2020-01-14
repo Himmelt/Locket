@@ -1,0 +1,4 @@
+rootProject.name = 'Locket'
+
+include 'SpigotLocket'
+include 'SpongeLocket'
