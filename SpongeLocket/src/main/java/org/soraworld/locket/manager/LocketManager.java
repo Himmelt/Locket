@@ -44,7 +44,6 @@ import org.spongepowered.api.world.BlockChangeFlags;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import javax.annotation.Nonnull;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -111,7 +110,7 @@ public class LocketManager extends VManager {
     }
 
     @Override
-    @Nonnull
+    @NotNull
     public ChatColor defChatColor() {
         return ChatColor.YELLOW;
     }
@@ -505,7 +504,7 @@ public class LocketManager extends VManager {
         return hasPermission(sender, plugin.getId() + ".bypass");
     }
 
-    public boolean canPlaceLock(@Nonnull BlockType type) {
+    public boolean canPlaceLock(@NotNull BlockType type) {
         return type == AIR || type == GRASS || type == SNOW_LAYER || type == FLOWING_WATER || type == WATER;
     }
 

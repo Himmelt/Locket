@@ -37,6 +37,7 @@ public class LockData {
                     manager.parseUuid(line1).ifPresent(owners::add);
                     manager.parseUuid(line2).ifPresent(users::add);
                     manager.parseUuid(line3).ifPresent(users::add);
+                    manager.asyncUpdateSign((Sign) tile, 50);
                 }
             }
         }));
