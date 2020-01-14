@@ -1,8 +1,7 @@
 apply plugin: 'java'
 
-group = 'org.soraworld'
 version = '1.2.2'
-archivesBaseName = "Locket"
+group = 'org.soraworld'
 
 sourceCompatibility = targetCompatibility = 1.8
 
@@ -37,13 +36,9 @@ subprojects {
     }
 
     repositories {
-        maven {
-            url = 'https://maven.aliyun.com/repository/public/'
-        }
+        maven { url = 'https://maven.aliyun.com/repository/public/' }
         jcenter()
-        maven {
-            url = 'https://oss.jfrog.org/artifactory/oss-snapshot-local/'
-        }
+        maven { url = 'https://oss.jfrog.org/artifactory/oss-snapshot-local/' }
     }
 
     configurations {
