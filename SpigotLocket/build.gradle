@@ -1,13 +1,5 @@
-repositories {
-    maven {
-        name = 'spigot'
-        url = 'https://hub.spigotmc.org/nexus/content/groups/public/'
-    }
-}
-
 dependencies {
     compileOnly 'org.spigotmc:spigot-api:1.14.1-R0.1-SNAPSHOT'
-    //compileOnly 'org.spigotmc:spigot-api:1.8-R0.1-SNAPSHOT'
 }
 
 processResources {
@@ -15,5 +7,14 @@ processResources {
     from(sourceSets.main.resources.srcDirs) {
         include 'plugin.yml'
         expand 'version': project.version
+    }
+}
+
+publishing {
+    publications {
+        gpr(MavenPublication) {
+            from components.java
+            artifactId = 'locket-spigot'
+        }
     }
 }

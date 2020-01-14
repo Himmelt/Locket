@@ -14,13 +14,6 @@ archivesBaseName = "Locket-sponge"
 
 sourceCompatibility = targetCompatibility = 1.8
 
-repositories {
-    jcenter()
-    maven {
-        url = 'https://oss.jfrog.org/artifactory/oss-snapshot-local/'
-    }
-}
-
 sourceSets {
     api
 }
@@ -34,4 +27,13 @@ dependencies {
 
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
+}
+
+publishing {
+    publications {
+        gpr(MavenPublication) {
+            from components.java
+            artifactId = 'locket-sponge'
+        }
+    }
 }
