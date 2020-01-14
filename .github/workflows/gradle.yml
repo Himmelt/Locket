@@ -13,7 +13,9 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 1.8
-    - name: Clean
+    - name: Set gradlew permission
+      run: chmod +x ./gradlew
+    - name: Gradle Clean
       run: ./gradlew clean
-    - name: Build
+    - name: Gradle Build
       run: ./gradlew build
