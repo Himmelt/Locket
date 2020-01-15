@@ -32,44 +32,64 @@ public class CommandLocket {
 
     @Sub(path = ".", perm = "locket.lock")
     public final SubExecutor<Player> lock = (cmd, player, args) -> {
-        Location location = manager.getSelected(player);
-        if (location != null) {
-            Block selected = location.getBlock();
-            if (args.empty()) {
-                if (manager.bypassPerm(player)) {
-                    manager.lockSign(player, selected, 0, null);
-                } else if (manager.tryAccess(player, selected, true) == Result.NOT_LOCKED) {
-                    if (manager.isLockable(LocketManager.getAttached(selected))) {
-                        manager.lockSign(player, selected, 0, null);
-                    } else {
-                        manager.sendHint(player, "notLockable");
-                    }
-                } else {
-                    manager.sendHint(player, "noOwnerAccess");
-                }
-            } else if (args.size() >= 2) {
-                try {
-                    int line = Integer.parseInt(args.get(0));
-                    String name = args.get(1);
-                    if (manager.bypassPerm(player)) {
-                        manager.lockSign(player, selected, line, name);
-                    } else if (manager.isLockable(LocketManager.getAttached(selected))) {
-                        Result result = manager.tryAccess(player, selected, true);
-                        if (result == Result.SIGN_OWNER || result == Result.NOT_LOCKED) {
-                            manager.lockSign(player, selected, line, name);
-                            manager.sendHint(player, "manuLock");
-                        } else {
-                            manager.sendHint(player, "noOwnerAccess");
-                        }
-                    } else {
-                        manager.sendHint(player, "notLockable");
-                    }
-                } catch (Throwable e) {
-                    manager.sendHint(player, "invalidInt");
-                }
-            }
-        } else {
+        Location select = manager.getSelected(player);
+        if (select == null) {
             manager.sendHint(player, "selectFirst");
+            return;
+        }
+        Block selected = select.getBlock();
+        if (selected.getType() != Material.WALL_SIGN) {
+            manager.sendHint(player, "notSignTile");
+            manager.clearSelected(player.getUniqueId());
+            return;
+        }
+        int line = 0;
+        String name;
+        if (args.size() < 2) {
+            name = null;
+        } else {
+            try {
+                line = Integer.parseInt(args.get(0));
+            } catch (Throwable ignored) {
+                manager.sendHint(player, "invalidInt");
+                return;
+            }
+            name = args.get(1);
+        }
+
+        Block target = LocketManager.getAttached(selected);
+
+        if (!manager.bypassPerm(player)) {
+            if (!manager.hasPermission(player, "locket.lock")) {
+                manager.sendHint(player, "needPerm", manager.mappingPerm("locket.lock"));
+                return;
+            }
+            if (manager.otherProtected(player, target)) {
+                manager.sendHint(player, "otherProtect");
+                return;
+            }
+            if (!manager.isLockable(target)) {
+                manager.sendHint(player, "notLockable");
+                return;
+            }
+        }
+
+        switch (manager.tryAccess(player, target, true)) {
+            case SIGN_OWNER:
+            case NOT_LOCKED:
+                manager.lockSign(player, selected, line, name);
+                return;
+            case MULTI_OWNERS:
+                manager.sendHint(player, "multiOwners");
+                return;
+            case MULTI_BLOCKS:
+                manager.sendHint(player, "multiBlocks");
+                return;
+            case OTHER_PROTECT:
+                manager.sendHint(player, "otherProtect");
+                return;
+            default:
+                manager.sendHint(player, "noAccess");
         }
     };
 
@@ -99,8 +119,9 @@ public class CommandLocket {
     public final SubExecutor<Player> remove = (cmd, player, args) -> {
         Location selected = manager.getSelected(player);
         if (selected != null) {
+            Block target = LocketManager.getAttached(selected.getBlock());
             if (args.empty()) {
-                if (manager.bypassPerm(player) || manager.tryAccess(player, selected.getBlock(), true) == Result.SIGN_OWNER) {
+                if (manager.bypassPerm(player) || manager.tryAccess(player, target, true) == Result.SIGN_OWNER) {
                     manager.unLockSign(selected, 0);
                 } else {
                     manager.sendHint(player, "noOwnerAccess");
@@ -110,7 +131,7 @@ public class CommandLocket {
                     int line = Integer.parseInt(args.first());
                     if (manager.bypassPerm(player)) {
                         manager.unLockSign(selected, line);
-                    } else if ((line == 2 || line == 3) && manager.tryAccess(player, selected.getBlock(), true) == Result.SIGN_OWNER) {
+                    } else if ((line == 2 || line == 3) && manager.tryAccess(player, target, true) == Result.SIGN_OWNER) {
                         manager.unLockSign(selected, line);
                         manager.sendHint(player, "manuRemove");
                     } else {

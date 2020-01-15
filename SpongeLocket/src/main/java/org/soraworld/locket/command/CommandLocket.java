@@ -56,22 +56,24 @@ public class CommandLocket {
             name = args.get(1);
         }
 
+        Location<World> target = LocketManager.getAttached(selected);
+
         if (!manager.bypassPerm(player)) {
             if (!manager.hasPermission(player, "locket.lock")) {
                 manager.sendHint(player, "needPerm", manager.mappingPerm("locket.lock"));
                 return;
             }
-            if (manager.otherProtected(player, selected)) {
+            if (manager.otherProtected(player, target)) {
                 manager.sendHint(player, "otherProtect");
                 return;
             }
-            if (!manager.isLockable(LocketManager.getAttached(selected))) {
+            if (!manager.isLockable(target)) {
                 manager.sendHint(player, "notLockable");
                 return;
             }
         }
 
-        switch (manager.tryAccess(player, selected, true)) {
+        switch (manager.tryAccess(player, target, true)) {
             case SIGN_OWNER:
             case NOT_LOCKED:
                 manager.lockSign(player, selected, line, name);
@@ -116,8 +118,9 @@ public class CommandLocket {
     public final SubExecutor<Player> remove = (cmd, player, args) -> {
         Location<World> selected = manager.getSelected(player);
         if (selected != null) {
+            Location<World> target = LocketManager.getAttached(selected);
             if (args.empty()) {
-                if (manager.bypassPerm(player) || manager.tryAccess(player, selected, true) == Result.SIGN_OWNER) {
+                if (manager.bypassPerm(player) || manager.tryAccess(player, target, true) == Result.SIGN_OWNER) {
                     manager.unLockSign(selected, 0);
                 } else {
                     manager.sendHint(player, "noOwnerAccess");
@@ -127,7 +130,7 @@ public class CommandLocket {
                     int line = Integer.parseInt(args.first());
                     if (manager.bypassPerm(player)) {
                         manager.unLockSign(selected, line);
-                    } else if ((line == 2 || line == 3) && manager.tryAccess(player, selected, true) == Result.SIGN_OWNER) {
+                    } else if ((line == 2 || line == 3) && manager.tryAccess(player, target, true) == Result.SIGN_OWNER) {
                         manager.unLockSign(selected, line);
                         manager.sendHint(player, "manuRemove");
                     } else {

@@ -130,7 +130,7 @@ public class LocketListener implements Listener {
                 return;
             }
             Material type = block.getType();
-            switch (manager.tryAccess(player, block, false)) {
+            switch (manager.tryAccess(player, type == Material.WALL_SIGN ? LocketManager.getAttached(block) : block, false)) {
                 case SIGN_USER:
                     if (action == Action.LEFT_CLICK_BLOCK || type == Material.WALL_SIGN) {
                         event.setCancelled(true);
@@ -213,23 +213,21 @@ public class LocketListener implements Listener {
 
         event.setCancelled(true);
 
-        if (manager.bypassPerm(player)) {
-            manager.placeLock(player, block, face, handType);
-            return;
+        if (!manager.bypassPerm(player)) {
+            if (!manager.hasPermission(player, "locket.lock")) {
+                manager.sendHint(player, "needPerm", manager.mappingPerm("locket.lock"));
+                return;
+            }
+            if (manager.otherProtected(player, block)) {
+                manager.sendHint(player, "otherProtect");
+                return;
+            }
         }
-        if (!manager.hasPermission(player, "locket.lock")) {
-            manager.sendHint(player, "needPerm", manager.mappingPerm("locket.lock"));
-            return;
-        }
-        if (manager.otherProtected(player, block)) {
-            manager.sendHint(player, "otherProtect");
-            return;
-        }
+
         switch (manager.tryAccess(player, block, true)) {
             case SIGN_OWNER:
             case NOT_LOCKED:
                 manager.placeLock(player, block, face, handType);
-                manager.sendHint(player, "quickLock");
                 return;
             case MULTI_OWNERS:
                 manager.sendHint(player, "multiOwners");

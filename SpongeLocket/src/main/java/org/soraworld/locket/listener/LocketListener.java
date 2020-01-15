@@ -61,7 +61,7 @@ public class LocketListener {
                 }
             });
         } else if (!manager.bypassPerm(player)) {
-            event.filter(l -> manager.tryAccess(player, l, true).canEdit());
+            event.filter(location -> manager.tryAccess(player, location, true).canEdit());
         }
     }
 
@@ -102,7 +102,7 @@ public class LocketListener {
                 return;
             }
             BlockType type = location.getBlockType();
-            switch (manager.tryAccess(player, location, false)) {
+            switch (manager.tryAccess(player, type == BlockTypes.WALL_SIGN ? LocketManager.getAttached(location) : location, false)) {
                 case SIGN_USER:
                     if (event instanceof InteractBlockEvent.Primary || type == BlockTypes.WALL_SIGN) {
                         event.setCancelled(true);
@@ -174,7 +174,7 @@ public class LocketListener {
             return;
         }
         Direction face = event.getTargetSide();
-        if (face == Direction.UP || face == Direction.DOWN || face == Direction.NONE) {
+        if (face != Direction.NORTH && face != Direction.EAST && face != Direction.SOUTH && face != Direction.WEST) {
             return;
         }
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
