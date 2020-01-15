@@ -1,18 +1,23 @@
 package org.soraworld.locket.manager;
 
 import org.bukkit.*;
-import org.bukkit.block.*;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Sign;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soraworld.hocon.node.Setting;
+import org.soraworld.locket.data.HandType;
 import org.soraworld.locket.data.LockData;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.data.State;
+import org.soraworld.locket.nms.InvUtil;
 import org.soraworld.locket.nms.TileSign;
 import org.soraworld.violet.inject.MainManager;
 import org.soraworld.violet.manager.VManager;
@@ -23,6 +28,8 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.soraworld.violet.nms.Version.*;
 
 /**
  * @author Himmelt
@@ -87,12 +94,18 @@ public class LocketManager extends VManager {
         lockables.add(Material.TRAPPED_CHEST);
         doubleBlocks.add(Material.CHEST);
         doubleBlocks.add(Material.TRAPPED_CHEST);
-        highDoors.add(Material.WOODEN_DOOR);
-        highDoors.add(Material.BIRCH_DOOR);
-        highDoors.add(Material.ACACIA_DOOR);
-        highDoors.add(Material.JUNGLE_DOOR);
-        highDoors.add(Material.SPRUCE_DOOR);
-        highDoors.add(Material.DARK_OAK_DOOR);
+        if (!v1_7_R4) {
+            highDoors.add(Material.BIRCH_DOOR);
+            highDoors.add(Material.ACACIA_DOOR);
+            highDoors.add(Material.JUNGLE_DOOR);
+            highDoors.add(Material.SPRUCE_DOOR);
+            highDoors.add(Material.DARK_OAK_DOOR);
+            if (v1_13_R1 || v1_13_R2) {
+                highDoors.add(Material.OAK_DOOR);
+            }
+        } else {
+            highDoors.add(Material.valueOf("WOODEN_DOOR"));
+        }
         highDoors.add(Material.IRON_DOOR);
     }
 
@@ -119,7 +132,7 @@ public class LocketManager extends VManager {
             return true;
         }
         BlockState tile = block.getState();
-        return protectTile && tile != null || protectCarrier && tile instanceof Container;
+        return protectTile && tile != null || protectCarrier && tile instanceof InventoryHolder;
     }
 
     public boolean isPreventTransfer() {
@@ -335,9 +348,9 @@ public class LocketManager extends VManager {
         }
     }
 
-    public void placeLock(Player player, Block loc, BlockFace face, EquipmentSlot hand) {
+    public void placeLock(Player player, Block loc, BlockFace face, HandType hand) {
         Block side = loc.getRelative(face);
-        side.setType(Material.WALL_SIGN, false);
+        side.setType(Material.WALL_SIGN);
         BlockState tile = side.getState();
         if (tile instanceof Sign) {
             Sign sign = (Sign) tile;
@@ -353,7 +366,11 @@ public class LocketManager extends VManager {
             asyncUpdateSign(side);
         }
         removeOneItem(player, hand);
-        player.playSound(loc.getLocation(), Sound.BLOCK_WOOD_PLACE, 1.0F, 0F);
+        if (v1_7_R4) {
+            player.playSound(loc.getLocation(), "random.wood_click", 1.0F, 0F);
+        } else {
+            player.playSound(loc.getLocation(), "block.wood.break", 1.0F, 0F);
+        }
         sendHint(player, "quickLock");
     }
 
@@ -429,17 +446,17 @@ public class LocketManager extends VManager {
         return data.tryAccess(player.getUniqueId());
     }
 
-    private static void removeOneItem(Player player, EquipmentSlot hand) {
+    private static void removeOneItem(Player player, HandType hand) {
         if (GameMode.CREATIVE == player.getGameMode()) {
             return;
         }
         PlayerInventory inv = player.getInventory();
-        ItemStack stack = getItemInHand(inv, hand);
+        ItemStack stack = InvUtil.getItemInHand(inv, hand);
         if (stack != null && stack.getAmount() >= 1) {
             stack.setAmount(stack.getAmount() - 1);
-            setItemInHand(inv, hand, stack);
+            InvUtil.setItemInHand(inv, hand, stack);
         } else {
-            setItemInHand(inv, hand, null);
+            InvUtil.setItemInHand(inv, hand, null);
         }
     }
 
@@ -460,9 +477,10 @@ public class LocketManager extends VManager {
     }
 
     public boolean canPlaceLock(@NotNull Material type) {
+        String typeName = type.name();
         return type == Material.AIR || type == Material.GRASS || type == Material.SNOW
-                || type == Material.WATER || type == Material.STATIONARY_WATER
-                || type == Material.LAVA || type == Material.STATIONARY_LAVA;
+                || type == Material.WATER || type == Material.LAVA
+                || "STATIONARY_WATER".equalsIgnoreCase(typeName) || "STATIONARY_LAVA".equalsIgnoreCase(typeName);
     }
 
     private static String hideUuid(UUID uuid) {
@@ -503,19 +521,5 @@ public class LocketManager extends VManager {
             }
             return false;
         }), 1);
-    }
-
-    public static ItemStack getItemInHand(@NotNull PlayerInventory player, EquipmentSlot type) {
-        if (type == EquipmentSlot.OFF_HAND) {
-            return player.getItemInOffHand();
-        }
-        return player.getItemInMainHand();
-    }
-
-    public static void setItemInHand(@NotNull PlayerInventory player, EquipmentSlot type, ItemStack stack) {
-        if (type == EquipmentSlot.OFF_HAND) {
-            player.setItemInOffHand(stack);
-        }
-        player.setItemInMainHand(stack);
     }
 }

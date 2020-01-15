@@ -6,5 +6,5 @@ package net.minecraft.server.v1_7_R4;
  * @author Himmelt
  */
 public class TileEntitySign extends TileEntity {
-    public final IChatBaseComponent[] lines = new IChatBaseComponent[]{new ChatComponentText(""), new ChatComponentText(""), new ChatComponentText(""), new ChatComponentText("")};
+    public final String[] lines = new String[]{"", "", "", ""};
 }

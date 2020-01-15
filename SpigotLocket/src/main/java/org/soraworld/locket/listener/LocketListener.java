@@ -5,7 +5,7 @@ import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.Container;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -18,15 +18,19 @@ import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
-import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.soraworld.locket.data.HandType;
 import org.soraworld.locket.data.State;
 import org.soraworld.locket.manager.LocketManager;
+import org.soraworld.locket.nms.InvUtil;
 import org.soraworld.locket.nms.TileSign;
 import org.soraworld.violet.inject.EventListener;
 import org.soraworld.violet.inject.Inject;
 
 import java.util.Arrays;
+
+import static org.soraworld.violet.nms.Version.v1_7_R4;
 
 /**
  * @author Himmelt
@@ -44,13 +48,6 @@ public class LocketListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onExplosion(BlockExplodeEvent event) {
-        if (manager.isPreventExplosion()) {
-            event.blockList().removeIf(block -> block != null && manager.isLocked(block));
-        }
-    }
-
     @EventHandler(priority = EventPriority.LOW)
     public void onChangeBlock(BlockPistonExtendEvent event) {
         for (Block block : event.getBlocks()) {
@@ -63,10 +60,16 @@ public class LocketListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW)
     public void onChangeBlock(BlockPistonRetractEvent event) {
-        for (Block block : event.getBlocks()) {
-            if (manager.isLocked(block)) {
+        if (v1_7_R4) {
+            if (manager.isLocked(event.getRetractLocation().getBlock())) {
                 event.setCancelled(true);
-                return;
+            }
+        } else {
+            for (Block block : event.getBlocks()) {
+                if (manager.isLocked(block)) {
+                    event.setCancelled(true);
+                    return;
+                }
             }
         }
     }
@@ -164,15 +167,15 @@ public class LocketListener implements Listener {
     @EventHandler(priority = EventPriority.LOW)
     public void onInventoryTransfer(InventoryMoveItemEvent event) {
         if (manager.isPreventTransfer()) {
-            Inventory sourceInv = event.getSource();
-            Inventory targetInv = event.getDestination();
+            InventoryHolder srcHolder = event.getSource().getHolder();
+            InventoryHolder desHolder = event.getDestination().getHolder();
             State source = State.NOT_LOCKED, target = State.NOT_LOCKED;
 
-            if (sourceInv.getHolder() instanceof Container) {
-                source = manager.checkState(sourceInv.getLocation().getBlock());
+            if (srcHolder instanceof BlockState) {
+                source = manager.checkState(((BlockState) srcHolder).getBlock());
             }
-            if (targetInv.getHolder() instanceof Container) {
-                target = manager.checkState(targetInv.getLocation().getBlock());
+            if (desHolder instanceof BlockState) {
+                target = manager.checkState(((BlockState) desHolder).getBlock());
             }
 
             // 允许情况: 相同所有者 或 都没上锁
@@ -188,7 +191,8 @@ public class LocketListener implements Listener {
             return;
         }
         Player player = event.getPlayer();
-        ItemStack stack = LocketManager.getItemInHand(player.getInventory(), event.getHand());
+        HandType handType = InvUtil.getHandType(event);
+        ItemStack stack = InvUtil.getItemInHand(player.getInventory(), handType);
         if (stack == null || stack.getType() != Material.SIGN) {
             return;
         }
@@ -210,7 +214,7 @@ public class LocketListener implements Listener {
         event.setCancelled(true);
 
         if (manager.bypassPerm(player)) {
-            manager.placeLock(player, block, face, event.getHand());
+            manager.placeLock(player, block, face, handType);
             return;
         }
         if (!manager.hasPermission(player, "locket.lock")) {
@@ -224,7 +228,7 @@ public class LocketListener implements Listener {
         switch (manager.tryAccess(player, block, true)) {
             case SIGN_OWNER:
             case NOT_LOCKED:
-                manager.placeLock(player, block, face, event.getHand());
+                manager.placeLock(player, block, face, handType);
                 manager.sendHint(player, "quickLock");
                 return;
             case MULTI_OWNERS:
