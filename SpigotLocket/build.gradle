@@ -1,9 +1,15 @@
 archivesBaseName = "Locket-spigot"
 
+sourceSets {
+    api
+}
+
 dependencies {
     compile 'org.soraworld:violet-spigot:2.4.2-SNAPSHOT'
     compileOnly 'org.spigotmc:spigot-api:1.12.2-R0.1-SNAPSHOT'
-    compile files('lib/spigot-1.12.2.jar')
+    compileOnly sourceSets.api.output
+    apiCompileOnly 'org.spigotmc:spigot-api:1.12.2-R0.1-SNAPSHOT'
+  //  compile files('lib/spigot-1.12.2.jar')
 }
 
 processResources {
