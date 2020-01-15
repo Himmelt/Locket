@@ -1,5 +1,13 @@
 package org.soraworld.locket.command;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.soraworld.locket.Locket;
 import org.soraworld.locket.data.Result;
@@ -8,15 +16,6 @@ import org.soraworld.violet.command.*;
 import org.soraworld.violet.inject.Command;
 import org.soraworld.violet.inject.Inject;
 import org.soraworld.violet.util.ListUtils;
-import org.spongepowered.api.Sponge;
-import org.spongepowered.api.block.BlockType;
-import org.spongepowered.api.block.BlockTypes;
-import org.spongepowered.api.command.CommandSource;
-import org.spongepowered.api.data.type.HandTypes;
-import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.item.inventory.ItemStack;
-import org.spongepowered.api.world.Location;
-import org.spongepowered.api.world.World;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,8 +31,9 @@ public class CommandLocket {
 
     @Sub(path = ".", perm = "locket.lock")
     public final SubExecutor<Player> lock = (cmd, player, args) -> {
-        Location<World> selected = manager.getSelected(player);
-        if (selected != null) {
+        Location location = manager.getSelected(player);
+        if (location != null) {
+            Block selected = location.getBlock();
             if (args.empty()) {
                 if (manager.bypassPerm(player)) {
                     manager.lockSign(player, selected, 0, null);
@@ -88,7 +88,7 @@ public class CommandLocket {
                 return sub.tabComplete(player, args.next());
             }
             List<String> players = new ArrayList<>();
-            Sponge.getServer().getOnlinePlayers().forEach(p -> players.add(p.getName()));
+            Bukkit.getServer().getOnlinePlayers().forEach(p -> players.add(p.getName()));
             return ListUtils.getMatchListIgnoreCase(args.get(1), players);
         }
         return new ArrayList<>();
@@ -96,10 +96,10 @@ public class CommandLocket {
 
     @Sub(perm = "locket.lock", usage = "usage.remove")
     public final SubExecutor<Player> remove = (cmd, player, args) -> {
-        Location<World> selected = manager.getSelected(player);
+        Location selected = manager.getSelected(player);
         if (selected != null) {
             if (args.empty()) {
-                if (manager.bypassPerm(player) || manager.tryAccess(player, selected, true) == Result.SIGN_OWNER) {
+                if (manager.bypassPerm(player) || manager.tryAccess(player, selected.getBlock(), true) == Result.SIGN_OWNER) {
                     manager.unLockSign(selected, 0);
                 } else {
                     manager.sendHint(player, "noOwnerAccess");
@@ -109,7 +109,7 @@ public class CommandLocket {
                     int line = Integer.parseInt(args.first());
                     if (manager.bypassPerm(player)) {
                         manager.unLockSign(selected, line);
-                    } else if ((line == 2 || line == 3) && manager.tryAccess(player, selected, true) == Result.SIGN_OWNER) {
+                    } else if ((line == 2 || line == 3) && manager.tryAccess(player, selected.getBlock(), true) == Result.SIGN_OWNER) {
                         manager.unLockSign(selected, line);
                         manager.sendHint(player, "manuRemove");
                     } else {
@@ -125,28 +125,28 @@ public class CommandLocket {
     };
 
     @Sub(perm = "admin", virtual = true, usage = "usage.type")
-    public final SubExecutor<CommandSource> type = null;
+    public final SubExecutor<CommandSender> type = null;
 
     @Sub(path = "type.+", perm = "admin")
-    public final SubExecutor<CommandSource> type_plus = (cmd, sender, args) -> processType(sender, args, manager::addType, "typeAdd");
+    public final SubExecutor<CommandSender> type_plus = (cmd, sender, args) -> processType(sender, args, manager::addType, "typeAdd");
 
     @Sub(path = "type.-", perm = "admin")
-    public final SubExecutor<CommandSource> type_minus = (cmd, sender, args) -> processType(sender, args, manager::removeType, "typeRemove");
+    public final SubExecutor<CommandSender> type_minus = (cmd, sender, args) -> processType(sender, args, manager::removeType, "typeRemove");
 
     @Sub(path = "type.++", perm = "admin")
-    public final SubExecutor<CommandSource> type_dplus = (cmd, sender, args) -> processType(sender, args, manager::addDType, "dTypeAdd");
+    public final SubExecutor<CommandSender> type_dplus = (cmd, sender, args) -> processType(sender, args, manager::addDType, "dTypeAdd");
 
     @Sub(path = "type.--", perm = "admin")
-    public final SubExecutor<CommandSource> type_dminus = (cmd, sender, args) -> processType(sender, args, manager::removeDType, "dTypeRemove");
+    public final SubExecutor<CommandSender> type_dminus = (cmd, sender, args) -> processType(sender, args, manager::removeDType, "dTypeRemove");
 
-    private void processType(@NotNull CommandSource sender, @NotNull Args args, @NotNull Consumer<BlockType> consumer, @NotNull String key) {
-        BlockType type;
+    private void processType(@NotNull CommandSender sender, @NotNull Args args, @NotNull Consumer<Material> consumer, @NotNull String key) {
+        Material type;
         // TODO +/-/++/-- block look at
         if (args.notEmpty()) {
-            type = Sponge.getRegistry().getType(BlockType.class, args.first()).orElse(null);
+            type = Material.getMaterial(args.first());
         } else if (sender instanceof Player) {
-            ItemStack stack = ((Player) sender).getItemInHand(HandTypes.MAIN_HAND).orElse(null);
-            type = stack == null ? null : stack.getType().getBlock().orElse(null);
+            ItemStack stack = LocketManager.getItemInHand(((Player) sender).getInventory(), EquipmentSlot.HAND);
+            type = stack == null ? null : stack.getType();
         } else {
             manager.sendKey(sender, "emptyArgs");
             return;
@@ -155,13 +155,12 @@ public class CommandLocket {
             manager.sendKey(sender, "nullBlockType");
             return;
         }
-        if (type == BlockTypes.AIR || type == BlockTypes.WALL_SIGN || type == BlockTypes.STANDING_SIGN) {
+        if (type == Material.AIR || type == Material.WALL_SIGN || type == Material.SIGN_POST) {
             manager.sendKey(sender, "illegalType");
             return;
         }
-        String typeName = type.getTranslation().get();
         consumer.accept(type);
-        manager.sendKey(sender, key, typeName);
+        manager.sendKey(sender, key, type.name());
         manager.asyncSave(null);
     }
 }

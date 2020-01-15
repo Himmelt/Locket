@@ -212,6 +212,9 @@ public class LocketListener {
             case MULTI_BLOCKS:
                 manager.sendHint(player, "multiBlocks");
                 return;
+            case OTHER_PROTECT:
+                manager.sendHint(player, "otherProtect");
+                return;
             default:
                 manager.sendHint(player, "noAccess");
         }
@@ -221,9 +224,8 @@ public class LocketListener {
     public void onPlayerChangeSign(ChangeSignEvent event, @First Player player) {
         SignData data = event.getText();
         ListValue<Text> lines = data.lines();
-        String line0 = ChatColor.stripColor(lines.get(0).toPlain()).trim();
         Player owner = player;
-        if (manager.isPrivate(line0)) {
+        if (manager.isPrivate(lines.get(0).toPlain())) {
             String line1 = lines.get(1).toPlain().trim();
             if (!line1.isEmpty() && !line1.equals(player.getName()) && manager.bypassPerm(player)) {
                 Player user = Sponge.getServer().getPlayer(line1).orElse(null);
@@ -262,7 +264,7 @@ public class LocketListener {
             data.setElement(2, manager.getUserText(line2));
             data.setElement(3, manager.getUserText(line3));
             manager.sendHint(player, "manuLock");
-            manager.asyncUpdateSign(event.getTargetTile(), 50);
+            manager.asyncUpdateSign(event.getTargetTile());
         }
     }
 
@@ -277,7 +279,7 @@ public class LocketListener {
 
     @Listener
     public void onLoadChunk(LoadChunkEvent event) {
-        event.getTargetChunk().getTileEntities(tile -> tile instanceof Sign).forEach(tile -> manager.asyncUpdateSign((Sign) tile, 50));
+        event.getTargetChunk().getTileEntities(tile -> tile instanceof Sign).forEach(tile -> manager.asyncUpdateSign((Sign) tile));
     }
 
     @Listener

@@ -38,7 +38,7 @@ comment {
   preventExplosion = "Whether prevent explosion break protected blocks."
   preventWorldEdit = "(WIP)Whether prevent WorldEdit edition."
   chatType = "ChatType: chat,action_bar,system."
-  privateSign = "Default Private text."
+  privateSign = "Default Private text. (Checking will ignore color format codes)"
   ownerFormat = "Display format for owner, {$owner} represents owner's name."
   userFormat = "Display format for user, {$user} represents user's name."
   acceptSigns = "Acceptable Private texts."

@@ -1,9 +1,11 @@
 name: Locket
 version: ${version}
 author: Himmelt
-main: org.soraworld.violet.SpigotViolet
+main: org.soraworld.locket.Locket
 website: https://github.com/Himmelt/Locket
 description: Locket Plugin.
+depend:
+  - Violet
 permissions:
   locket.admin:
     default: op

@@ -1,14 +1,11 @@
 package org.soraworld.locket.data;
 
+import org.bukkit.block.Block;
 import org.jetbrains.annotations.NotNull;
 import org.soraworld.locket.manager.LocketManager;
+import org.soraworld.locket.nms.TileSign;
 import org.soraworld.violet.inject.Inject;
 import org.soraworld.violet.util.ChatColor;
-import org.spongepowered.api.block.tileentity.Sign;
-import org.spongepowered.api.data.value.mutable.ListValue;
-import org.spongepowered.api.text.Text;
-import org.spongepowered.api.world.Location;
-import org.spongepowered.api.world.World;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -29,20 +26,15 @@ public class LockData {
     private static LocketManager manager;
     private static final Pattern HIDE_UUID = Pattern.compile("(\u00A7[0-9a-f]){32}");
 
-    public LockData(@NotNull HashSet<Location<World>> signs) {
-        signs.forEach(sign -> sign.getTileEntity().ifPresent(tile -> {
-            if (tile instanceof Sign) {
-                ListValue<Text> lines = ((Sign) tile).lines();
-                if (manager.isPrivate(lines.get(0).toPlain())) {
-                    String line1 = lines.get(1).toPlain().trim();
-                    String line2 = lines.get(2).toPlain().trim();
-                    String line3 = lines.get(3).toPlain().trim();
-                    parseUuid(line1).ifPresent(owners::add);
-                    parseUuid(line2).ifPresent(users::add);
-                    parseUuid(line3).ifPresent(users::add);
-                    manager.asyncUpdateSign((Sign) tile);
-                }
+    public LockData(@NotNull HashSet<Block> signs) {
+        signs.forEach(sign -> TileSign.touchSign(sign, data -> {
+            if (manager.isPrivate(data.line0)) {
+                parseUuid(data.line1).ifPresent(owners::add);
+                parseUuid(data.line2).ifPresent(users::add);
+                parseUuid(data.line3).ifPresent(users::add);
+                manager.asyncUpdateSign(sign);
             }
+            return false;
         }));
     }
 

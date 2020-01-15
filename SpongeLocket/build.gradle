@@ -8,11 +8,7 @@ sponge {
     }
 }
 
-group = 'org.soraworld'
-version = '1.2.2'
 archivesBaseName = "Locket-sponge"
-
-sourceCompatibility = targetCompatibility = 1.8
 
 sourceSets {
     api
@@ -23,10 +19,6 @@ dependencies {
     compile 'org.soraworld:violet-sponge:2.4.2-SNAPSHOT'
     compileOnly sourceSets.api.output
     apiCompileOnly 'org.spongepowered:spongeapi:7.1.0-SNAPSHOT'
-}
-
-tasks.withType(JavaCompile) {
-    options.encoding = "UTF-8"
 }
 
 publishing {

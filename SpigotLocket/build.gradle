@@ -1,5 +1,9 @@
+archivesBaseName = "Locket-spigot"
+
 dependencies {
-    compileOnly 'org.spigotmc:spigot-api:1.14.1-R0.1-SNAPSHOT'
+    compile 'org.soraworld:violet-spigot:2.4.2-SNAPSHOT'
+    compileOnly 'org.spigotmc:spigot-api:1.12.2-R0.1-SNAPSHOT'
+    compile files('lib/spigot-1.12.2.jar')
 }
 
 processResources {
