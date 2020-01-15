@@ -4,7 +4,6 @@ import org.soraworld.locket.data.State;
 import org.soraworld.locket.manager.LocketManager;
 import org.soraworld.violet.inject.EventListener;
 import org.soraworld.violet.inject.Inject;
-import org.soraworld.violet.util.ChatColor;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
@@ -188,23 +187,21 @@ public class LocketListener {
 
         event.setCancelled(true);
 
-        if (manager.bypassPerm(player)) {
-            manager.placeLock(player, block, face, event.getHandType());
-            return;
+        if (!manager.bypassPerm(player)) {
+            if (!manager.hasPermission(player, "locket.lock")) {
+                manager.sendHint(player, "needPerm", manager.mappingPerm("locket.lock"));
+                return;
+            }
+            if (manager.otherProtected(player, block)) {
+                manager.sendHint(player, "otherProtect");
+                return;
+            }
         }
-        if (!manager.hasPermission(player, "locket.lock")) {
-            manager.sendHint(player, "needPerm", manager.mappingPerm("locket.lock"));
-            return;
-        }
-        if (manager.otherProtected(player, block)) {
-            manager.sendHint(player, "otherProtect");
-            return;
-        }
+
         switch (manager.tryAccess(player, block, true)) {
             case SIGN_OWNER:
             case NOT_LOCKED:
                 manager.placeLock(player, block, face, event.getHandType());
-                manager.sendHint(player, "quickLock");
                 return;
             case MULTI_OWNERS:
                 manager.sendHint(player, "multiOwners");

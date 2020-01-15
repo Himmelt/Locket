@@ -393,6 +393,7 @@ public class LocketManager extends VManager {
             sendHint(player, "manuLock");
         } else {
             sendHint(player, "notSignTile");
+            clearSelected(player.getUniqueId());
         }
     }
 

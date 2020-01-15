@@ -4,8 +4,8 @@
 chatHead = "[告示牌锁] "
 
 needPerm = "&6你需要 <&c%s&6> 权限才能进行该操作."
-manuLock = "&7手动上锁成功."
-quickLock = "&7快速上锁成功."
+manuLock = "&a手动上锁成功."
+quickLock = "&a快速上锁成功."
 cantLock = "你无法对目标方块添加保护锁."
 manuRemove = "手动移除用户."
 cantRemove = "你无法手动移除用户."
@@ -25,10 +25,11 @@ typeAdd = "方块 [&7%s&r] 已添加到保护列表."
 typeRemove = "方块 [&7%s&r] 已从保护列表移除."
 dTypeAdd = "方块 [&7%s&r] 已标记为双联方块(e.g.大箱子)."
 dTypeRemove = "方块 [&7%s&r] 已取消标记双联方块(e.g.大箱子)."
-nullBlockType = "参数无效或手持物非方块，类型解析失败."
-illegalType = "此方块为空气或告示牌等非法类型."
+nullBlockType = "&6参数无效或手持物非方块，类型解析失败."
+illegalType = "&6此方块为空气或告示牌等非法类型."
 
-invalidUsername = "无效的所有者，目标玩家 %s 必须在线方可设置."
+notSignTile = "&c所选告示牌已不存在, 请重新选择."
+invalidUsername = "&c无效的所有者，目标玩家 %s 必须在线方可设置."
 storageServiceInvalid = "&c用户账户存储服务不可用 !"
 
 comment {
