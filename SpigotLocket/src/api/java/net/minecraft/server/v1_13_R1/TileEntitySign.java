@@ -5,6 +5,6 @@ package net.minecraft.server.v1_13_R1;
  *
  * @author Himmelt
  */
-public class TileEntitySign extends TileEntity {
+public abstract class TileEntitySign extends TileEntity {
     public final IChatBaseComponent[] lines = new IChatBaseComponent[]{new ChatComponentText(""), new ChatComponentText(""), new ChatComponentText(""), new ChatComponentText("")};
 }
