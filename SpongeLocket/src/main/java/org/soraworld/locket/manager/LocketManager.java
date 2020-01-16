@@ -1,8 +1,10 @@
 package org.soraworld.locket.manager;
 
+import com.griefdefender.api.GriefDefender;
+import com.griefdefender.api.claim.Claim;
+import com.griefdefender.api.claim.ClaimManager;
+import com.griefdefender.api.claim.TrustTypes;
 import me.ryanhamshire.griefprevention.GriefPrevention;
-import me.ryanhamshire.griefprevention.api.claim.Claim;
-import me.ryanhamshire.griefprevention.api.claim.ClaimManager;
 import me.ryanhamshire.griefprevention.api.claim.TrustType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -83,6 +85,7 @@ public class LocketManager extends VManager {
     @Setting(comment = "comment.highDoors")
     private Set<BlockType> highDoors = new HashSet<>();
 
+    private boolean usingGriefDefender = false;
     private boolean usingGriefPrevention = false;
     private UserStorageService storageService = null;
     private final HashMap<UUID, Location<World>> selected = new HashMap<>();
@@ -140,6 +143,7 @@ public class LocketManager extends VManager {
         highDoors.add(BlockTypes.SPRUCE_DOOR);
         highDoors.add(BlockTypes.DARK_OAK_DOOR);
         highDoors.add(BlockTypes.IRON_DOOR);
+        usingGriefDefender = Sponge.getPluginManager().isLoaded("griefdefender");
         usingGriefPrevention = Sponge.getPluginManager().isLoaded("griefprevention");
     }
 
@@ -407,15 +411,28 @@ public class LocketManager extends VManager {
     }
 
     private boolean canEditOther(Player player, Location<World> location) {
-        if (usingGriefPrevention) {
+        if (usingGriefDefender) {
             World world = location.getExtent();
             try {
-                ClaimManager manager = GriefPrevention.getApi().getClaimManager(world);
-                Claim claim = manager.getClaimAt(location);
+                ClaimManager manager = GriefDefender.getCore().getClaimManager(world.getUniqueId());
+                Claim claim = manager.getClaimAt(location.getBlockPosition());
                 if (claim == null || claim == manager.getWildernessClaim()) {
                     return true;
                 }
-                return claim.isUserTrusted(player, TrustType.BUILDER);
+                return claim.isUserTrusted(player.getUniqueId(), TrustTypes.BUILDER);
+            } catch (Throwable e) {
+                debug(e);
+            }
+        }
+        if (usingGriefPrevention) {
+            World world = location.getExtent();
+            try {
+                me.ryanhamshire.griefprevention.api.claim.ClaimManager manager = GriefPrevention.getApi().getClaimManager(world);
+                me.ryanhamshire.griefprevention.api.claim.Claim claim = manager.getClaimAt(location);
+                if (claim == null || claim == manager.getWildernessClaim()) {
+                    return true;
+                }
+                return claim.isUserTrusted(player.getUniqueId(), TrustType.BUILDER);
             } catch (Throwable e) {
                 debug(e);
             }

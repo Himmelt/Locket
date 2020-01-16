@@ -22,6 +22,10 @@ import org.spongepowered.api.plugin.Plugin;
                         version = Violet.PLUGIN_VERSION
                 ),
                 @Dependency(
+                        id = "griefdefender",
+                        optional = true
+                ),
+                @Dependency(
                         id = "griefprevention",
                         optional = true
                 )

@@ -1,8 +1,7 @@
 apply plugin: 'java'
 
-group = 'org.soraworld'
 version = '1.2.2'
-archivesBaseName = "Locket"
+group = 'org.soraworld'
 
 sourceCompatibility = targetCompatibility = 1.8
 
@@ -11,13 +10,9 @@ tasks.withType(JavaCompile) {
 }
 
 repositories {
-    maven {
-        url = 'https://maven.aliyun.com/repository/public/'
-    }
+    maven { url = 'https://maven.aliyun.com/repository/public/' }
     jcenter()
-    maven {
-        url = 'https://oss.jfrog.org/artifactory/oss-snapshot-local/'
-    }
+    maven { url = 'https://oss.jfrog.org/artifactory/oss-snapshot-local/' }
 }
 
 dependencies {
@@ -26,6 +21,7 @@ dependencies {
 
 subprojects {
     apply plugin: 'java'
+    apply plugin: "maven-publish"
 
     group rootProject.group
     version rootProject.version
@@ -37,13 +33,10 @@ subprojects {
     }
 
     repositories {
-        maven {
-            url = 'https://maven.aliyun.com/repository/public/'
-        }
+        maven { url = 'https://maven.aliyun.com/repository/public/' }
         jcenter()
-        maven {
-            url = 'https://oss.jfrog.org/artifactory/oss-snapshot-local/'
-        }
+        maven { url = 'https://hub.spigotmc.org/nexus/content/groups/public/' }
+        maven { url = 'https://oss.jfrog.org/artifactory/oss-snapshot-local/' }
     }
 
     configurations {
@@ -63,5 +56,18 @@ subprojects {
         }
         includeEmptyDirs = false
         exclude 'net/minecraft/server', 'org/bukkit/craftbukkit'
+    }
+
+    publishing {
+        repositories {
+            maven {
+                name = "locket"
+                url = uri("https://maven.pkg.github.com/himmelt/locket")
+                credentials {
+                    username = 'Himmelt'
+                    password = System.getenv("PACKAGES_TOKEN")
+                }
+            }
+        }
     }
 }
