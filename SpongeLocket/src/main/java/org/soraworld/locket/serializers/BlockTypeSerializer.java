@@ -11,17 +11,24 @@ import org.spongepowered.api.block.BlockType;
 
 import java.lang.reflect.Type;
 
+/**
+ * @author Himmelt
+ */
 public class BlockTypeSerializer extends TypeSerializer<BlockType, NodeBase> {
     public BlockTypeSerializer() throws SerializerException {
     }
 
+    @Override
     @NotNull
     public BlockType deserialize(@NotNull Type type, @NotNull NodeBase node) throws HoconException {
         BlockType blockType = Sponge.getRegistry().getType(BlockType.class, node.toString()).orElse(null);
-        if (blockType == null) throw new SerializerException("Value:" + node.toString() + " CANT deserialize to valid BlockType !!");
+        if (blockType == null) {
+            throw new SerializerException("Value:" + node.toString() + " CANT deserialize to valid BlockType !!");
+        }
         return blockType;
     }
 
+    @Override
     @NotNull
     public NodeBase serialize(@NotNull Type type, @NotNull BlockType blockType, @NotNull Options options) {
         return new NodeBase(options, blockType.getId());

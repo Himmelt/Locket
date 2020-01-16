@@ -11,7 +11,10 @@ import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Himmelt
@@ -24,20 +27,20 @@ public class LockData {
 
     @Inject
     private static LocketManager manager;
+    private static final Pattern HIDE_UUID = Pattern.compile("(\u00A7[0-9a-f]){32}");
 
     public LockData(@NotNull HashSet<Location<World>> signs) {
         signs.forEach(sign -> sign.getTileEntity().ifPresent(tile -> {
             if (tile instanceof Sign) {
                 ListValue<Text> lines = ((Sign) tile).lines();
-                String line0 = ChatColor.stripColor(lines.get(0).toPlain()).trim();
-                if (manager.isPrivate(line0)) {
+                if (manager.isPrivate(lines.get(0).toPlain())) {
                     String line1 = lines.get(1).toPlain().trim();
                     String line2 = lines.get(2).toPlain().trim();
                     String line3 = lines.get(3).toPlain().trim();
-                    manager.parseUuid(line1).ifPresent(owners::add);
-                    manager.parseUuid(line2).ifPresent(users::add);
-                    manager.parseUuid(line3).ifPresent(users::add);
-                    manager.asyncUpdateSign((Sign) tile, 50);
+                    parseUuid(line1).ifPresent(owners::add);
+                    parseUuid(line2).ifPresent(users::add);
+                    parseUuid(line3).ifPresent(users::add);
+                    manager.asyncUpdateSign((Sign) tile);
                 }
             }
         }));
@@ -67,5 +70,18 @@ public class LockData {
             return State.MULTI_OWNERS;
         }
         return new State(owners.iterator().next());
+    }
+
+    private static Optional<UUID> parseUuid(String text) {
+        Matcher matcher = HIDE_UUID.matcher(text);
+        if (matcher.find()) {
+            String hex = matcher.group().replace(ChatColor.TRUE_COLOR_STRING, "");
+            if (hex.length() == 32) {
+                long most = Long.parseUnsignedLong(hex.substring(0, 16), 16);
+                long least = Long.parseUnsignedLong(hex.substring(16), 16);
+                return Optional.of(new UUID(most, least));
+            }
+        }
+        return Optional.empty();
     }
 }

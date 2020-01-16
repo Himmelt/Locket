@@ -31,7 +31,7 @@ import org.spongepowered.api.plugin.Plugin;
                 )
         }
 )
-public class Locket extends SpongePlugin<LocketManager> {
+public final class Locket extends SpongePlugin<LocketManager> {
     public static final String PLUGIN_ID = "locket";
     public static final String PLUGIN_NAME = "Locket";
     public static final String PLUGIN_VERSION = "1.2.2";

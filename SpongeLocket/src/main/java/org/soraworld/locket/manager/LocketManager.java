@@ -14,8 +14,6 @@ import org.soraworld.locket.data.LockData;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.data.State;
 import org.soraworld.locket.serializers.BlockTypeSerializer;
-import org.soraworld.locket.serializers.ChatTypeSerializer;
-import org.soraworld.locket.serializers.TextSerializer;
 import org.soraworld.violet.inject.MainManager;
 import org.soraworld.violet.manager.VManager;
 import org.soraworld.violet.plugin.SpongePlugin;
@@ -39,8 +37,6 @@ import org.spongepowered.api.entity.living.player.gamemode.GameModes;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.service.user.UserStorageService;
 import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.chat.ChatType;
-import org.spongepowered.api.text.chat.ChatTypes;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.BlockChangeFlags;
 import org.spongepowered.api.world.Location;
@@ -69,9 +65,9 @@ public class LocketManager extends VManager {
     @Setting(comment = "comment.preventWorldEdit")
     private boolean preventWorldEdit = false;
     @Setting(comment = "comment.chatType")
-    private ChatType chatType = ChatTypes.ACTION_BAR;
-    @Setting(comment = "comment.defaultSign", trans = 0b1000)
-    private Text privateSign = Text.of("" + ChatColor.DARK_RED + ChatColor.BOLD + "[Private]");
+    private String chatType = "action_bar";
+    @Setting(comment = "comment.privateSign", trans = 0b1000)
+    private String privateSign = ChatColor.DARK_RED.toString() + ChatColor.BOLD + "[Private]";
     @Setting(comment = "comment.ownerFormat", trans = 0b1000)
     private String ownerFormat = ChatColor.GREEN + "{$owner}";
     @Setting(comment = "comment.userFormat", trans = 0b1000)
@@ -85,6 +81,7 @@ public class LocketManager extends VManager {
     @Setting(comment = "comment.highDoors")
     private Set<BlockType> highDoors = new HashSet<>();
 
+    private Text privateSignText = Text.of(privateSign);
     private boolean usingGriefDefender = false;
     private boolean usingGriefPrevention = false;
     private UserStorageService storageService = null;
@@ -96,17 +93,7 @@ public class LocketManager extends VManager {
     public LocketManager(SpongePlugin plugin, Path path) {
         super(plugin, path);
         try {
-            options.registerType(new ChatTypeSerializer());
-        } catch (SerializerException e) {
-            e.printStackTrace();
-        }
-        try {
             options.registerType(new BlockTypeSerializer());
-        } catch (SerializerException e) {
-            e.printStackTrace();
-        }
-        try {
-            options.registerType(new TextSerializer());
         } catch (SerializerException e) {
             e.printStackTrace();
         }
@@ -125,9 +112,10 @@ public class LocketManager extends VManager {
             consoleKey("storageServiceInvalid");
         }
         if (privateSign == null) {
-            privateSign = Text.of("[Private]");
+            privateSign = "[Private]";
         }
-        acceptSigns.add(privateSign.toPlain());
+        privateSignText = Text.of(privateSign);
+        acceptSigns.add(privateSign);
         HashSet<String> temp = new HashSet<>();
         acceptSigns.forEach(sign -> temp.add(ChatColor.stripAllColor(sign)));
         acceptSigns.clear();
@@ -198,22 +186,25 @@ public class LocketManager extends VManager {
     }
 
     public void sendHint(Player player, String key, Object... args) {
-        if (chatType == ChatTypes.CHAT || chatType == ChatTypes.SYSTEM) {
-            sendKey(player, key, args);
-        } else {
+        if ("action_bar".equalsIgnoreCase(chatType)) {
             sendActionKey(player, key, args);
+        } else {
+            sendKey(player, key, args);
         }
     }
 
     public boolean isPrivate(@NotNull String line) {
-        return acceptSigns.contains(line);
+        return acceptSigns.contains(ChatColor.stripAllColor(line).trim());
     }
 
     public Text getPrivateText() {
-        return privateSign;
+        return privateSignText;
     }
 
     private Optional<User> getUser(String name) {
+        if (name == null || name.isEmpty()) {
+            return Optional.empty();
+        }
         if (storageService != null) {
             try {
                 return storageService.get(name);
@@ -231,11 +222,11 @@ public class LocketManager extends VManager {
     }
 
     public Text getOwnerText(@NotNull User owner) {
-        return Text.of(ownerFormat.replace("{$owner}", owner.getName()) + hideUUID(owner.getUniqueId()));
+        return Text.of(ownerFormat.replace("{$owner}", owner.getName()) + hideUuid(owner.getUniqueId()));
     }
 
     public Text getUserText(@NotNull User user) {
-        return Text.of(userFormat.replace("{$user}", user.getName()) + hideUUID(user.getUniqueId()));
+        return Text.of(userFormat.replace("{$user}", user.getName()) + hideUuid(user.getUniqueId()));
     }
 
     public Text getUserText(@NotNull String name) {
@@ -349,67 +340,6 @@ public class LocketManager extends VManager {
         return false;
     }
 
-    public void lockSign(Player player, Location<World> selected, int line, String name) {
-        TileEntity tile = selected.getTileEntity().orElse(null);
-        if (tile instanceof Sign) {
-            if (line == 1 && bypassPerm(player) && name != null && !name.equals(player.getName()) && !name.isEmpty()) {
-                Player user = Sponge.getServer().getPlayer(name).orElse(null);
-                if (user != null) {
-                    player = user;
-                } else {
-                    sendKey(player, "invalidUsername", name);
-                    return;
-                }
-            }
-            SignData data = ((Sign) tile).getSignData();
-            data.setElement(0, getPrivateText());
-            data.setElement(1, getOwnerText(player));
-            if ((line == 2 || line == 3) && name != null && !name.isEmpty()) {
-                data.setElement(line, getUserText(name));
-            }
-            tile.offer(data);
-            asyncUpdateSign((Sign) tile, 50);
-            sendHint(player, "manuLock");
-        } else {
-            sendHint(player, "notSignTile");
-        }
-    }
-
-    public void unLockSign(Location<World> location, int line) {
-        TileEntity tile = location.getTileEntity().orElse(null);
-        if (tile instanceof Sign) {
-            SignData data = ((Sign) tile).getSignData();
-            data.setElement(line, Text.EMPTY);
-            tile.offer(data);
-        }
-    }
-
-    public void placeLock(Player player, Location<World> loc, Direction face, HandType hand) {
-        Location<World> side = loc.getRelative(face);
-        side.setBlockType(BlockTypes.WALL_SIGN, BlockChangeFlags.NONE);
-        BlockState state = BlockTypes.WALL_SIGN.getDefaultState();
-        side.setBlock(state.with(Keys.DIRECTION, face).orElse(state), BlockChangeFlags.NONE);
-        TileEntity tile = side.getTileEntity().orElse(null);
-        if (tile instanceof Sign) {
-            SignData data = ((Sign) tile).getSignData();
-            data.setElement(0, getPrivateText());
-            data.setElement(1, getOwnerText(player));
-            tile.offer(data);
-            asyncUpdateSign((Sign) tile, 50);
-        }
-        removeOneItem(player, hand);
-        player.playSound(SoundTypes.BLOCK_WOOD_PLACE, loc.getPosition(), 1.0D);
-        sendHint(player, "quickLock");
-    }
-
-    public boolean isLocked(@NotNull Location<World> location) {
-        return checkState(location) != State.NOT_LOCKED;
-    }
-
-    public boolean notLocked(@NotNull Location<World> location) {
-        return checkState(location) == State.NOT_LOCKED;
-    }
-
     private boolean canEditOther(Player player, Location<World> location) {
         if (usingGriefDefender) {
             World world = location.getExtent();
@@ -438,6 +368,68 @@ public class LocketManager extends VManager {
             }
         }
         return true;
+    }
+
+    public void lockSign(Player player, Location<World> selected, int line, String name) {
+        TileEntity tile = selected.getTileEntity().orElse(null);
+        if (tile instanceof Sign) {
+            if (line == 1 && bypassPerm(player) && name != null && !name.equals(player.getName()) && !name.isEmpty()) {
+                Player user = Sponge.getServer().getPlayer(name).orElse(null);
+                if (user != null) {
+                    player = user;
+                } else {
+                    sendKey(player, "invalidUsername", name);
+                    return;
+                }
+            }
+            SignData data = ((Sign) tile).getSignData();
+            data.setElement(0, getPrivateText());
+            data.setElement(1, getOwnerText(player));
+            if ((line == 2 || line == 3) && name != null && !name.isEmpty()) {
+                data.setElement(line, getUserText(name));
+            }
+            tile.offer(data);
+            asyncUpdateSign((Sign) tile);
+            sendHint(player, "manuLock");
+        } else {
+            sendHint(player, "notSignTile");
+            clearSelected(player.getUniqueId());
+        }
+    }
+
+    public void unLockSign(Location<World> location, int line) {
+        TileEntity tile = location.getTileEntity().orElse(null);
+        if (tile instanceof Sign) {
+            SignData data = ((Sign) tile).getSignData();
+            data.setElement(line, Text.EMPTY);
+            tile.offer(data);
+        }
+    }
+
+    public void placeLock(Player player, Location<World> loc, Direction face, HandType hand) {
+        Location<World> side = loc.getRelative(face);
+        side.setBlockType(BlockTypes.WALL_SIGN, BlockChangeFlags.NONE);
+        BlockState state = BlockTypes.WALL_SIGN.getDefaultState();
+        side.setBlock(state.with(Keys.DIRECTION, face).orElse(state), BlockChangeFlags.NONE);
+        TileEntity tile = side.getTileEntity().orElse(null);
+        if (tile instanceof Sign) {
+            SignData data = ((Sign) tile).getSignData();
+            data.setElement(0, getPrivateText());
+            data.setElement(1, getOwnerText(player));
+            tile.offer(data);
+            asyncUpdateSign((Sign) tile);
+        }
+        removeOneItem(player, hand);
+        player.playSound(SoundTypes.BLOCK_WOOD_PLACE, loc.getPosition(), 1.0D);
+        sendHint(player, "quickLock");
+    }
+
+    public boolean isLocked(@NotNull Location<World> location) {
+        return checkState(location) != State.NOT_LOCKED;
+    }
+
+    public boolean notLocked(@NotNull Location<World> location) {
+        return checkState(location) == State.NOT_LOCKED;
     }
 
     public State checkState(@NotNull Location<World> location) {
@@ -522,10 +514,10 @@ public class LocketManager extends VManager {
     }
 
     public boolean canPlaceLock(@NotNull BlockType type) {
-        return type == AIR || type == GRASS || type == SNOW_LAYER || type == FLOWING_WATER || type == WATER;
+        return type == AIR || type == GRASS || type == SNOW_LAYER || type == FLOWING_WATER || type == WATER || type == LAVA || type == FLOWING_LAVA;
     }
 
-    public static String hideUUID(UUID uuid) {
+    private static String hideUuid(UUID uuid) {
         String text = uuid.toString().replace("-", "");
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < text.length(); i++) {
@@ -534,20 +526,10 @@ public class LocketManager extends VManager {
         return builder.toString();
     }
 
-    public Optional<UUID> parseUuid(String text) {
-        Matcher matcher = HIDE_UUID.matcher(text);
-        if (matcher.find()) {
-            String hex = matcher.group().replace(ChatColor.TRUE_COLOR_STRING, "");
-            if (hex.length() == 32) {
-                long most = Long.parseUnsignedLong(hex.substring(0, 16), 16);
-                long least = Long.parseUnsignedLong(hex.substring(16), 16);
-                return Optional.of(new UUID(most, least));
-            }
-        }
-        return Optional.empty();
-    }
-
     private Optional<User> parseUser(String text) {
+        if (text == null || text.isEmpty()) {
+            return Optional.empty();
+        }
         Matcher matcher = HIDE_UUID.matcher(text);
         if (matcher.find()) {
             String hex = matcher.group().replace(ChatColor.TRUE_COLOR_STRING, "");
@@ -562,22 +544,22 @@ public class LocketManager extends VManager {
         return Optional.empty();
     }
 
-    public void asyncUpdateSign(@NotNull final Sign sign, long delay) {
+    public void asyncUpdateSign(@NotNull final Sign sign) {
         Sponge.getScheduler().createAsyncExecutor(plugin).schedule(() -> {
             final SignData data = sign.getSignData();
             ListValue<Text> lines = data.lines();
-            String line0 = ChatColor.stripColor(lines.get(0).toPlain()).trim();
-            if (isPrivate(line0)) {
+            if (isPrivate(lines.get(0).toPlain())) {
                 String line1 = lines.get(1).toPlain().trim();
                 String line2 = lines.get(2).toPlain().trim();
                 String line3 = lines.get(3).toPlain().trim();
 
+                data.setElement(0, getPrivateText());
                 parseUser(line1).ifPresent(owner -> data.setElement(1, getOwnerText(owner)));
                 parseUser(line2).ifPresent(user -> data.setElement(2, getUserText(user)));
                 parseUser(line3).ifPresent(user -> data.setElement(3, getUserText(user)));
 
                 Sponge.getScheduler().createSyncExecutor(plugin).execute(() -> sign.offer(data));
             }
-        }, delay, TimeUnit.MILLISECONDS);
+        }, 55, TimeUnit.MILLISECONDS);
     }
 }
