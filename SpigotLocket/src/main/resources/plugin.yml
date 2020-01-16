@@ -4,6 +4,7 @@ author: Himmelt
 main: org.soraworld.locket.Locket
 website: https://github.com/Himmelt/Locket
 description: Locket Plugin.
+api-version: '1.13'
 depend:
   - Violet
 permissions:

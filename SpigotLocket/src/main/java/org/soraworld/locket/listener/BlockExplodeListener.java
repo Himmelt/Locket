@@ -12,7 +12,7 @@ import org.soraworld.violet.inject.Inject;
  * @author Himmelt
  */
 @EventListener
-public class HighVersionListener implements Listener {
+public class BlockExplodeListener implements Listener {
     @Inject
     private LocketManager manager;
 

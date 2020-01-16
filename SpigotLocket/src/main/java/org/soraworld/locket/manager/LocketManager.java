@@ -101,10 +101,18 @@ public class LocketManager extends VManager {
             highDoors.add(Material.SPRUCE_DOOR);
             highDoors.add(Material.DARK_OAK_DOOR);
             if (v1_13_R1 || v1_13_R2) {
-                highDoors.add(Material.OAK_DOOR);
+                try {
+                    highDoors.add(Material.valueOf("OAK_DOOR"));
+                } catch (Throwable e) {
+                    debug(e);
+                }
             }
         } else {
-            highDoors.add(Material.valueOf("WOODEN_DOOR"));
+            try {
+                highDoors.add(Material.valueOf("WOODEN_DOOR"));
+            } catch (Throwable e) {
+                debug(e);
+            }
         }
         highDoors.add(Material.IRON_DOOR);
     }

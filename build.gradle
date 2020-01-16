@@ -15,10 +15,6 @@ repositories {
     maven { url = 'https://oss.jfrog.org/artifactory/oss-snapshot-local/' }
 }
 
-dependencies {
-    compile 'org.soraworld:hocon:1.2.1-SNAPSHOT'
-}
-
 subprojects {
     apply plugin: 'java'
     apply plugin: "maven-publish"
@@ -35,27 +31,24 @@ subprojects {
     repositories {
         maven { url = 'https://maven.aliyun.com/repository/public/' }
         jcenter()
-        maven { url = 'https://hub.spigotmc.org/nexus/content/groups/public/' }
         maven { url = 'https://oss.jfrog.org/artifactory/oss-snapshot-local/' }
+        maven { url = 'https://hub.spigotmc.org/nexus/content/groups/public/' }
     }
 
     configurations {
         shadow
         compile.extendsFrom(shadow)
-        shadeOnly
-        compileOnly.extendsFrom(shadeOnly)
     }
 
     dependencies {
-        shadeOnly rootProject
+        shadow rootProject
     }
 
     jar {
-        configurations.shadeOnly.copyRecursive().setTransitive(false).each {
+        configurations.shadow.copyRecursive().setTransitive(false).each {
             artifact -> from(zipTree(artifact))
         }
         includeEmptyDirs = false
-        exclude 'net/minecraft/server', 'org/bukkit/craftbukkit'
     }
 
     publishing {
