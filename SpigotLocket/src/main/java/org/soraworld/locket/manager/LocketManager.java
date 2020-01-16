@@ -168,7 +168,7 @@ public class LocketManager extends VManager {
     }
 
     public void sendHint(Player player, String key, Object... args) {
-        if ("action_bar".equalsIgnoreCase(chatType)) {
+        if (!v1_7_R4 && !v1_8_R1 && !v1_8_R3 && "action_bar".equalsIgnoreCase(chatType)) {
             sendActionKey(player, key, args);
         } else {
             sendKey(player, key, args);
