@@ -12,9 +12,7 @@ public final class Locket extends SpigotPlugin<LocketManager> {
     public static final String PLUGIN_NAME = "Locket";
     public static final String PLUGIN_VERSION = "1.2.3";
 
-    @Override
-    public void onLoad() {
-        Helper.init(getLogger());
-        super.onLoad();
+    static {
+        Helper.injectTile();
     }
 }

@@ -20,11 +20,10 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.soraworld.locket.data.HandType;
 import org.soraworld.locket.data.State;
 import org.soraworld.locket.manager.LocketManager;
-import org.soraworld.locket.nms.InvUtil;
-import org.soraworld.locket.nms.TileSign;
+import org.soraworld.locket.nms.HandType;
+import org.soraworld.locket.nms.Helper;
 import org.soraworld.violet.inject.EventListener;
 import org.soraworld.violet.inject.Inject;
 
@@ -191,8 +190,8 @@ public class LocketListener implements Listener {
             return;
         }
         Player player = event.getPlayer();
-        HandType handType = InvUtil.getHandType(event);
-        ItemStack stack = InvUtil.getItemInHand(player.getInventory(), handType);
+        HandType handType = Helper.getHandType(event);
+        ItemStack stack = Helper.getItemInHand(player.getInventory(), handType);
         if (stack == null || stack.getType() != Material.SIGN) {
             return;
         }
@@ -289,7 +288,7 @@ public class LocketListener implements Listener {
             event.setLine(2, theLines[2]);
             event.setLine(3, theLines[3]);
             manager.sendHint(player, "manuLock");
-            Bukkit.getScheduler().runTask(manager.getPlugin(), () -> TileSign.touchSign(event.getBlock(), data -> {
+            Bukkit.getScheduler().runTask(manager.getPlugin(), () -> Helper.touchSign(event.getBlock(), data -> {
                 data.line0 = theLines[0];
                 data.line1 = theLines[1];
                 data.line2 = theLines[2];

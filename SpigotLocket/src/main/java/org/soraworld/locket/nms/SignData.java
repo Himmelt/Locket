@@ -1,4 +1,4 @@
-package org.soraworld.locket.data;
+package org.soraworld.locket.nms;
 
 /**
  * @author Himmelt

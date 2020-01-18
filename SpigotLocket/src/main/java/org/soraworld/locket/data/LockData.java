@@ -3,7 +3,7 @@ package org.soraworld.locket.data;
 import org.bukkit.block.Block;
 import org.jetbrains.annotations.NotNull;
 import org.soraworld.locket.manager.LocketManager;
-import org.soraworld.locket.nms.TileSign;
+import org.soraworld.locket.nms.Helper;
 import org.soraworld.violet.inject.Inject;
 import org.soraworld.violet.util.ChatColor;
 
@@ -27,7 +27,7 @@ public class LockData {
     private static final Pattern HIDE_UUID = Pattern.compile("(\u00A7[0-9a-f]){32}");
 
     public LockData(@NotNull HashSet<Block> signs) {
-        signs.forEach(sign -> TileSign.touchSign(sign, data -> {
+        signs.forEach(sign -> Helper.touchSign(sign, data -> {
             if (manager.isPrivate(data.line0)) {
                 parseUuid(data.line1).ifPresent(owners::add);
                 parseUuid(data.line2).ifPresent(users::add);

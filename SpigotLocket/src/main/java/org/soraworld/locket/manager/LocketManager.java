@@ -13,12 +13,11 @@ import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soraworld.hocon.node.Setting;
-import org.soraworld.locket.data.HandType;
+import org.soraworld.locket.nms.HandType;
 import org.soraworld.locket.data.LockData;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.data.State;
-import org.soraworld.locket.nms.InvUtil;
-import org.soraworld.locket.nms.TileSign;
+import org.soraworld.locket.nms.Helper;
 import org.soraworld.violet.inject.MainManager;
 import org.soraworld.violet.manager.VManager;
 import org.soraworld.violet.plugin.SpigotPlugin;
@@ -329,7 +328,7 @@ public class LocketManager extends VManager {
                 }
             }
             Player finalPlayer = player;
-            TileSign.touchSign(block, data -> {
+            Helper.touchSign(block, data -> {
                 data.line0 = getPrivateText();
                 data.line1 = getOwnerText(finalPlayer);
                 if (name != null && !name.isEmpty()) {
@@ -366,7 +365,7 @@ public class LocketManager extends VManager {
             signData.setFacingDirection(face);
             sign.setData(signData);
             sign.update();
-            TileSign.touchSign(side, data -> {
+            Helper.touchSign(side, data -> {
                 data.line0 = getPrivateText();
                 data.line1 = getOwnerText(player);
                 return true;
@@ -459,12 +458,12 @@ public class LocketManager extends VManager {
             return;
         }
         PlayerInventory inv = player.getInventory();
-        ItemStack stack = InvUtil.getItemInHand(inv, hand);
+        ItemStack stack = Helper.getItemInHand(inv, hand);
         if (stack != null && stack.getAmount() >= 1) {
             stack.setAmount(stack.getAmount() - 1);
-            InvUtil.setItemInHand(inv, hand, stack);
+            Helper.setItemInHand(inv, hand, stack);
         } else {
-            InvUtil.setItemInHand(inv, hand, null);
+            Helper.setItemInHand(inv, hand, null);
         }
     }
 
@@ -519,7 +518,7 @@ public class LocketManager extends VManager {
     }
 
     public void asyncUpdateSign(@NotNull final Block block) {
-        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> TileSign.touchSign(block, data -> {
+        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> Helper.touchSign(block, data -> {
             if (isPrivate(data.line0)) {
                 data.line0 = getPrivateText();
                 parseUser(data.line1).ifPresent(owner -> data.line1 = getOwnerText(owner));

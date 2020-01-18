@@ -9,10 +9,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.soraworld.locket.Locket;
-import org.soraworld.locket.data.HandType;
+import org.soraworld.locket.nms.HandType;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.manager.LocketManager;
-import org.soraworld.locket.nms.InvUtil;
+import org.soraworld.locket.nms.Helper;
 import org.soraworld.violet.command.*;
 import org.soraworld.violet.inject.Command;
 import org.soraworld.violet.inject.Inject;
@@ -167,7 +167,7 @@ public class CommandLocket {
         if (args.notEmpty()) {
             type = Material.getMaterial(args.first());
         } else if (sender instanceof Player) {
-            ItemStack stack = InvUtil.getItemInHand(((Player) sender).getInventory(), HandType.MAIN_HAND);
+            ItemStack stack = Helper.getItemInHand(((Player) sender).getInventory(), HandType.MAIN_HAND);
             type = stack == null ? null : stack.getType();
         } else {
             manager.sendKey(sender, "emptyArgs");
