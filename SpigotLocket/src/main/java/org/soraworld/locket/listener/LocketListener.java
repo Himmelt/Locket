@@ -277,7 +277,6 @@ public class LocketListener implements Listener {
                     return;
                 }
             }
-
             Player owner = temp;
             Bukkit.getScheduler().runTask(manager.getPlugin(), () -> Helper.touchSign(event.getBlock(), data -> {
                 data.lines[0] = manager.getPrivateText();

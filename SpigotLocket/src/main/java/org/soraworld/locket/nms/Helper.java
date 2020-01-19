@@ -34,6 +34,19 @@ public class Helper {
                 HashMap<Class<?>, String> classToNameMap = (HashMap<Class<?>, String>) classToName.get(null);
                 classToNameMap.put(TileEntitySign.class, "Sign");
                 System.out.println("[Locket] Inject class " + TileEntitySign.class.getName() + " to id Sign");
+
+                Class<?> blocksClass = getClass("net.minecraft.server.v1_7_R4.Blocks", "net.minecraft.init.Blocks");
+                Field postSign = getFiled(blocksClass, "SIGN_POST", "an", "field_150472_an", "standing_sign");
+                postSign.setAccessible(true);
+                Field wallSign = getFiled(blocksClass, "WALL_SIGN", "as", "field_150444_as", "wall_sign");
+                wallSign.setAccessible(true);
+                Class<?> blockSignClass = getClass("net.minecraft.server.v1_7_R4.BlockSign", "net.minecraft.block.BlockSign");
+                Field tileClass = getFiled(blockSignClass, "a", "field_149968_a");
+                tileClass.setAccessible(true);
+                tileClass.set(postSign.get(null), TileEntitySign.class);
+                System.out.println("[Locket] Inject class " + TileEntitySign.class.getName() + " into SIGN_POST.");
+                tileClass.set(wallSign.get(null), TileEntitySign.class);
+                System.out.println("[Locket] Inject class " + TileEntitySign.class.getName() + " into WALL_SIGN.");
             } catch (Throwable e) {
                 e.printStackTrace();
             }
@@ -100,8 +113,6 @@ public class Helper {
         if (v1_7_R4) {
             try {
                 net.minecraft.server.v1_7_R4.TileEntitySign sign = (net.minecraft.server.v1_7_R4.TileEntitySign) ((org.bukkit.craftbukkit.v1_7_R4.CraftWorld) block.getWorld()).getTileEntityAt(block.getX(), block.getY(), block.getZ());
-                // TODO remove
-                System.out.println(sign.getClass());
                 SignData data = new SignData();
                 data.lines[0] = sign.lines[0];
                 data.lines[1] = sign.lines[1];
@@ -116,6 +127,12 @@ public class Helper {
                     if (world instanceof net.minecraft.server.v1_7_R4.WorldServer) {
                         ((net.minecraft.server.v1_7_R4.WorldServer) world).getPlayerChunkMap().flagDirty(sign.x, sign.y, sign.z);
                     }
+                    // TODO
+                    /*for (Object player : sign.getWorld().players) {
+                        if (player instanceof EntityPlayer) {
+                            ((EntityPlayer) player).playerConnection.sendPacket(sign.getUpdatePacket());
+                        }
+                    }*/
                 }
             } catch (Throwable e) {
                 e.printStackTrace();

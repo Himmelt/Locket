@@ -520,17 +520,9 @@ public class LocketManager extends VManager {
         Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> Helper.touchSign(block, data -> {
             if (isPrivate(data.lines[0])) {
                 data.lines[0] = getPrivateText();
-                // TODO remove
-                System.out.println(data.lines[1]);
-                System.out.println(data.lines[2]);
-                System.out.println(data.lines[3]);
                 parseUser(data.lines[1]).ifPresent(owner -> data.lines[1] = getOwnerText(owner));
                 parseUser(data.lines[2]).ifPresent(user -> data.lines[2] = getUserText(user));
                 parseUser(data.lines[3]).ifPresent(user -> data.lines[3] = getUserText(user));
-                // TODO remove
-                System.out.println(data.lines[1]);
-                System.out.println(data.lines[2]);
-                System.out.println(data.lines[3]);
                 return true;
             }
             return false;
