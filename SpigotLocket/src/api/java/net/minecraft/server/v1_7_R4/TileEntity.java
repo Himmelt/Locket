@@ -9,10 +9,9 @@ public abstract class TileEntity {
     public int x;
     public int y;
     public int z;
+    protected World world;
 
-    /**
-     * Update.
-     */
-    public void update() {
+    public World getWorld() {
+        return this.world;
     }
 }

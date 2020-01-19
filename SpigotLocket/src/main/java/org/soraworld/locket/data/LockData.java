@@ -28,11 +28,10 @@ public class LockData {
 
     public LockData(@NotNull HashSet<Block> signs) {
         signs.forEach(sign -> Helper.touchSign(sign, data -> {
-            if (manager.isPrivate(data.line0)) {
-                parseUuid(data.line1).ifPresent(owners::add);
-                parseUuid(data.line2).ifPresent(users::add);
-                parseUuid(data.line3).ifPresent(users::add);
-                manager.asyncUpdateSign(sign);
+            if (manager.isPrivate(data.lines[0])) {
+                parseUuid(data.lines[1]).ifPresent(owners::add);
+                parseUuid(data.lines[2]).ifPresent(users::add);
+                parseUuid(data.lines[3]).ifPresent(users::add);
             }
             return false;
         }));

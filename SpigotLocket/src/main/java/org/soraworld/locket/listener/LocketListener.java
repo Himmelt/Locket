@@ -246,12 +246,12 @@ public class LocketListener implements Listener {
     public void onPlayerChangeSign(SignChangeEvent event) {
         Player player = event.getPlayer();
         String[] lines = event.getLines();
-        Player owner = player;
+        Player temp = player;
         if (manager.isPrivate(lines[0])) {
             if (!lines[1].isEmpty() && !lines[1].equals(player.getName()) && manager.bypassPerm(player)) {
                 Player user = Bukkit.getPlayer(lines[1]);
                 if (user != null) {
-                    owner = user;
+                    temp = user;
                 } else {
                     event.setLine(0, "");
                     event.setLine(1, "");
@@ -278,24 +278,16 @@ public class LocketListener implements Listener {
                 }
             }
 
-            final String[] theLines = new String[4];
-            theLines[0] = manager.getPrivateText();
-            theLines[1] = manager.getOwnerText(owner);
-            theLines[2] = manager.getUserText(lines[2]);
-            theLines[3] = manager.getUserText(lines[3]);
-            event.setLine(0, theLines[0]);
-            event.setLine(1, theLines[1]);
-            event.setLine(2, theLines[2]);
-            event.setLine(3, theLines[3]);
-            manager.sendHint(player, "manuLock");
+            Player owner = temp;
             Bukkit.getScheduler().runTask(manager.getPlugin(), () -> Helper.touchSign(event.getBlock(), data -> {
-                data.line0 = theLines[0];
-                data.line1 = theLines[1];
-                data.line2 = theLines[2];
-                data.line3 = theLines[3];
+                data.lines[0] = manager.getPrivateText();
+                data.lines[1] = manager.getOwnerText(owner);
+                data.lines[2] = manager.getUserText(lines[2]);
+                data.lines[3] = manager.getUserText(lines[3]);
                 return true;
             }));
             manager.asyncUpdateSign(event.getBlock());
+            manager.sendHint(player, "manuLock");
         }
     }
 
@@ -308,6 +300,7 @@ public class LocketListener implements Listener {
         Block block = event.getClickedBlock();
         if (block != null && block.getType() == Material.WALL_SIGN) {
             manager.setSelected(player, block.getLocation());
+            manager.asyncUpdateSign(block);
             manager.sendHint(player, "selectSign");
         }
     }

@@ -13,10 +13,10 @@ import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soraworld.hocon.node.Setting;
-import org.soraworld.locket.nms.HandType;
 import org.soraworld.locket.data.LockData;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.data.State;
+import org.soraworld.locket.nms.HandType;
 import org.soraworld.locket.nms.Helper;
 import org.soraworld.violet.inject.MainManager;
 import org.soraworld.violet.manager.VManager;
@@ -175,7 +175,7 @@ public class LocketManager extends VManager {
     }
 
     public boolean isPrivate(@NotNull String line) {
-        return acceptSigns.contains(ChatColor.stripAllColor(line).trim());
+        return acceptSigns.contains(ChatColor.stripAllColor(line).replace(ChatColor.TRUE_COLOR_STRING, "").trim());
     }
 
     public String getPrivateText() {
@@ -205,8 +205,8 @@ public class LocketManager extends VManager {
         return userFormat.replace("{$user}", user.getName() + hideUuid(user.getUniqueId()));
     }
 
-    public String getUserText(@NotNull String name) {
-        return userFormat.replace("{$user}", name);
+    public String getUserText(String name) {
+        return name == null || name.isEmpty() ? "" : userFormat.replace("{$user}", name);
     }
 
     public boolean isDBlock(@NotNull Material type) {
@@ -318,28 +318,27 @@ public class LocketManager extends VManager {
 
     public void lockSign(Player player, Block block, int line, String name) {
         if (block.getState() instanceof Sign) {
+            Player owner = player;
             if (line == 1 && bypassPerm(player) && name != null && !name.equals(player.getName()) && !name.isEmpty()) {
                 Player user = Bukkit.getPlayer(name);
                 if (user != null) {
-                    player = user;
+                    owner = user;
                 } else {
                     sendKey(player, "invalidUsername", name);
                     return;
                 }
             }
-            Player finalPlayer = player;
+
+            Player _owner = owner;
             Helper.touchSign(block, data -> {
-                data.line0 = getPrivateText();
-                data.line1 = getOwnerText(finalPlayer);
-                if (name != null && !name.isEmpty()) {
-                    if (line == 2) {
-                        data.line2 = getUserText(name);
-                    } else if (line == 3) {
-                        data.line3 = getUserText(name);
-                    }
+                data.lines[0] = getPrivateText();
+                data.lines[1] = getOwnerText(_owner);
+                if ((line == 2 || line == 3) && name != null && !name.isEmpty()) {
+                    data.lines[line] = getUserText(name);
                 }
                 return true;
             });
+
             asyncUpdateSign(block);
             sendHint(player, "manuLock");
         } else {
@@ -366,8 +365,8 @@ public class LocketManager extends VManager {
             sign.setData(signData);
             sign.update();
             Helper.touchSign(side, data -> {
-                data.line0 = getPrivateText();
-                data.line1 = getOwnerText(player);
+                data.lines[0] = getPrivateText();
+                data.lines[1] = getOwnerText(player);
                 return true;
             });
             asyncUpdateSign(side);
@@ -512,21 +511,29 @@ public class LocketManager extends VManager {
                 return getUser(new UUID(most, least));
             }
         } else {
-            return getUser(ChatColor.stripColor(text));
+            return getUser(ChatColor.stripAllColor(text).replace(ChatColor.TRUE_COLOR_STRING, "").trim());
         }
         return Optional.empty();
     }
 
     public void asyncUpdateSign(@NotNull final Block block) {
         Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> Helper.touchSign(block, data -> {
-            if (isPrivate(data.line0)) {
-                data.line0 = getPrivateText();
-                parseUser(data.line1).ifPresent(owner -> data.line1 = getOwnerText(owner));
-                parseUser(data.line2).ifPresent(user -> data.line2 = getUserText(user));
-                parseUser(data.line3).ifPresent(user -> data.line3 = getUserText(user));
+            if (isPrivate(data.lines[0])) {
+                data.lines[0] = getPrivateText();
+                // TODO remove
+                System.out.println(data.lines[1]);
+                System.out.println(data.lines[2]);
+                System.out.println(data.lines[3]);
+                parseUser(data.lines[1]).ifPresent(owner -> data.lines[1] = getOwnerText(owner));
+                parseUser(data.lines[2]).ifPresent(user -> data.lines[2] = getUserText(user));
+                parseUser(data.lines[3]).ifPresent(user -> data.lines[3] = getUserText(user));
+                // TODO remove
+                System.out.println(data.lines[1]);
+                System.out.println(data.lines[2]);
+                System.out.println(data.lines[3]);
                 return true;
             }
             return false;
-        }), 1);
+        }), 2);
     }
 }

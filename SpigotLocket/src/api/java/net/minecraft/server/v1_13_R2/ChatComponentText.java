@@ -14,8 +14,13 @@ public class ChatComponentText implements IChatBaseComponent {
     public ChatComponentText(String text) {
     }
 
+    /**
+     * To plain text string.
+     *
+     * @return the string
+     */
     @Override
-    public String toPlainText() {
+    public String e() {
         return "";
     }
 }

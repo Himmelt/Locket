@@ -254,12 +254,10 @@ public class LocketListener {
                 }
             }
 
-            String line2 = lines.get(2).toPlain().trim();
-            String line3 = lines.get(3).toPlain().trim();
             data.setElement(0, manager.getPrivateText());
             data.setElement(1, manager.getOwnerText(owner));
-            data.setElement(2, manager.getUserText(line2));
-            data.setElement(3, manager.getUserText(line3));
+            data.setElement(2, manager.getUserText(lines.get(2).toPlain().trim()));
+            data.setElement(3, manager.getUserText(lines.get(3).toPlain().trim()));
             manager.sendHint(player, "manuLock");
             manager.asyncUpdateSign(event.getTargetTile());
         }
@@ -270,13 +268,14 @@ public class LocketListener {
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
         if (block != null && block.getBlockType() == BlockTypes.WALL_SIGN) {
             manager.setSelected(player, block);
+            block.getTileEntity().ifPresent(sign -> manager.asyncUpdateSign((Sign) sign));
             manager.sendHint(player, "selectSign");
         }
     }
 
     @Listener
     public void onLoadChunk(LoadChunkEvent event) {
-        event.getTargetChunk().getTileEntities(tile -> tile instanceof Sign).forEach(tile -> manager.asyncUpdateSign((Sign) tile));
+        event.getTargetChunk().getTileEntities(tile -> tile instanceof Sign).forEach(sign -> manager.asyncUpdateSign((Sign) sign));
     }
 
     @Listener

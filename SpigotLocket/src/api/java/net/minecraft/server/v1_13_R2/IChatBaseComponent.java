@@ -9,5 +9,5 @@ public interface IChatBaseComponent {
      *
      * @return the string
      */
-    String toPlainText();
+    String e();
 }

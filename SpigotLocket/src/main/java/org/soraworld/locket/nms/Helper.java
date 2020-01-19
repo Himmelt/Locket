@@ -13,6 +13,9 @@ import java.util.function.Predicate;
 
 import static org.soraworld.violet.nms.Version.*;
 
+/**
+ * @author Himmelt
+ */
 public class Helper {
 
     public static void injectTile() {
@@ -38,7 +41,9 @@ public class Helper {
     }
 
     public static Class<?> getClass(String... names) throws ClassNotFoundException {
-        if (names == null || names.length == 0) throw new ClassNotFoundException("empty class name");
+        if (names == null || names.length == 0) {
+            throw new ClassNotFoundException("empty class name");
+        }
         for (String name : names) {
             try {
                 return Class.forName(name);
@@ -49,7 +54,9 @@ public class Helper {
     }
 
     public static Field getFiled(Class<?> clazz, String... names) throws NoSuchFieldException {
-        if (names == null || names.length == 0) throw new NoSuchFieldException("empty field name");
+        if (names == null || names.length == 0) {
+            throw new NoSuchFieldException("empty field name");
+        }
         for (String name : names) {
             try {
                 Field field = clazz.getDeclaredField(name);
@@ -92,17 +99,23 @@ public class Helper {
     public static void touchSign(Block block, Predicate<SignData> change) {
         if (v1_7_R4) {
             try {
-                TileEntitySign sign = (TileEntitySign) ((org.bukkit.craftbukkit.v1_7_R4.CraftWorld) block.getWorld()).getTileEntityAt(block.getX(), block.getY(), block.getZ());
+                net.minecraft.server.v1_7_R4.TileEntitySign sign = (net.minecraft.server.v1_7_R4.TileEntitySign) ((org.bukkit.craftbukkit.v1_7_R4.CraftWorld) block.getWorld()).getTileEntityAt(block.getX(), block.getY(), block.getZ());
+                // TODO remove
+                System.out.println(sign.getClass());
                 SignData data = new SignData();
-                data.line0 = sign.lines[0];
-                data.line1 = sign.lines[1];
-                data.line2 = sign.lines[2];
-                data.line3 = sign.lines[3];
+                data.lines[0] = sign.lines[0];
+                data.lines[1] = sign.lines[1];
+                data.lines[2] = sign.lines[2];
+                data.lines[3] = sign.lines[3];
                 if (change.test(data)) {
-                    sign.lines[0] = data.line0;
-                    sign.lines[1] = data.line1;
-                    sign.lines[2] = data.line2;
-                    sign.lines[3] = data.line3;
+                    sign.lines[0] = data.lines[0];
+                    sign.lines[1] = data.lines[1];
+                    sign.lines[2] = data.lines[2];
+                    sign.lines[3] = data.lines[3];
+                    net.minecraft.server.v1_7_R4.World world = sign.getWorld();
+                    if (world instanceof net.minecraft.server.v1_7_R4.WorldServer) {
+                        ((net.minecraft.server.v1_7_R4.WorldServer) world).getPlayerChunkMap().flagDirty(sign.x, sign.y, sign.z);
+                    }
                 }
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -111,15 +124,19 @@ public class Helper {
             try {
                 net.minecraft.server.v1_8_R1.TileEntitySign sign = (net.minecraft.server.v1_8_R1.TileEntitySign) ((org.bukkit.craftbukkit.v1_8_R1.CraftWorld) block.getWorld()).getTileEntityAt(block.getX(), block.getY(), block.getZ());
                 SignData data = new SignData();
-                data.line0 = sign.lines[0].toPlainText();
-                data.line1 = sign.lines[1].toPlainText();
-                data.line2 = sign.lines[2].toPlainText();
-                data.line3 = sign.lines[3].toPlainText();
+                data.lines[0] = sign.lines[0].c();
+                data.lines[1] = sign.lines[1].c();
+                data.lines[2] = sign.lines[2].c();
+                data.lines[3] = sign.lines[3].c();
                 if (change.test(data)) {
-                    sign.lines[0] = new net.minecraft.server.v1_8_R1.ChatComponentText(data.line0);
-                    sign.lines[1] = new net.minecraft.server.v1_8_R1.ChatComponentText(data.line1);
-                    sign.lines[2] = new net.minecraft.server.v1_8_R1.ChatComponentText(data.line2);
-                    sign.lines[3] = new net.minecraft.server.v1_8_R1.ChatComponentText(data.line3);
+                    sign.lines[0] = new net.minecraft.server.v1_8_R1.ChatComponentText(data.lines[0]);
+                    sign.lines[1] = new net.minecraft.server.v1_8_R1.ChatComponentText(data.lines[1]);
+                    sign.lines[2] = new net.minecraft.server.v1_8_R1.ChatComponentText(data.lines[2]);
+                    sign.lines[3] = new net.minecraft.server.v1_8_R1.ChatComponentText(data.lines[3]);
+                    net.minecraft.server.v1_8_R1.World world = sign.getWorld();
+                    if (world instanceof net.minecraft.server.v1_8_R1.WorldServer) {
+                        ((net.minecraft.server.v1_8_R1.WorldServer) world).getPlayerChunkMap().flagDirty(sign.getPosition());
+                    }
                 }
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -128,19 +145,19 @@ public class Helper {
             try {
                 net.minecraft.server.v1_8_R3.TileEntitySign sign = (net.minecraft.server.v1_8_R3.TileEntitySign) ((org.bukkit.craftbukkit.v1_8_R3.CraftWorld) block.getWorld()).getTileEntityAt(block.getX(), block.getY(), block.getZ());
                 SignData data = new SignData();
-                data.line0 = sign.lines[0].c();
-                data.line1 = sign.lines[1].c();
-                data.line2 = sign.lines[2].c();
-                data.line3 = sign.lines[3].c();
+                data.lines[0] = sign.lines[0].c();
+                data.lines[1] = sign.lines[1].c();
+                data.lines[2] = sign.lines[2].c();
+                data.lines[3] = sign.lines[3].c();
                 if (change.test(data)) {
-                    sign.lines[0] = new net.minecraft.server.v1_8_R3.ChatComponentText(data.line0);
-                    sign.lines[1] = new net.minecraft.server.v1_8_R3.ChatComponentText(data.line1);
-                    sign.lines[2] = new net.minecraft.server.v1_8_R3.ChatComponentText(data.line2);
-                    sign.lines[3] = new net.minecraft.server.v1_8_R3.ChatComponentText(data.line3);
-                    System.out.println(data.line0);
-                    System.out.println(data.line1);
-                    System.out.println(data.line2);
-                    System.out.println(data.line3);
+                    sign.lines[0] = new net.minecraft.server.v1_8_R3.ChatComponentText(data.lines[0]);
+                    sign.lines[1] = new net.minecraft.server.v1_8_R3.ChatComponentText(data.lines[1]);
+                    sign.lines[2] = new net.minecraft.server.v1_8_R3.ChatComponentText(data.lines[2]);
+                    sign.lines[3] = new net.minecraft.server.v1_8_R3.ChatComponentText(data.lines[3]);
+                    net.minecraft.server.v1_8_R3.World world = sign.getWorld();
+                    if (world instanceof net.minecraft.server.v1_8_R3.WorldServer) {
+                        ((net.minecraft.server.v1_8_R3.WorldServer) world).getPlayerChunkMap().flagDirty(sign.getPosition());
+                    }
                 }
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -149,15 +166,19 @@ public class Helper {
             try {
                 net.minecraft.server.v1_9_R1.TileEntitySign sign = (net.minecraft.server.v1_9_R1.TileEntitySign) ((org.bukkit.craftbukkit.v1_9_R1.CraftWorld) block.getWorld()).getTileEntityAt(block.getX(), block.getY(), block.getZ());
                 SignData data = new SignData();
-                data.line0 = sign.lines[0].toPlainText();
-                data.line1 = sign.lines[1].toPlainText();
-                data.line2 = sign.lines[2].toPlainText();
-                data.line3 = sign.lines[3].toPlainText();
+                data.lines[0] = sign.lines[0].toPlainText();
+                data.lines[1] = sign.lines[1].toPlainText();
+                data.lines[2] = sign.lines[2].toPlainText();
+                data.lines[3] = sign.lines[3].toPlainText();
                 if (change.test(data)) {
-                    sign.lines[0] = new net.minecraft.server.v1_9_R1.ChatComponentText(data.line0);
-                    sign.lines[1] = new net.minecraft.server.v1_9_R1.ChatComponentText(data.line1);
-                    sign.lines[2] = new net.minecraft.server.v1_9_R1.ChatComponentText(data.line2);
-                    sign.lines[3] = new net.minecraft.server.v1_9_R1.ChatComponentText(data.line3);
+                    sign.lines[0] = new net.minecraft.server.v1_9_R1.ChatComponentText(data.lines[0]);
+                    sign.lines[1] = new net.minecraft.server.v1_9_R1.ChatComponentText(data.lines[1]);
+                    sign.lines[2] = new net.minecraft.server.v1_9_R1.ChatComponentText(data.lines[2]);
+                    sign.lines[3] = new net.minecraft.server.v1_9_R1.ChatComponentText(data.lines[3]);
+                    net.minecraft.server.v1_9_R1.World world = sign.getWorld();
+                    if (world instanceof net.minecraft.server.v1_9_R1.WorldServer) {
+                        ((net.minecraft.server.v1_9_R1.WorldServer) world).getPlayerChunkMap().flagDirty(sign.getPosition());
+                    }
                 }
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -166,15 +187,19 @@ public class Helper {
             try {
                 net.minecraft.server.v1_9_R2.TileEntitySign sign = (net.minecraft.server.v1_9_R2.TileEntitySign) ((org.bukkit.craftbukkit.v1_9_R2.CraftWorld) block.getWorld()).getTileEntityAt(block.getX(), block.getY(), block.getZ());
                 SignData data = new SignData();
-                data.line0 = sign.lines[0].toPlainText();
-                data.line1 = sign.lines[1].toPlainText();
-                data.line2 = sign.lines[2].toPlainText();
-                data.line3 = sign.lines[3].toPlainText();
+                data.lines[0] = sign.lines[0].toPlainText();
+                data.lines[1] = sign.lines[1].toPlainText();
+                data.lines[2] = sign.lines[2].toPlainText();
+                data.lines[3] = sign.lines[3].toPlainText();
                 if (change.test(data)) {
-                    sign.lines[0] = new net.minecraft.server.v1_9_R2.ChatComponentText(data.line0);
-                    sign.lines[1] = new net.minecraft.server.v1_9_R2.ChatComponentText(data.line1);
-                    sign.lines[2] = new net.minecraft.server.v1_9_R2.ChatComponentText(data.line2);
-                    sign.lines[3] = new net.minecraft.server.v1_9_R2.ChatComponentText(data.line3);
+                    sign.lines[0] = new net.minecraft.server.v1_9_R2.ChatComponentText(data.lines[0]);
+                    sign.lines[1] = new net.minecraft.server.v1_9_R2.ChatComponentText(data.lines[1]);
+                    sign.lines[2] = new net.minecraft.server.v1_9_R2.ChatComponentText(data.lines[2]);
+                    sign.lines[3] = new net.minecraft.server.v1_9_R2.ChatComponentText(data.lines[3]);
+                    net.minecraft.server.v1_9_R2.World world = sign.getWorld();
+                    if (world instanceof net.minecraft.server.v1_9_R2.WorldServer) {
+                        ((net.minecraft.server.v1_9_R2.WorldServer) world).getPlayerChunkMap().flagDirty(sign.getPosition());
+                    }
                 }
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -183,15 +208,19 @@ public class Helper {
             try {
                 net.minecraft.server.v1_10_R1.TileEntitySign sign = (net.minecraft.server.v1_10_R1.TileEntitySign) ((org.bukkit.craftbukkit.v1_10_R1.CraftWorld) block.getWorld()).getTileEntityAt(block.getX(), block.getY(), block.getZ());
                 SignData data = new SignData();
-                data.line0 = sign.lines[0].toPlainText();
-                data.line1 = sign.lines[1].toPlainText();
-                data.line2 = sign.lines[2].toPlainText();
-                data.line3 = sign.lines[3].toPlainText();
+                data.lines[0] = sign.lines[0].toPlainText();
+                data.lines[1] = sign.lines[1].toPlainText();
+                data.lines[2] = sign.lines[2].toPlainText();
+                data.lines[3] = sign.lines[3].toPlainText();
                 if (change.test(data)) {
-                    sign.lines[0] = new net.minecraft.server.v1_10_R1.ChatComponentText(data.line0);
-                    sign.lines[1] = new net.minecraft.server.v1_10_R1.ChatComponentText(data.line1);
-                    sign.lines[2] = new net.minecraft.server.v1_10_R1.ChatComponentText(data.line2);
-                    sign.lines[3] = new net.minecraft.server.v1_10_R1.ChatComponentText(data.line3);
+                    sign.lines[0] = new net.minecraft.server.v1_10_R1.ChatComponentText(data.lines[0]);
+                    sign.lines[1] = new net.minecraft.server.v1_10_R1.ChatComponentText(data.lines[1]);
+                    sign.lines[2] = new net.minecraft.server.v1_10_R1.ChatComponentText(data.lines[2]);
+                    sign.lines[3] = new net.minecraft.server.v1_10_R1.ChatComponentText(data.lines[3]);
+                    net.minecraft.server.v1_10_R1.World world = sign.getWorld();
+                    if (world instanceof net.minecraft.server.v1_10_R1.WorldServer) {
+                        ((net.minecraft.server.v1_10_R1.WorldServer) world).getPlayerChunkMap().flagDirty(sign.getPosition());
+                    }
                 }
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -200,15 +229,19 @@ public class Helper {
             try {
                 net.minecraft.server.v1_11_R1.TileEntitySign sign = (net.minecraft.server.v1_11_R1.TileEntitySign) ((org.bukkit.craftbukkit.v1_11_R1.CraftWorld) block.getWorld()).getTileEntityAt(block.getX(), block.getY(), block.getZ());
                 SignData data = new SignData();
-                data.line0 = sign.lines[0].toPlainText();
-                data.line1 = sign.lines[1].toPlainText();
-                data.line2 = sign.lines[2].toPlainText();
-                data.line3 = sign.lines[3].toPlainText();
+                data.lines[0] = sign.lines[0].toPlainText();
+                data.lines[1] = sign.lines[1].toPlainText();
+                data.lines[2] = sign.lines[2].toPlainText();
+                data.lines[3] = sign.lines[3].toPlainText();
                 if (change.test(data)) {
-                    sign.lines[0] = new net.minecraft.server.v1_11_R1.ChatComponentText(data.line0);
-                    sign.lines[1] = new net.minecraft.server.v1_11_R1.ChatComponentText(data.line1);
-                    sign.lines[2] = new net.minecraft.server.v1_11_R1.ChatComponentText(data.line2);
-                    sign.lines[3] = new net.minecraft.server.v1_11_R1.ChatComponentText(data.line3);
+                    sign.lines[0] = new net.minecraft.server.v1_11_R1.ChatComponentText(data.lines[0]);
+                    sign.lines[1] = new net.minecraft.server.v1_11_R1.ChatComponentText(data.lines[1]);
+                    sign.lines[2] = new net.minecraft.server.v1_11_R1.ChatComponentText(data.lines[2]);
+                    sign.lines[3] = new net.minecraft.server.v1_11_R1.ChatComponentText(data.lines[3]);
+                    net.minecraft.server.v1_11_R1.World world = sign.getWorld();
+                    if (world instanceof net.minecraft.server.v1_11_R1.WorldServer) {
+                        ((net.minecraft.server.v1_11_R1.WorldServer) world).getPlayerChunkMap().flagDirty(sign.getPosition());
+                    }
                 }
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -217,15 +250,19 @@ public class Helper {
             try {
                 net.minecraft.server.v1_12_R1.TileEntitySign sign = (net.minecraft.server.v1_12_R1.TileEntitySign) ((org.bukkit.craftbukkit.v1_12_R1.CraftWorld) block.getWorld()).getTileEntityAt(block.getX(), block.getY(), block.getZ());
                 SignData data = new SignData();
-                data.line0 = sign.lines[0].toPlainText();
-                data.line1 = sign.lines[1].toPlainText();
-                data.line2 = sign.lines[2].toPlainText();
-                data.line3 = sign.lines[3].toPlainText();
+                data.lines[0] = sign.lines[0].toPlainText();
+                data.lines[1] = sign.lines[1].toPlainText();
+                data.lines[2] = sign.lines[2].toPlainText();
+                data.lines[3] = sign.lines[3].toPlainText();
                 if (change.test(data)) {
-                    sign.lines[0] = new net.minecraft.server.v1_12_R1.ChatComponentText(data.line0);
-                    sign.lines[1] = new net.minecraft.server.v1_12_R1.ChatComponentText(data.line1);
-                    sign.lines[2] = new net.minecraft.server.v1_12_R1.ChatComponentText(data.line2);
-                    sign.lines[3] = new net.minecraft.server.v1_12_R1.ChatComponentText(data.line3);
+                    sign.lines[0] = new net.minecraft.server.v1_12_R1.ChatComponentText(data.lines[0]);
+                    sign.lines[1] = new net.minecraft.server.v1_12_R1.ChatComponentText(data.lines[1]);
+                    sign.lines[2] = new net.minecraft.server.v1_12_R1.ChatComponentText(data.lines[2]);
+                    sign.lines[3] = new net.minecraft.server.v1_12_R1.ChatComponentText(data.lines[3]);
+                    net.minecraft.server.v1_12_R1.World world = sign.getWorld();
+                    if (world instanceof net.minecraft.server.v1_12_R1.WorldServer) {
+                        ((net.minecraft.server.v1_12_R1.WorldServer) world).getPlayerChunkMap().flagDirty(sign.getPosition());
+                    }
                 }
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -234,15 +271,19 @@ public class Helper {
             try {
                 net.minecraft.server.v1_13_R1.TileEntitySign sign = (net.minecraft.server.v1_13_R1.TileEntitySign) ((org.bukkit.craftbukkit.v1_13_R1.CraftWorld) block.getWorld()).getTileEntityAt(block.getX(), block.getY(), block.getZ());
                 SignData data = new SignData();
-                data.line0 = sign.lines[0].toPlainText();
-                data.line1 = sign.lines[1].toPlainText();
-                data.line2 = sign.lines[2].toPlainText();
-                data.line3 = sign.lines[3].toPlainText();
+                data.lines[0] = sign.lines[0].c();
+                data.lines[1] = sign.lines[1].c();
+                data.lines[2] = sign.lines[2].c();
+                data.lines[3] = sign.lines[3].c();
                 if (change.test(data)) {
-                    sign.lines[0] = new net.minecraft.server.v1_13_R1.ChatComponentText(data.line0);
-                    sign.lines[1] = new net.minecraft.server.v1_13_R1.ChatComponentText(data.line1);
-                    sign.lines[2] = new net.minecraft.server.v1_13_R1.ChatComponentText(data.line2);
-                    sign.lines[3] = new net.minecraft.server.v1_13_R1.ChatComponentText(data.line3);
+                    sign.lines[0] = new net.minecraft.server.v1_13_R1.ChatComponentText(data.lines[0]);
+                    sign.lines[1] = new net.minecraft.server.v1_13_R1.ChatComponentText(data.lines[1]);
+                    sign.lines[2] = new net.minecraft.server.v1_13_R1.ChatComponentText(data.lines[2]);
+                    sign.lines[3] = new net.minecraft.server.v1_13_R1.ChatComponentText(data.lines[3]);
+                    net.minecraft.server.v1_13_R1.World world = sign.getWorld();
+                    if (world instanceof net.minecraft.server.v1_13_R1.WorldServer) {
+                        ((net.minecraft.server.v1_13_R1.WorldServer) world).getPlayerChunkMap().flagDirty(sign.getPosition());
+                    }
                 }
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -251,15 +292,19 @@ public class Helper {
             try {
                 net.minecraft.server.v1_13_R2.TileEntitySign sign = (net.minecraft.server.v1_13_R2.TileEntitySign) ((org.bukkit.craftbukkit.v1_13_R2.CraftWorld) block.getWorld()).getTileEntityAt(block.getX(), block.getY(), block.getZ());
                 SignData data = new SignData();
-                data.line0 = sign.lines[0].toPlainText();
-                data.line1 = sign.lines[1].toPlainText();
-                data.line2 = sign.lines[2].toPlainText();
-                data.line3 = sign.lines[3].toPlainText();
+                data.lines[0] = sign.lines[0].e();
+                data.lines[1] = sign.lines[1].e();
+                data.lines[2] = sign.lines[2].e();
+                data.lines[3] = sign.lines[3].e();
                 if (change.test(data)) {
-                    sign.lines[0] = new net.minecraft.server.v1_13_R2.ChatComponentText(data.line0);
-                    sign.lines[1] = new net.minecraft.server.v1_13_R2.ChatComponentText(data.line1);
-                    sign.lines[2] = new net.minecraft.server.v1_13_R2.ChatComponentText(data.line2);
-                    sign.lines[3] = new net.minecraft.server.v1_13_R2.ChatComponentText(data.line3);
+                    sign.lines[0] = new net.minecraft.server.v1_13_R2.ChatComponentText(data.lines[0]);
+                    sign.lines[1] = new net.minecraft.server.v1_13_R2.ChatComponentText(data.lines[1]);
+                    sign.lines[2] = new net.minecraft.server.v1_13_R2.ChatComponentText(data.lines[2]);
+                    sign.lines[3] = new net.minecraft.server.v1_13_R2.ChatComponentText(data.lines[3]);
+                    net.minecraft.server.v1_13_R2.World world = sign.getWorld();
+                    if (world instanceof net.minecraft.server.v1_13_R2.WorldServer) {
+                        ((net.minecraft.server.v1_13_R2.WorldServer) world).getPlayerChunkMap().flagDirty(sign.getPosition());
+                    }
                 }
             } catch (Throwable e) {
                 e.printStackTrace();
