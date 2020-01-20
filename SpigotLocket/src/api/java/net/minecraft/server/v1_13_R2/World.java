@@ -1,4 +1,7 @@
 package net.minecraft.server.v1_13_R2;
 
-public class World {
+/**
+ * @author Himmelt
+ */
+public abstract class World {
 }

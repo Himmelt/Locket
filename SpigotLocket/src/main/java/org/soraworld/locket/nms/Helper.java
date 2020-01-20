@@ -27,13 +27,13 @@ public class Helper {
                 nameToClass.setAccessible(true);
                 HashMap<String, Class<?>> nameToClassMap = (HashMap<String, Class<?>>) nameToClass.get(null);
                 nameToClassMap.put("Sign", TileEntitySign.class);
-                System.out.println("[Locket] Inject id Sign to class " + TileEntitySign.class.getName());
+                System.out.println("[Locket] Inject [Sign] -> [" + TileEntitySign.class.getName() + "]");
                 // j => field_145853_j => classToNameMap
                 Field classToName = getFiled(tileEntityClass, "j", "field_145853_j", "classToNameMap");
                 classToName.setAccessible(true);
                 HashMap<Class<?>, String> classToNameMap = (HashMap<Class<?>, String>) classToName.get(null);
                 classToNameMap.put(TileEntitySign.class, "Sign");
-                System.out.println("[Locket] Inject class " + TileEntitySign.class.getName() + " to id Sign");
+                System.out.println("[Locket] Inject [" + TileEntitySign.class.getName() + "] -> [Sign]");
 
                 Class<?> blocksClass = getClass("net.minecraft.server.v1_7_R4.Blocks", "net.minecraft.init.Blocks");
                 Field postSign = getFiled(blocksClass, "SIGN_POST", "an", "field_150472_an", "standing_sign");
@@ -127,12 +127,6 @@ public class Helper {
                     if (world instanceof net.minecraft.server.v1_7_R4.WorldServer) {
                         ((net.minecraft.server.v1_7_R4.WorldServer) world).getPlayerChunkMap().flagDirty(sign.x, sign.y, sign.z);
                     }
-                    // TODO
-                    /*for (Object player : sign.getWorld().players) {
-                        if (player instanceof EntityPlayer) {
-                            ((EntityPlayer) player).playerConnection.sendPacket(sign.getUpdatePacket());
-                        }
-                    }*/
                 }
             } catch (Throwable e) {
                 e.printStackTrace();

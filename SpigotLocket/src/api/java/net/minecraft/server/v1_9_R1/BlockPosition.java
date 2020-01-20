@@ -1,4 +1,7 @@
 package net.minecraft.server.v1_9_R1;
 
-public class BlockPosition {
+/**
+ * @author Himmelt
+ */
+public abstract class BlockPosition {
 }
