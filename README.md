@@ -26,3 +26,6 @@ Use the wall-sign to protect your blocks!
 1. Execute the command `/lock type ++/-- <block_id>`!(need permission `locket.admin`)
 2. Execute the command `/lock type ++/-- ` when held a block item.(need permission `locket.admin`)
 3. Add/remove the type id in config file, and execute command `/lock reload`(need permission `locket.admin`)
+
+## Known Bugs
+1. Doors on blocks with gravity influence can't be protected.

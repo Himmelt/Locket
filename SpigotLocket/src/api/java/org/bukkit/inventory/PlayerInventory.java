@@ -1,5 +1,8 @@
 package org.bukkit.inventory;
 
+/**
+ * @author Himmelt
+ */
 public interface PlayerInventory {
     /* legacy */
     ItemStack getItemInHand();

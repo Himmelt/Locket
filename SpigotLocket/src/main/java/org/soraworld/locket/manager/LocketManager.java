@@ -92,22 +92,21 @@ public class LocketManager extends VManager {
         lockables.add(Material.TRAPPED_CHEST);
         doubleBlocks.add(Material.CHEST);
         doubleBlocks.add(Material.TRAPPED_CHEST);
+
+        // Doors
+        try {
+            highDoors.add(Material.valueOf("WOODEN_DOOR"));
+        } catch (Throwable e) {
+            debug(e);
+        }
         if (!v1_7_R4) {
             highDoors.add(Material.BIRCH_DOOR);
             highDoors.add(Material.ACACIA_DOOR);
             highDoors.add(Material.JUNGLE_DOOR);
             highDoors.add(Material.SPRUCE_DOOR);
             highDoors.add(Material.DARK_OAK_DOOR);
-            if (v1_13_R1 || v1_13_R2) {
-                try {
-                    highDoors.add(Material.valueOf("OAK_DOOR"));
-                } catch (Throwable e) {
-                    debug(e);
-                }
-            }
-        } else {
             try {
-                highDoors.add(Material.valueOf("WOODEN_DOOR"));
+                highDoors.add(Material.valueOf("OAK_DOOR"));
             } catch (Throwable e) {
                 debug(e);
             }
