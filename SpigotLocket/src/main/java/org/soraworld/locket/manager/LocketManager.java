@@ -13,11 +13,13 @@ import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soraworld.hocon.node.Setting;
+import org.soraworld.locket.Locket;
 import org.soraworld.locket.data.LockData;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.data.State;
 import org.soraworld.locket.nms.HandType;
 import org.soraworld.locket.nms.Helper;
+import org.soraworld.locket.util.Util;
 import org.soraworld.violet.inject.MainManager;
 import org.soraworld.violet.manager.VManager;
 import org.soraworld.violet.plugin.SpigotPlugin;
@@ -25,8 +27,6 @@ import org.soraworld.violet.util.ChatColor;
 
 import java.nio.file.Path;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static org.soraworld.violet.nms.Version.*;
 
@@ -66,7 +66,6 @@ public class LocketManager extends VManager {
 
     private final HashMap<UUID, Location> selected = new HashMap<>();
 
-    private static final Pattern HIDE_UUID = Pattern.compile("(\u00A7[0-9a-f]){32}");
     private static final BlockFace[] FACES = new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
 
     public LocketManager(SpigotPlugin plugin, Path path) {
@@ -182,27 +181,12 @@ public class LocketManager extends VManager {
         return privateSign;
     }
 
-    private Optional<OfflinePlayer> getUser(String name) {
-        if (name == null || name.isEmpty()) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(Bukkit.getOfflinePlayer(name));
-        } catch (Throwable ignored) {
-        }
-        return Optional.empty();
-    }
-
-    private Optional<OfflinePlayer> getUser(UUID uuid) {
-        return Optional.of(Bukkit.getOfflinePlayer(uuid));
-    }
-
     public String getOwnerText(@NotNull OfflinePlayer owner) {
-        return ownerFormat.replace("{$owner}", owner.getName() + hideUuid(owner.getUniqueId()));
+        return ownerFormat.replace("{$owner}", owner.getName() + Util.hideUuid(owner.getUniqueId()));
     }
 
     public String getUserText(@NotNull OfflinePlayer user) {
-        return userFormat.replace("{$user}", user.getName() + hideUuid(user.getUniqueId()));
+        return userFormat.replace("{$user}", user.getName() + Util.hideUuid(user.getUniqueId()));
     }
 
     public String getUserText(String name) {
@@ -489,40 +473,13 @@ public class LocketManager extends VManager {
                 || "STATIONARY_WATER".equalsIgnoreCase(typeName) || "STATIONARY_LAVA".equalsIgnoreCase(typeName);
     }
 
-    private static String hideUuid(UUID uuid) {
-        String text = uuid.toString().replace("-", "");
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < text.length(); i++) {
-            builder.append(ChatColor.TRUE_COLOR_CHAR).append(text.charAt(i));
-        }
-        return builder.toString();
-    }
-
-    private Optional<OfflinePlayer> parseUser(String text) {
-        if (text == null || text.isEmpty()) {
-            return Optional.empty();
-        }
-        Matcher matcher = HIDE_UUID.matcher(text);
-        if (matcher.find()) {
-            String hex = matcher.group().replace(ChatColor.TRUE_COLOR_STRING, "");
-            if (hex.length() == 32) {
-                long most = Long.parseUnsignedLong(hex.substring(0, 16), 16);
-                long least = Long.parseUnsignedLong(hex.substring(16), 16);
-                return getUser(new UUID(most, least));
-            }
-        } else {
-            return getUser(ChatColor.stripAllColor(text).replace(ChatColor.TRUE_COLOR_STRING, "").trim());
-        }
-        return Optional.empty();
-    }
-
     public void asyncUpdateSign(@NotNull final Block block) {
         Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> Helper.touchSign(block, data -> {
             if (isPrivate(data.lines[0])) {
                 data.lines[0] = getPrivateText();
-                parseUser(data.lines[1]).ifPresent(owner -> data.lines[1] = getOwnerText(owner));
-                parseUser(data.lines[2]).ifPresent(user -> data.lines[2] = getUserText(user));
-                parseUser(data.lines[3]).ifPresent(user -> data.lines[3] = getUserText(user));
+                Locket.parseUser(data.lines[1]).ifPresent(owner -> data.lines[1] = getOwnerText(owner));
+                Locket.parseUser(data.lines[2]).ifPresent(user -> data.lines[2] = getUserText(user));
+                Locket.parseUser(data.lines[3]).ifPresent(user -> data.lines[3] = getUserText(user));
                 return true;
             }
             return false;

@@ -3,8 +3,14 @@ package org.soraworld.locket;
 import org.soraworld.locket.manager.LocketManager;
 import org.soraworld.violet.Violet;
 import org.soraworld.violet.plugin.SpongePlugin;
+import org.soraworld.violet.util.ChatColor;
 import org.spongepowered.api.plugin.Dependency;
 import org.spongepowered.api.plugin.Plugin;
+
+import java.util.Optional;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Himmelt
