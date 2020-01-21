@@ -22,10 +22,10 @@ public class TileEntitySign extends net.minecraft.server.v1_7_R4.TileEntitySign 
 
     @Override
     public Packet getUpdatePacket() {
-        return new PacketPlayOutUpdateSign(x, y, z, sendClientLines());
+        return new PacketPlayOutUpdateSign(x, y, z, truncateSignLines());
     }
 
-    private String[] sendClientLines() {
+    private String[] truncateSignLines() {
         String[] texts = new String[4];
         for (int i = 0; i < 4; i++) {
             texts[i] = lines[i].length() <= 15 ? lines[i] : lines[i].substring(0, 15);

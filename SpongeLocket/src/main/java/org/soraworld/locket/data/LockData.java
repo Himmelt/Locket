@@ -34,13 +34,9 @@ public class LockData {
             if (tile instanceof Sign) {
                 ListValue<Text> lines = ((Sign) tile).lines();
                 if (manager.isPrivate(lines.get(0).toPlain())) {
-                    String line1 = lines.get(1).toPlain().trim();
-                    String line2 = lines.get(2).toPlain().trim();
-                    String line3 = lines.get(3).toPlain().trim();
-                    parseUuid(line1).ifPresent(owners::add);
-                    parseUuid(line2).ifPresent(users::add);
-                    parseUuid(line3).ifPresent(users::add);
-                    manager.asyncUpdateSign((Sign) tile);
+                    parseUuid(lines.get(1).toPlain().trim()).ifPresent(owners::add);
+                    parseUuid(lines.get(2).toPlain().trim()).ifPresent(users::add);
+                    parseUuid(lines.get(3).toPlain().trim()).ifPresent(users::add);
                 }
             }
         }));

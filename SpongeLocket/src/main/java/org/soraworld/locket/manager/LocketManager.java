@@ -373,10 +373,11 @@ public class LocketManager extends VManager {
     public void lockSign(Player player, Location<World> selected, int line, String name) {
         TileEntity tile = selected.getTileEntity().orElse(null);
         if (tile instanceof Sign) {
+            Player owner = player;
             if (line == 1 && bypassPerm(player) && name != null && !name.equals(player.getName()) && !name.isEmpty()) {
                 Player user = Sponge.getServer().getPlayer(name).orElse(null);
                 if (user != null) {
-                    player = user;
+                    owner = user;
                 } else {
                     sendKey(player, "invalidUsername", name);
                     return;
@@ -384,7 +385,7 @@ public class LocketManager extends VManager {
             }
             SignData data = ((Sign) tile).getSignData();
             data.setElement(0, getPrivateText());
-            data.setElement(1, getOwnerText(player));
+            data.setElement(1, getOwnerText(owner));
             if ((line == 2 || line == 3) && name != null && !name.isEmpty()) {
                 data.setElement(line, getUserText(name));
             }
@@ -560,6 +561,6 @@ public class LocketManager extends VManager {
 
                 Sponge.getScheduler().createSyncExecutor(plugin).execute(() -> sign.offer(data));
             }
-        }, 55, TimeUnit.MILLISECONDS);
+        }, 100, TimeUnit.MILLISECONDS);
     }
 }

@@ -9,17 +9,20 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.soraworld.locket.Locket;
-import org.soraworld.locket.data.HandType;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.manager.LocketManager;
-import org.soraworld.locket.nms.InvUtil;
+import org.soraworld.locket.nms.HandType;
+import org.soraworld.locket.nms.Helper;
+import org.soraworld.locket.util.Util;
 import org.soraworld.violet.command.*;
 import org.soraworld.violet.inject.Command;
 import org.soraworld.violet.inject.Inject;
+import org.soraworld.violet.util.ChatColor;
 import org.soraworld.violet.util.ListUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
@@ -146,6 +149,29 @@ public class CommandLocket {
         }
     };
 
+    @Sub(perm = "admin")
+    public final SubExecutor<Player> info = ((cmd, player, args) -> {
+        Location select = manager.getSelected(player);
+        if (select == null) {
+            manager.sendHint(player, "selectFirst");
+            return;
+        }
+        Block selected = select.getBlock();
+        if (selected.getType() != Material.WALL_SIGN) {
+            manager.sendHint(player, "notSignTile");
+            manager.clearSelected(player.getUniqueId());
+            return;
+        }
+        Helper.touchSign(selected, data -> {
+            for (int i = 1; i <= 3; i++) {
+                String text = Util.HIDE_UUID.matcher(data.lines[i]).replaceAll("");
+                UUID uuid = Util.parseUuid(data.lines[i]).orElse(null);
+                manager.send(player, "[" + i + "]: " + text + ChatColor.RESET + " -> " + uuid);
+            }
+            return false;
+        });
+    });
+
     @Sub(perm = "admin", virtual = true, usage = "usage.type")
     public final SubExecutor<CommandSender> type = null;
 
@@ -167,7 +193,7 @@ public class CommandLocket {
         if (args.notEmpty()) {
             type = Material.getMaterial(args.first());
         } else if (sender instanceof Player) {
-            ItemStack stack = InvUtil.getItemInHand(((Player) sender).getInventory(), HandType.MAIN_HAND);
+            ItemStack stack = Helper.getItemInHand(((Player) sender).getInventory(), HandType.MAIN_HAND);
             type = stack == null ? null : stack.getType();
         } else {
             manager.sendKey(sender, "emptyArgs");

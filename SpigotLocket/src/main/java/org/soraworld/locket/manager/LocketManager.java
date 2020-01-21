@@ -13,12 +13,13 @@ import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soraworld.hocon.node.Setting;
-import org.soraworld.locket.data.HandType;
+import org.soraworld.locket.Locket;
 import org.soraworld.locket.data.LockData;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.data.State;
-import org.soraworld.locket.nms.InvUtil;
-import org.soraworld.locket.nms.TileSign;
+import org.soraworld.locket.nms.HandType;
+import org.soraworld.locket.nms.Helper;
+import org.soraworld.locket.util.Util;
 import org.soraworld.violet.inject.MainManager;
 import org.soraworld.violet.manager.VManager;
 import org.soraworld.violet.plugin.SpigotPlugin;
@@ -26,8 +27,6 @@ import org.soraworld.violet.util.ChatColor;
 
 import java.nio.file.Path;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static org.soraworld.violet.nms.Version.*;
 
@@ -67,7 +66,6 @@ public class LocketManager extends VManager {
 
     private final HashMap<UUID, Location> selected = new HashMap<>();
 
-    private static final Pattern HIDE_UUID = Pattern.compile("(\u00A7[0-9a-f]){32}");
     private static final BlockFace[] FACES = new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
 
     public LocketManager(SpigotPlugin plugin, Path path) {
@@ -94,22 +92,21 @@ public class LocketManager extends VManager {
         lockables.add(Material.TRAPPED_CHEST);
         doubleBlocks.add(Material.CHEST);
         doubleBlocks.add(Material.TRAPPED_CHEST);
+
+        // Doors
+        try {
+            highDoors.add(Material.valueOf("WOODEN_DOOR"));
+        } catch (Throwable e) {
+            debug(e);
+        }
         if (!v1_7_R4) {
             highDoors.add(Material.BIRCH_DOOR);
             highDoors.add(Material.ACACIA_DOOR);
             highDoors.add(Material.JUNGLE_DOOR);
             highDoors.add(Material.SPRUCE_DOOR);
             highDoors.add(Material.DARK_OAK_DOOR);
-            if (v1_13_R1 || v1_13_R2) {
-                try {
-                    highDoors.add(Material.valueOf("OAK_DOOR"));
-                } catch (Throwable e) {
-                    debug(e);
-                }
-            }
-        } else {
             try {
-                highDoors.add(Material.valueOf("WOODEN_DOOR"));
+                highDoors.add(Material.valueOf("OAK_DOOR"));
             } catch (Throwable e) {
                 debug(e);
             }
@@ -176,38 +173,23 @@ public class LocketManager extends VManager {
     }
 
     public boolean isPrivate(@NotNull String line) {
-        return acceptSigns.contains(ChatColor.stripAllColor(line).trim());
+        return acceptSigns.contains(ChatColor.stripAllColor(line).replace(ChatColor.TRUE_COLOR_STRING, "").trim());
     }
 
     public String getPrivateText() {
         return privateSign;
     }
 
-    private Optional<OfflinePlayer> getUser(String name) {
-        if (name == null || name.isEmpty()) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(Bukkit.getOfflinePlayer(name));
-        } catch (Throwable ignored) {
-        }
-        return Optional.empty();
-    }
-
-    private Optional<OfflinePlayer> getUser(UUID uuid) {
-        return Optional.of(Bukkit.getOfflinePlayer(uuid));
-    }
-
     public String getOwnerText(@NotNull OfflinePlayer owner) {
-        return ownerFormat.replace("{$owner}", owner.getName() + hideUuid(owner.getUniqueId()));
+        return ownerFormat.replace("{$owner}", owner.getName() + Util.hideUuid(owner.getUniqueId()));
     }
 
     public String getUserText(@NotNull OfflinePlayer user) {
-        return userFormat.replace("{$user}", user.getName() + hideUuid(user.getUniqueId()));
+        return userFormat.replace("{$user}", user.getName() + Util.hideUuid(user.getUniqueId()));
     }
 
-    public String getUserText(@NotNull String name) {
-        return userFormat.replace("{$user}", name);
+    public String getUserText(String name) {
+        return name == null || name.isEmpty() ? "" : userFormat.replace("{$user}", name);
     }
 
     public boolean isDBlock(@NotNull Material type) {
@@ -319,28 +301,27 @@ public class LocketManager extends VManager {
 
     public void lockSign(Player player, Block block, int line, String name) {
         if (block.getState() instanceof Sign) {
+            Player owner = player;
             if (line == 1 && bypassPerm(player) && name != null && !name.equals(player.getName()) && !name.isEmpty()) {
                 Player user = Bukkit.getPlayer(name);
                 if (user != null) {
-                    player = user;
+                    owner = user;
                 } else {
                     sendKey(player, "invalidUsername", name);
                     return;
                 }
             }
-            Player finalPlayer = player;
-            TileSign.touchSign(block, data -> {
-                data.line0 = getPrivateText();
-                data.line1 = getOwnerText(finalPlayer);
-                if (name != null && !name.isEmpty()) {
-                    if (line == 2) {
-                        data.line2 = getUserText(name);
-                    } else if (line == 3) {
-                        data.line3 = getUserText(name);
-                    }
+
+            Player _owner = owner;
+            Helper.touchSign(block, data -> {
+                data.lines[0] = getPrivateText();
+                data.lines[1] = getOwnerText(_owner);
+                if ((line == 2 || line == 3) && name != null && !name.isEmpty()) {
+                    data.lines[line] = getUserText(name);
                 }
                 return true;
             });
+
             asyncUpdateSign(block);
             sendHint(player, "manuLock");
         } else {
@@ -366,9 +347,9 @@ public class LocketManager extends VManager {
             signData.setFacingDirection(face);
             sign.setData(signData);
             sign.update();
-            TileSign.touchSign(side, data -> {
-                data.line0 = getPrivateText();
-                data.line1 = getOwnerText(player);
+            Helper.touchSign(side, data -> {
+                data.lines[0] = getPrivateText();
+                data.lines[1] = getOwnerText(player);
                 return true;
             });
             asyncUpdateSign(side);
@@ -459,12 +440,12 @@ public class LocketManager extends VManager {
             return;
         }
         PlayerInventory inv = player.getInventory();
-        ItemStack stack = InvUtil.getItemInHand(inv, hand);
+        ItemStack stack = Helper.getItemInHand(inv, hand);
         if (stack != null && stack.getAmount() >= 1) {
             stack.setAmount(stack.getAmount() - 1);
-            InvUtil.setItemInHand(inv, hand, stack);
+            Helper.setItemInHand(inv, hand, stack);
         } else {
-            InvUtil.setItemInHand(inv, hand, null);
+            Helper.setItemInHand(inv, hand, null);
         }
     }
 
@@ -491,43 +472,16 @@ public class LocketManager extends VManager {
                 || "STATIONARY_WATER".equalsIgnoreCase(typeName) || "STATIONARY_LAVA".equalsIgnoreCase(typeName);
     }
 
-    private static String hideUuid(UUID uuid) {
-        String text = uuid.toString().replace("-", "");
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < text.length(); i++) {
-            builder.append(ChatColor.TRUE_COLOR_CHAR).append(text.charAt(i));
-        }
-        return builder.toString();
-    }
-
-    private Optional<OfflinePlayer> parseUser(String text) {
-        if (text == null || text.isEmpty()) {
-            return Optional.empty();
-        }
-        Matcher matcher = HIDE_UUID.matcher(text);
-        if (matcher.find()) {
-            String hex = matcher.group().replace(ChatColor.TRUE_COLOR_STRING, "");
-            if (hex.length() == 32) {
-                long most = Long.parseUnsignedLong(hex.substring(0, 16), 16);
-                long least = Long.parseUnsignedLong(hex.substring(16), 16);
-                return getUser(new UUID(most, least));
-            }
-        } else {
-            return getUser(ChatColor.stripColor(text));
-        }
-        return Optional.empty();
-    }
-
     public void asyncUpdateSign(@NotNull final Block block) {
-        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> TileSign.touchSign(block, data -> {
-            if (isPrivate(data.line0)) {
-                data.line0 = getPrivateText();
-                parseUser(data.line1).ifPresent(owner -> data.line1 = getOwnerText(owner));
-                parseUser(data.line2).ifPresent(user -> data.line2 = getUserText(user));
-                parseUser(data.line3).ifPresent(user -> data.line3 = getUserText(user));
+        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> Helper.touchSign(block, data -> {
+            if (isPrivate(data.lines[0])) {
+                data.lines[0] = getPrivateText();
+                Locket.parseUser(data.lines[1]).ifPresent(owner -> data.lines[1] = getOwnerText(owner));
+                Locket.parseUser(data.lines[2]).ifPresent(user -> data.lines[2] = getUserText(user));
+                Locket.parseUser(data.lines[3]).ifPresent(user -> data.lines[3] = getUserText(user));
                 return true;
             }
             return false;
-        }), 1);
+        }), 2);
     }
 }

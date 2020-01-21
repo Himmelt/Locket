@@ -4,22 +4,29 @@ import org.jetbrains.annotations.NotNull;
 import org.soraworld.locket.Locket;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.manager.LocketManager;
+import org.soraworld.locket.util.Util;
 import org.soraworld.violet.command.*;
 import org.soraworld.violet.inject.Command;
 import org.soraworld.violet.inject.Inject;
+import org.soraworld.violet.util.ChatColor;
 import org.soraworld.violet.util.ListUtils;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.command.CommandSource;
+import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
 import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
@@ -144,6 +151,30 @@ public class CommandLocket {
             manager.sendHint(player, "selectFirst");
         }
     };
+
+    @Sub(perm = "admin")
+    public final SubExecutor<Player> info = ((cmd, player, args) -> {
+        Location<World> select = manager.getSelected(player);
+        if (select == null) {
+            manager.sendHint(player, "selectFirst");
+            return;
+        }
+        BlockState selected = select.getBlock();
+        if (selected.getType() != BlockTypes.WALL_SIGN) {
+            manager.sendHint(player, "notSignTile");
+            manager.clearSelected(player.getUniqueId());
+            return;
+        }
+        select.getTileEntity().filter(tile -> tile instanceof Sign).ifPresent(tile -> {
+            SignData data = ((Sign) tile).getSignData();
+            for (int i = 1; i <= 3; i++) {
+                String plain = data.get(i).orElse(Text.EMPTY).toPlain();
+                String text = Util.HIDE_UUID.matcher(plain).replaceAll("");
+                UUID uuid = Util.parseUuid(plain).orElse(null);
+                manager.send(player, "[" + i + "]: " + text + ChatColor.RESET + " -> " + uuid);
+            }
+        });
+    });
 
     @Sub(perm = "admin", virtual = true, usage = "usage.type")
     public final SubExecutor<CommandSource> type = null;
