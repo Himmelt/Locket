@@ -1,6 +1,5 @@
 package org.soraworld.locket.nms;
 
-import net.minecraft.server.v1_14_R1.BlockPosition;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
@@ -22,17 +21,24 @@ import static org.soraworld.violet.nms.Version.*;
  */
 public class Helper {
 
-    public static final boolean v1_14_R1;
+    public static final boolean v1_14_R1, v1_15_R1;
 
     static {
-        boolean v1_14_r1 = false;
+        boolean v1_14_r1 = false, v1_15_r1 = false;
         try {
             org.bukkit.craftbukkit.v1_14_R1.CraftWorld.class.getName();
             net.minecraft.server.v1_14_R1.WorldServer.class.getName();
             v1_14_r1 = true;
         } catch (Throwable ignored) {
         }
+        try {
+            org.bukkit.craftbukkit.v1_15_R1.CraftWorld.class.getName();
+            net.minecraft.server.v1_15_R1.WorldServer.class.getName();
+            v1_14_r1 = true;
+        } catch (Throwable ignored) {
+        }
         v1_14_R1 = v1_14_r1;
+        v1_15_R1 = v1_15_r1;
     }
 
     public static void injectTile() {
@@ -339,7 +345,7 @@ public class Helper {
             }
         } else if (v1_14_R1) {
             try {
-                net.minecraft.server.v1_14_R1.TileEntitySign sign = (net.minecraft.server.v1_14_R1.TileEntitySign) ((org.bukkit.craftbukkit.v1_14_R1.CraftWorld) block.getWorld()).getHandle().getTileEntity(new BlockPosition(block.getX(), block.getY(), block.getZ()));
+                net.minecraft.server.v1_14_R1.TileEntitySign sign = (net.minecraft.server.v1_14_R1.TileEntitySign) ((org.bukkit.craftbukkit.v1_14_R1.CraftWorld) block.getWorld()).getHandle().getTileEntity(new net.minecraft.server.v1_14_R1.BlockPosition(block.getX(), block.getY(), block.getZ()));
                 SignData data = new SignData();
                 data.lines[0] = sign.lines[0] == null ? "" : sign.lines[0].e();
                 data.lines[1] = sign.lines[1] == null ? "" : sign.lines[1].e();
@@ -358,11 +364,32 @@ public class Helper {
             } catch (Throwable e) {
                 e.printStackTrace();
             }
+        } else if (v1_15_R1) {
+            try {
+                net.minecraft.server.v1_15_R1.TileEntitySign sign = (net.minecraft.server.v1_15_R1.TileEntitySign) ((org.bukkit.craftbukkit.v1_15_R1.CraftWorld) block.getWorld()).getHandle().getTileEntity(new net.minecraft.server.v1_15_R1.BlockPosition(block.getX(), block.getY(), block.getZ()));
+                SignData data = new SignData();
+                data.lines[0] = sign.lines[0] == null ? "" : sign.lines[0].e();
+                data.lines[1] = sign.lines[1] == null ? "" : sign.lines[1].e();
+                data.lines[2] = sign.lines[2] == null ? "" : sign.lines[2].e();
+                data.lines[3] = sign.lines[3] == null ? "" : sign.lines[3].e();
+                if (change.test(data)) {
+                    sign.lines[0] = new net.minecraft.server.v1_15_R1.ChatComponentText(data.lines[0]);
+                    sign.lines[1] = new net.minecraft.server.v1_15_R1.ChatComponentText(data.lines[1]);
+                    sign.lines[2] = new net.minecraft.server.v1_15_R1.ChatComponentText(data.lines[2]);
+                    sign.lines[3] = new net.minecraft.server.v1_15_R1.ChatComponentText(data.lines[3]);
+                    net.minecraft.server.v1_15_R1.World world = sign.getWorld();
+                    if (world instanceof net.minecraft.server.v1_15_R1.WorldServer) {
+                        ((net.minecraft.server.v1_15_R1.WorldServer) world).getChunkProvider().flagDirty(sign.getPosition());
+                    }
+                }
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
         }
     }
 
     public static void setSignRotation(Sign sign, BlockFace face) {
-        if (v1_14_R1) {
+        if (v1_14_R1 || v1_15_R1) {
             org.bukkit.block.data.type.WallSign signData = (WallSign) sign.getBlockData();
             signData.setFacing(face);
             sign.setBlockData(signData);

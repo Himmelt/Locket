@@ -6,10 +6,10 @@ sourceSets {
 
 dependencies {
     compile 'org.soraworld:violet-spigot:2.4.2-SNAPSHOT'
-    compileOnly 'org.spigotmc:spigot-api:1.14.4-R0.1-SNAPSHOT'
+    compileOnly 'org.spigotmc:spigot-api:1.15.2-R0.1-SNAPSHOT'
     // compile files('lib/spigot-nms-all.jar')
     compileOnly sourceSets.api.output
-    apiCompileOnly 'org.spigotmc:spigot-api:1.14.4-R0.1-SNAPSHOT'
+    apiCompileOnly 'org.spigotmc:spigot-api:1.15.2-R0.1-SNAPSHOT'
 }
 
 processResources {
