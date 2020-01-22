@@ -2,7 +2,6 @@ package org.soraworld.locket.data;
 
 import org.bukkit.block.Block;
 import org.jetbrains.annotations.NotNull;
-import org.soraworld.locket.Locket;
 import org.soraworld.locket.manager.LocketManager;
 import org.soraworld.locket.nms.Helper;
 import org.soraworld.locket.util.Util;
@@ -31,7 +30,7 @@ public class LockData {
                 Util.parseUuid(data.lines[3]).ifPresent(users::add);
             }
             return false;
-        }));
+        }, null));
     }
 
     public Result tryAccess(@NotNull UUID uuid) {

@@ -169,7 +169,7 @@ public class CommandLocket {
                 manager.send(player, "[" + i + "]: " + text + ChatColor.RESET + " -> " + uuid);
             }
             return false;
-        });
+        }, null);
     });
 
     @Sub(perm = "admin", virtual = true, usage = "usage.type")

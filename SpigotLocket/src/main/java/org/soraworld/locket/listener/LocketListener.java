@@ -20,6 +20,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.soraworld.locket.Locket;
 import org.soraworld.locket.data.State;
 import org.soraworld.locket.manager.LocketManager;
 import org.soraworld.locket.nms.HandType;
@@ -246,12 +247,12 @@ public class LocketListener implements Listener {
     public void onPlayerChangeSign(SignChangeEvent event) {
         Player player = event.getPlayer();
         String[] lines = event.getLines();
-        Player temp = player;
+        Player owner = player;
         if (manager.isPrivate(lines[0])) {
             if (!lines[1].isEmpty() && !lines[1].equals(player.getName()) && manager.bypassPerm(player)) {
                 Player user = Bukkit.getPlayer(lines[1]);
                 if (user != null) {
-                    temp = user;
+                    owner = user;
                 } else {
                     event.setLine(0, "");
                     event.setLine(1, "");
@@ -277,15 +278,22 @@ public class LocketListener implements Listener {
                     return;
                 }
             }
-            Player owner = temp;
+            String ownerText = manager.getOwnerText(owner);
             Bukkit.getScheduler().runTask(manager.getPlugin(), () -> Helper.touchSign(event.getBlock(), data -> {
                 data.lines[0] = manager.getPrivateText();
-                data.lines[1] = manager.getOwnerText(owner);
+                data.lines[1] = ownerText;
                 data.lines[2] = manager.getUserText(lines[2]);
                 data.lines[3] = manager.getUserText(lines[3]);
                 return true;
+            }, data -> {
+                if (!data.lines[2].isEmpty() || !data.lines[3].isEmpty()) {
+                    Locket.parseUser(data.lines[2]).ifPresent(user -> data.lines[2] = manager.getUserText(user));
+                    Locket.parseUser(data.lines[3]).ifPresent(user -> data.lines[3] = manager.getUserText(user));
+                    return true;
+                } else {
+                    return false;
+                }
             }));
-            manager.asyncUpdateSign(event.getBlock());
             manager.sendHint(player, "manuLock");
         }
     }

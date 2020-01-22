@@ -335,17 +335,21 @@ public class LocketManager extends VManager {
                 }
             }
 
-            Player _owner = owner;
+            String ownerText = getOwnerText(owner);
             Helper.touchSign(block, data -> {
                 data.lines[0] = getPrivateText();
-                data.lines[1] = getOwnerText(_owner);
+                data.lines[1] = ownerText;
                 if ((line == 2 || line == 3) && name != null && !name.isEmpty()) {
                     data.lines[line] = getUserText(name);
                 }
                 return true;
+            }, data -> {
+                if ((line == 2 || line == 3)) {
+                    Locket.parseUser(data.lines[line]).ifPresent(user -> data.lines[line] = getUserText(user));
+                    return true;
+                }
+                return false;
             });
-
-            asyncUpdateSign(block);
             sendHint(player, "manuLock");
         } else {
             sendHint(player, "notSignTile");
@@ -370,8 +374,7 @@ public class LocketManager extends VManager {
                 data.lines[0] = getPrivateText();
                 data.lines[1] = getOwnerText(player);
                 return true;
-            });
-            asyncUpdateSign(side);
+            }, null);
         }
         removeOneItem(player, hand);
         if (v1_7_R4) {
@@ -492,7 +495,7 @@ public class LocketManager extends VManager {
     }
 
     public void asyncUpdateSign(@NotNull final Block block) {
-        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> Helper.touchSign(block, data -> {
+        Helper.touchSign(block, null, data -> {
             if (isPrivate(data.lines[0])) {
                 data.lines[0] = getPrivateText();
                 Locket.parseUser(data.lines[1]).ifPresent(owner -> data.lines[1] = getOwnerText(owner));
@@ -501,7 +504,7 @@ public class LocketManager extends VManager {
                 return true;
             }
             return false;
-        }), 2);
+        });
     }
 
     public boolean isSign(Material type) {
