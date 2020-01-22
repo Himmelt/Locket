@@ -65,6 +65,7 @@ public class LocketManager extends VManager {
     private Set<Material> highDoors = new HashSet<>();
 
     private final HashMap<UUID, Location> selected = new HashMap<>();
+    private final HashMap<Material, Material> signTypeMap = new HashMap<>();
 
     private static final BlockFace[] FACES = new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
 
@@ -112,11 +113,33 @@ public class LocketManager extends VManager {
             }
         }
         highDoors.add(Material.IRON_DOOR);
+
+        // Sign Type Map
+        try {
+            signTypeMap.put(Material.valueOf("SIGN"), Material.valueOf("WALL_SIGN"));
+        } catch (Throwable e) {
+            debug(e);
+        }
+        try {
+            signTypeMap.put(Material.valueOf("SIGN_POST"), Material.valueOf("WALL_SIGN"));
+        } catch (Throwable e) {
+            debug(e);
+        }
+        try {
+            signTypeMap.put(Material.OAK_SIGN, Material.OAK_WALL_SIGN);
+            signTypeMap.put(Material.ACACIA_SIGN, Material.ACACIA_WALL_SIGN);
+            signTypeMap.put(Material.BIRCH_SIGN, Material.BIRCH_WALL_SIGN);
+            signTypeMap.put(Material.DARK_OAK_SIGN, Material.DARK_OAK_WALL_SIGN);
+            signTypeMap.put(Material.JUNGLE_SIGN, Material.JUNGLE_WALL_SIGN);
+            signTypeMap.put(Material.SPRUCE_SIGN, Material.SPRUCE_WALL_SIGN);
+        } catch (Throwable e) {
+            debug(e);
+        }
     }
 
     public boolean isLockable(@NotNull Block block) {
         Material type = block.getType();
-        if (type == Material.WALL_SIGN || type == Material.SIGN) {
+        if (isSign(type)) {
             return false;
         }
         if (lockables.contains(type)) {
@@ -222,7 +245,7 @@ public class LocketManager extends VManager {
         HashSet<Block> signs = new HashSet<>();
 
         // 自身也将参与检查
-        if (type == Material.WALL_SIGN) {
+        if (isWallSign(type)) {
             signs.add(location);
         }
 
@@ -234,7 +257,7 @@ public class LocketManager extends VManager {
                 if (++count >= 2) {
                     return Result.MULTI_BLOCKS;
                 }
-            } else if (relative.getType() == Material.WALL_SIGN && getSignFace(relative).getOppositeFace() == face) {
+            } else if (isWallSign(relative.getType()) && getSignFace(relative).getOppositeFace() == face) {
                 signs.add(relative);
             }
         }
@@ -247,7 +270,7 @@ public class LocketManager extends VManager {
                 if (relative.getType() == type && ++count >= 2) {
                     return Result.MULTI_BLOCKS;
                 }
-                if (relative.getType() == Material.WALL_SIGN && getSignFace(relative).getOppositeFace() == face) {
+                if (isWallSign(relative.getType()) && getSignFace(relative).getOppositeFace() == face) {
                     signs.add(relative);
                 }
             }
@@ -257,7 +280,7 @@ public class LocketManager extends VManager {
         for (Block door : getDoors(location)) {
             for (BlockFace face : FACES) {
                 Block relative = door.getRelative(face);
-                if (relative.getType() == Material.WALL_SIGN && getSignFace(relative).getOppositeFace() == face) {
+                if (isWallSign(relative.getType()) && getSignFace(relative).getOppositeFace() == face) {
                     signs.add(relative);
                 }
             }
@@ -337,16 +360,12 @@ public class LocketManager extends VManager {
         }
     }
 
-    public void placeLock(Player player, Block loc, BlockFace face, HandType hand) {
+    public void placeLock(Player player, Block loc, BlockFace face, HandType hand, Material itemType) {
         Block side = loc.getRelative(face);
-        side.setType(Material.WALL_SIGN);
+        side.setType(signTypeMap.getOrDefault(itemType, signTypeMap.values().iterator().next()));
         BlockState tile = side.getState();
         if (tile instanceof Sign) {
-            Sign sign = (Sign) tile;
-            org.bukkit.material.Sign signData = (org.bukkit.material.Sign) sign.getData();
-            signData.setFacingDirection(face);
-            sign.setData(signData);
-            sign.update();
+            Helper.setSignRotation((Sign) tile, face);
             Helper.touchSign(side, data -> {
                 data.lines[0] = getPrivateText();
                 data.lines[1] = getOwnerText(player);
@@ -383,7 +402,7 @@ public class LocketManager extends VManager {
         HashSet<Block> signs = new HashSet<>();
 
         // 自身也将参与检查
-        if (type == Material.WALL_SIGN) {
+        if (isWallSign(type)) {
             signs.add(block);
         }
 
@@ -395,7 +414,7 @@ public class LocketManager extends VManager {
                 if (++count >= 2) {
                     return State.MULTI_BLOCKS;
                 }
-            } else if (relative.getType() == Material.WALL_SIGN && getSignFace(relative).getOppositeFace() == face) {
+            } else if (isWallSign(relative.getType()) && getSignFace(relative).getOppositeFace() == face) {
                 signs.add(relative);
             }
         }
@@ -408,7 +427,7 @@ public class LocketManager extends VManager {
                 if (relative.getType() == type && ++count >= 2) {
                     return State.MULTI_BLOCKS;
                 }
-                if (relative.getType() == Material.WALL_SIGN && getSignFace(relative).getOppositeFace() == face) {
+                if (isWallSign(relative.getType()) && getSignFace(relative).getOppositeFace() == face) {
                     signs.add(relative);
                 }
             }
@@ -418,7 +437,7 @@ public class LocketManager extends VManager {
         for (Block door : getDoors(block)) {
             for (BlockFace face : FACES) {
                 Block relative = door.getRelative(face);
-                if (relative.getType() == Material.WALL_SIGN && getSignFace(relative).getOppositeFace() == face) {
+                if (isWallSign(relative.getType()) && getSignFace(relative).getOppositeFace() == face) {
                     signs.add(relative);
                 }
             }
@@ -483,5 +502,13 @@ public class LocketManager extends VManager {
             }
             return false;
         }), 2);
+    }
+
+    public boolean isSign(Material type) {
+        return signTypeMap.containsKey(type) || signTypeMap.containsValue(type);
+    }
+
+    public boolean isWallSign(Material type) {
+        return signTypeMap.containsValue(type);
     }
 }

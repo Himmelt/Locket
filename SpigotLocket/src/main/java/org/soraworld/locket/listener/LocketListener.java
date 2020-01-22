@@ -129,14 +129,14 @@ public class LocketListener implements Listener {
                 return;
             }
             Material type = block.getType();
-            switch (manager.tryAccess(player, type == Material.WALL_SIGN ? LocketManager.getAttached(block) : block, false)) {
+            switch (manager.tryAccess(player, manager.isWallSign(type) ? LocketManager.getAttached(block) : block, false)) {
                 case SIGN_USER:
-                    if (action == Action.LEFT_CLICK_BLOCK || type == Material.WALL_SIGN) {
+                    if (action == Action.LEFT_CLICK_BLOCK || manager.isWallSign(type)) {
                         event.setCancelled(true);
                     }
                     break;
                 case SIGN_OWNER:
-                    if (action == Action.LEFT_CLICK_BLOCK && type != Material.WALL_SIGN && player.getGameMode() == GameMode.CREATIVE) {
+                    if (action == Action.LEFT_CLICK_BLOCK && !manager.isWallSign(type) && player.getGameMode() == GameMode.CREATIVE) {
                         event.setCancelled(true);
                     }
                     break;
@@ -192,7 +192,7 @@ public class LocketListener implements Listener {
         Player player = event.getPlayer();
         HandType handType = Helper.getHandType(event);
         ItemStack stack = Helper.getItemInHand(player.getInventory(), handType);
-        if (stack == null || stack.getType() != Material.SIGN) {
+        if (stack == null || !manager.isSign(stack.getType())) {
             return;
         }
         if (player.isSneaking()) {
@@ -226,7 +226,7 @@ public class LocketListener implements Listener {
         switch (manager.tryAccess(player, block, true)) {
             case SIGN_OWNER:
             case NOT_LOCKED:
-                manager.placeLock(player, block, face, handType);
+                manager.placeLock(player, block, face, handType, stack.getType());
                 return;
             case MULTI_OWNERS:
                 manager.sendHint(player, "multiOwners");
@@ -297,7 +297,7 @@ public class LocketListener implements Listener {
         }
         Player player = event.getPlayer();
         Block block = event.getClickedBlock();
-        if (block != null && block.getType() == Material.WALL_SIGN) {
+        if (block != null && manager.isWallSign(block.getType())) {
             manager.setSelected(player, block.getLocation());
             manager.asyncUpdateSign(block);
             manager.sendHint(player, "selectSign");

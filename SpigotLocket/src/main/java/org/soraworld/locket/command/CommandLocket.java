@@ -41,7 +41,7 @@ public class CommandLocket {
             return;
         }
         Block selected = select.getBlock();
-        if (selected.getType() != Material.WALL_SIGN) {
+        if (!manager.isWallSign(selected.getType())) {
             manager.sendHint(player, "notSignTile");
             manager.clearSelected(player.getUniqueId());
             return;
@@ -157,7 +157,7 @@ public class CommandLocket {
             return;
         }
         Block selected = select.getBlock();
-        if (selected.getType() != Material.WALL_SIGN) {
+        if (!manager.isWallSign(selected.getType())) {
             manager.sendHint(player, "notSignTile");
             manager.clearSelected(player.getUniqueId());
             return;
@@ -203,7 +203,7 @@ public class CommandLocket {
             manager.sendKey(sender, "nullBlockType");
             return;
         }
-        if (type == Material.AIR || type == Material.SIGN || type == Material.WALL_SIGN || "SIGN_POST".equalsIgnoreCase(type.name())) {
+        if (type == Material.AIR || manager.isSign(type) || manager.isWallSign(type) || "SIGN_POST".equalsIgnoreCase(type.name())) {
             manager.sendKey(sender, "illegalType");
             return;
         }

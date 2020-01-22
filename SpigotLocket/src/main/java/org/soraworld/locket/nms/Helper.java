@@ -1,6 +1,10 @@
 package org.soraworld.locket.nms;
 
+import net.minecraft.server.v1_14_R1.BlockPosition;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.Sign;
+import org.bukkit.block.data.type.WallSign;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -17,6 +21,19 @@ import static org.soraworld.violet.nms.Version.*;
  * @author Himmelt
  */
 public class Helper {
+
+    public static final boolean v1_14_R1;
+
+    static {
+        boolean v1_14_r1 = false;
+        try {
+            org.bukkit.craftbukkit.v1_14_R1.CraftWorld.class.getName();
+            net.minecraft.server.v1_14_R1.WorldServer.class.getName();
+            v1_14_r1 = true;
+        } catch (Throwable ignored) {
+        }
+        v1_14_R1 = v1_14_r1;
+    }
 
     public static void injectTile() {
         if (v1_7_R4) {
@@ -320,6 +337,40 @@ public class Helper {
             } catch (Throwable e) {
                 e.printStackTrace();
             }
+        } else if (v1_14_R1) {
+            try {
+                net.minecraft.server.v1_14_R1.TileEntitySign sign = (net.minecraft.server.v1_14_R1.TileEntitySign) ((org.bukkit.craftbukkit.v1_14_R1.CraftWorld) block.getWorld()).getHandle().getTileEntity(new BlockPosition(block.getX(), block.getY(), block.getZ()));
+                SignData data = new SignData();
+                data.lines[0] = sign.lines[0] == null ? "" : sign.lines[0].e();
+                data.lines[1] = sign.lines[1] == null ? "" : sign.lines[1].e();
+                data.lines[2] = sign.lines[2] == null ? "" : sign.lines[2].e();
+                data.lines[3] = sign.lines[3] == null ? "" : sign.lines[3].e();
+                if (change.test(data)) {
+                    sign.lines[0] = new net.minecraft.server.v1_14_R1.ChatComponentText(data.lines[0]);
+                    sign.lines[1] = new net.minecraft.server.v1_14_R1.ChatComponentText(data.lines[1]);
+                    sign.lines[2] = new net.minecraft.server.v1_14_R1.ChatComponentText(data.lines[2]);
+                    sign.lines[3] = new net.minecraft.server.v1_14_R1.ChatComponentText(data.lines[3]);
+                    net.minecraft.server.v1_14_R1.World world = sign.getWorld();
+                    if (world instanceof net.minecraft.server.v1_14_R1.WorldServer) {
+                        ((net.minecraft.server.v1_14_R1.WorldServer) world).getChunkProvider().flagDirty(sign.getPosition());
+                    }
+                }
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
         }
+    }
+
+    public static void setSignRotation(Sign sign, BlockFace face) {
+        if (v1_14_R1) {
+            org.bukkit.block.data.type.WallSign signData = (WallSign) sign.getBlockData();
+            signData.setFacing(face);
+            sign.setBlockData(signData);
+        } else {
+            org.bukkit.material.Sign signData = (org.bukkit.material.Sign) sign.getData();
+            signData.setFacingDirection(face);
+            sign.setData(signData);
+        }
+        sign.update();
     }
 }

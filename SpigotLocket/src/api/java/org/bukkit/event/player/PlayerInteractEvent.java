@@ -22,5 +22,4 @@ public abstract class PlayerInteractEvent extends PlayerEvent implements Cancell
     public abstract Action getAction();
 
     public abstract BlockFace getBlockFace();
-
 }
