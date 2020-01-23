@@ -34,6 +34,8 @@ import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.entity.living.player.gamemode.GameModes;
+import org.spongepowered.api.item.ItemType;
+import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.service.user.UserStorageService;
 import org.spongepowered.api.text.Text;
@@ -85,7 +87,12 @@ public class LocketManager extends VManager {
     private boolean usingGriefDefender = false;
     private boolean usingGriefPrevention = false;
     private UserStorageService storageService = null;
+
     private final HashMap<UUID, Location<World>> selected = new HashMap<>();
+    private final HashSet<ItemType> itemSignTypes = new HashSet<>();
+    private final HashSet<BlockType> wallSignTypes = new HashSet<>();
+    private final HashSet<BlockType> postSignTypes = new HashSet<>();
+    private final HashMap<ItemType, BlockType> signTypeMap = new HashMap<>();
 
     private static final Pattern HIDE_UUID = Pattern.compile("(\u00A7[0-9a-f]){32}");
     private static final Direction[] FACES = new Direction[]{Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
@@ -131,13 +138,49 @@ public class LocketManager extends VManager {
         highDoors.add(BlockTypes.SPRUCE_DOOR);
         highDoors.add(BlockTypes.DARK_OAK_DOOR);
         highDoors.add(BlockTypes.IRON_DOOR);
+
+        // Sign Type Map
+        itemSignTypes.add(ItemTypes.SIGN);
+        wallSignTypes.add(BlockTypes.WALL_SIGN);
+        postSignTypes.add(BlockTypes.STANDING_SIGN);
+        signTypeMap.put(ItemTypes.SIGN, BlockTypes.WALL_SIGN);
+        signTypeMap.put(ItemTypes.AIR, BlockTypes.AIR);
+//        try {
+//            itemSignTypes.add(ItemTypes.OAK_SIGN);
+//            postSignTypes.add(BlockTypes.OAK_SIGN);
+//            wallSignTypes.add(BlockTypes.OAK_WALL_SIGN);
+//            signTypeMap.put(ItemTypes.OAK_SIGN, BlockTypes.OAK_WALL_SIGN);
+//            itemSignTypes.add(ItemTypes.ACACIA_SIGN);
+//            postSignTypes.add(BlockTypes.ACACIA_SIGN);
+//            wallSignTypes.add(BlockTypes.ACACIA_WALL_SIGN);
+//            signTypeMap.put(ItemTypes.ACACIA_SIGN, BlockTypes.ACACIA_WALL_SIGN);
+//            itemSignTypes.add(ItemTypes.BIRCH_SIGN);
+//            postSignTypes.add(BlockTypes.BIRCH_SIGN);
+//            wallSignTypes.add(BlockTypes.BIRCH_WALL_SIGN);
+//            signTypeMap.put(ItemTypes.BIRCH_SIGN, BlockTypes.BIRCH_WALL_SIGN);
+//            itemSignTypes.add(ItemTypes.DARK_OAK_SIGN);
+//            postSignTypes.add(BlockTypes.DARK_OAK_SIGN);
+//            wallSignTypes.add(BlockTypes.DARK_OAK_WALL_SIGN);
+//            signTypeMap.put(ItemTypes.DARK_OAK_SIGN, BlockTypes.DARK_OAK_WALL_SIGN);
+//            itemSignTypes.add(ItemTypes.JUNGLE_SIGN);
+//            postSignTypes.add(BlockTypes.JUNGLE_SIGN);
+//            wallSignTypes.add(BlockTypes.JUNGLE_WALL_SIGN);
+//            signTypeMap.put(ItemTypes.JUNGLE_SIGN, BlockTypes.JUNGLE_WALL_SIGN);
+//            itemSignTypes.add(ItemTypes.SPRUCE_SIGN);
+//            postSignTypes.add(BlockTypes.SPRUCE_SIGN);
+//            wallSignTypes.add(BlockTypes.SPRUCE_WALL_SIGN);
+//            signTypeMap.put(ItemTypes.SPRUCE_SIGN, BlockTypes.SPRUCE_WALL_SIGN);
+//        } catch (Throwable e) {
+//            debug(e);
+//        }
+
         usingGriefDefender = Sponge.getPluginManager().isLoaded("griefdefender");
         usingGriefPrevention = Sponge.getPluginManager().isLoaded("griefprevention");
     }
 
     public boolean isLockable(@NotNull Location<World> location) {
         BlockType type = location.getBlockType();
-        if (type == BlockTypes.WALL_SIGN || type == BlockTypes.STANDING_SIGN) {
+        if (type == BlockTypes.AIR || isSign(type)) {
             return false;
         }
         if (lockables.contains(type)) {
@@ -263,7 +306,7 @@ public class LocketManager extends VManager {
         HashSet<Location<World>> signs = new HashSet<>();
 
         // 自身也将参与检查
-        if (type == BlockTypes.WALL_SIGN) {
+        if (isWallSign(type)) {
             signs.add(location);
         }
 
@@ -275,7 +318,7 @@ public class LocketManager extends VManager {
                 if (++count >= 2) {
                     return Result.MULTI_BLOCKS;
                 }
-            } else if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+            } else if (isWallSign(relative.getBlockType()) && relative.get(Keys.DIRECTION).orElse(null) == face) {
                 signs.add(relative);
             }
         }
@@ -288,7 +331,7 @@ public class LocketManager extends VManager {
                 if (relative.getBlockType() == type && ++count >= 2) {
                     return Result.MULTI_BLOCKS;
                 }
-                if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+                if (isWallSign(relative.getBlockType()) && relative.get(Keys.DIRECTION).orElse(null) == face) {
                     signs.add(relative);
                 }
             }
@@ -298,7 +341,7 @@ public class LocketManager extends VManager {
         for (Location<World> door : getDoors(location)) {
             for (Direction face : FACES) {
                 Location<World> relative = door.getRelative(face);
-                if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+                if (isWallSign(relative.getBlockType()) && relative.get(Keys.DIRECTION).orElse(null) == face) {
                     signs.add(relative);
                 }
             }
@@ -407,10 +450,10 @@ public class LocketManager extends VManager {
         }
     }
 
-    public void placeLock(Player player, Location<World> loc, Direction face, HandType hand) {
+    public void placeLock(Player player, Location<World> loc, Direction face, HandType hand, ItemType itemType) {
         Location<World> side = loc.getRelative(face);
-        side.setBlockType(BlockTypes.WALL_SIGN, BlockChangeFlags.NONE);
-        BlockState state = BlockTypes.WALL_SIGN.getDefaultState();
+        side.setBlockType(getSignBlock(itemType), BlockChangeFlags.NONE);
+        BlockState state = side.getBlockType().getDefaultState();
         side.setBlock(state.with(Keys.DIRECTION, face).orElse(state), BlockChangeFlags.NONE);
         TileEntity tile = side.getTileEntity().orElse(null);
         if (tile instanceof Sign) {
@@ -441,7 +484,7 @@ public class LocketManager extends VManager {
         HashSet<Location<World>> signs = new HashSet<>();
 
         // 自身也将参与检查
-        if (type == BlockTypes.WALL_SIGN) {
+        if (isWallSign(type)) {
             signs.add(location);
         }
 
@@ -453,7 +496,7 @@ public class LocketManager extends VManager {
                 if (++count >= 2) {
                     return State.MULTI_BLOCKS;
                 }
-            } else if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+            } else if (isWallSign(relative.getBlockType()) && relative.get(Keys.DIRECTION).orElse(null) == face) {
                 signs.add(relative);
             }
         }
@@ -466,7 +509,7 @@ public class LocketManager extends VManager {
                 if (relative.getBlockType() == type && ++count >= 2) {
                     return State.MULTI_BLOCKS;
                 }
-                if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+                if (isWallSign(relative.getBlockType()) && relative.get(Keys.DIRECTION).orElse(null) == face) {
                     signs.add(relative);
                 }
             }
@@ -476,7 +519,7 @@ public class LocketManager extends VManager {
         for (Location<World> door : getDoors(location)) {
             for (Direction face : FACES) {
                 Location<World> relative = door.getRelative(face);
-                if (relative.getBlockType() == BlockTypes.WALL_SIGN && relative.get(Keys.DIRECTION).orElse(null) == face) {
+                if (isWallSign(relative.getBlockType()) && relative.get(Keys.DIRECTION).orElse(null) == face) {
                     signs.add(relative);
                 }
             }
@@ -562,5 +605,21 @@ public class LocketManager extends VManager {
                 Sponge.getScheduler().createSyncExecutor(plugin).execute(() -> sign.offer(data));
             }
         }, 100, TimeUnit.MILLISECONDS);
+    }
+
+    public BlockType getSignBlock(ItemType itemType) {
+        return signTypeMap.get(itemType);
+    }
+
+    public boolean isSign(ItemType type) {
+        return itemSignTypes.contains(type);
+    }
+
+    public boolean isSign(BlockType type) {
+        return postSignTypes.contains(type) || wallSignTypes.contains(type);
+    }
+
+    public boolean isWallSign(BlockType type) {
+        return wallSignTypes.contains(type);
     }
 }

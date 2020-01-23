@@ -65,6 +65,9 @@ public class LocketManager extends VManager {
     private Set<Material> highDoors = new HashSet<>();
 
     private final HashMap<UUID, Location> selected = new HashMap<>();
+    private final HashSet<Material> itemSignTypes = new HashSet<>();
+    private final HashSet<Material> wallSignTypes = new HashSet<>();
+    private final HashSet<Material> postSignTypes = new HashSet<>();
     private final HashMap<Material, Material> signTypeMap = new HashMap<>();
 
     private static final BlockFace[] FACES = new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
@@ -116,21 +119,37 @@ public class LocketManager extends VManager {
 
         // Sign Type Map
         try {
+            itemSignTypes.add(Material.valueOf("SIGN"));
+            wallSignTypes.add(Material.valueOf("WALL_SIGN"));
+            postSignTypes.add(Material.valueOf("SIGN_POST"));
             signTypeMap.put(Material.valueOf("SIGN"), Material.valueOf("WALL_SIGN"));
         } catch (Throwable e) {
             debug(e);
         }
         try {
-            signTypeMap.put(Material.valueOf("SIGN_POST"), Material.valueOf("WALL_SIGN"));
-        } catch (Throwable e) {
-            debug(e);
-        }
-        try {
+            itemSignTypes.add(Material.OAK_SIGN);
+            postSignTypes.add(Material.OAK_SIGN);
+            wallSignTypes.add(Material.OAK_WALL_SIGN);
             signTypeMap.put(Material.OAK_SIGN, Material.OAK_WALL_SIGN);
+            itemSignTypes.add(Material.ACACIA_SIGN);
+            postSignTypes.add(Material.ACACIA_SIGN);
+            wallSignTypes.add(Material.ACACIA_WALL_SIGN);
             signTypeMap.put(Material.ACACIA_SIGN, Material.ACACIA_WALL_SIGN);
+            itemSignTypes.add(Material.BIRCH_SIGN);
+            postSignTypes.add(Material.BIRCH_SIGN);
+            wallSignTypes.add(Material.BIRCH_WALL_SIGN);
             signTypeMap.put(Material.BIRCH_SIGN, Material.BIRCH_WALL_SIGN);
+            itemSignTypes.add(Material.DARK_OAK_SIGN);
+            postSignTypes.add(Material.DARK_OAK_SIGN);
+            wallSignTypes.add(Material.DARK_OAK_WALL_SIGN);
             signTypeMap.put(Material.DARK_OAK_SIGN, Material.DARK_OAK_WALL_SIGN);
+            itemSignTypes.add(Material.JUNGLE_SIGN);
+            postSignTypes.add(Material.JUNGLE_SIGN);
+            wallSignTypes.add(Material.JUNGLE_WALL_SIGN);
             signTypeMap.put(Material.JUNGLE_SIGN, Material.JUNGLE_WALL_SIGN);
+            itemSignTypes.add(Material.SPRUCE_SIGN);
+            postSignTypes.add(Material.SPRUCE_SIGN);
+            wallSignTypes.add(Material.SPRUCE_WALL_SIGN);
             signTypeMap.put(Material.SPRUCE_SIGN, Material.SPRUCE_WALL_SIGN);
         } catch (Throwable e) {
             debug(e);
@@ -139,7 +158,7 @@ public class LocketManager extends VManager {
 
     public boolean isLockable(@NotNull Block block) {
         Material type = block.getType();
-        if (isSign(type)) {
+        if (type == Material.AIR || isSign(type)) {
             return false;
         }
         if (lockables.contains(type)) {
@@ -356,17 +375,20 @@ public class LocketManager extends VManager {
         }
     }
 
-    public void unLockSign(Location location, int line) {
-        BlockState tile = location.getBlock().getState();
-        if (tile instanceof Sign) {
-            ((Sign) tile).setLine(line, "");
-            tile.update();
-        }
+    public void unLockSign(Block block, int line) {
+        Helper.touchSign(block, data -> {
+            if (line >= 0 && line <= 3) {
+                data.lines[line] = "";
+                return true;
+            } else {
+                return false;
+            }
+        }, null);
     }
 
     public void placeLock(Player player, Block loc, BlockFace face, HandType hand, Material itemType) {
         Block side = loc.getRelative(face);
-        side.setType(signTypeMap.getOrDefault(itemType, signTypeMap.values().iterator().next()));
+        side.setType(getSignBlock(itemType));
         BlockState tile = side.getState();
         if (tile instanceof Sign) {
             Helper.setSignRotation((Sign) tile, face);
@@ -471,10 +493,6 @@ public class LocketManager extends VManager {
         }
     }
 
-    public static Block getAttached(@NotNull Block block) {
-        return block.getRelative(((org.bukkit.material.Sign) block.getState().getData()).getAttachedFace());
-    }
-
     private static BlockFace getDoorFace(Block block) {
         return ((org.bukkit.material.Door) block.getState().getData()).getFacing();
     }
@@ -507,11 +525,15 @@ public class LocketManager extends VManager {
         });
     }
 
+    public Material getSignBlock(Material itemType) {
+        return signTypeMap.get(itemType);
+    }
+
     public boolean isSign(Material type) {
-        return signTypeMap.containsKey(type) || signTypeMap.containsValue(type);
+        return itemSignTypes.contains(type) || postSignTypes.contains(type) || wallSignTypes.contains(type);
     }
 
     public boolean isWallSign(Material type) {
-        return signTypeMap.containsValue(type);
+        return wallSignTypes.contains(type);
     }
 }

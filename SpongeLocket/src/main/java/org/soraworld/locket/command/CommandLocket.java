@@ -44,7 +44,7 @@ public class CommandLocket {
             manager.sendHint(player, "selectFirst");
             return;
         }
-        if (selected.getBlockType() != BlockTypes.WALL_SIGN) {
+        if (!manager.isWallSign(selected.getBlockType())) {
             manager.sendHint(player, "notSignTile");
             manager.clearSelected(player.getUniqueId());
             return;
@@ -125,27 +125,30 @@ public class CommandLocket {
     public final SubExecutor<Player> remove = (cmd, player, args) -> {
         Location<World> selected = manager.getSelected(player);
         if (selected != null) {
-            Location<World> target = LocketManager.getAttached(selected);
-            if (args.empty()) {
-                if (manager.bypassPerm(player) || manager.tryAccess(player, target, true) == Result.SIGN_OWNER) {
-                    manager.unLockSign(selected, 0);
-                } else {
-                    manager.sendHint(player, "noOwnerAccess");
-                }
-            } else if (args.size() >= 1) {
-                try {
-                    int line = Integer.parseInt(args.first());
-                    if (manager.bypassPerm(player)) {
-                        manager.unLockSign(selected, line);
-                    } else if ((line == 2 || line == 3) && manager.tryAccess(player, target, true) == Result.SIGN_OWNER) {
-                        manager.unLockSign(selected, line);
-                        manager.sendHint(player, "manuRemove");
+            if (manager.isWallSign(selected.getBlockType())) {
+                Location<World> target = LocketManager.getAttached(selected);
+                if (args.empty()) {
+                    if (manager.bypassPerm(player) || manager.tryAccess(player, target, true) == Result.SIGN_OWNER) {
+                        manager.unLockSign(selected, 0);
                     } else {
-                        manager.sendHint(player, "cantRemove");
+                        manager.sendHint(player, "noOwnerAccess");
                     }
-                } catch (Throwable ignored) {
-                    manager.sendHint(player, "invalidInt");
+                } else if (args.size() >= 1) {
+                    try {
+                        int line = Integer.parseInt(args.first());
+                        if (manager.bypassPerm(player) || manager.tryAccess(player, target, true) == Result.SIGN_OWNER) {
+                            manager.unLockSign(selected, line);
+                            manager.sendHint(player, "manuRemove");
+                        } else {
+                            manager.sendHint(player, "cantRemove");
+                        }
+                    } catch (Throwable ignored) {
+                        manager.sendHint(player, "invalidInt");
+                    }
                 }
+            } else {
+                manager.sendHint(player, "selectFirst");
+                manager.clearSelected(player.getUniqueId());
             }
         } else {
             manager.sendHint(player, "selectFirst");
@@ -160,7 +163,7 @@ public class CommandLocket {
             return;
         }
         BlockState selected = select.getBlock();
-        if (selected.getType() != BlockTypes.WALL_SIGN) {
+        if (!manager.isWallSign(selected.getType())) {
             manager.sendHint(player, "notSignTile");
             manager.clearSelected(player.getUniqueId());
             return;
@@ -198,7 +201,7 @@ public class CommandLocket {
             type = Sponge.getRegistry().getType(BlockType.class, args.first()).orElse(null);
         } else if (sender instanceof Player) {
             ItemStack stack = ((Player) sender).getItemInHand(HandTypes.MAIN_HAND).orElse(null);
-            type = stack == null ? null : stack.getType().getBlock().orElse(null);
+            type = stack == null ? null : manager.getSignBlock(stack.getType());
         } else {
             manager.sendKey(sender, "emptyArgs");
             return;
@@ -207,7 +210,7 @@ public class CommandLocket {
             manager.sendKey(sender, "nullBlockType");
             return;
         }
-        if (type == BlockTypes.AIR || type == BlockTypes.WALL_SIGN || type == BlockTypes.STANDING_SIGN) {
+        if (type == BlockTypes.AIR || manager.isSign(type)) {
             manager.sendKey(sender, "illegalType");
             return;
         }

@@ -9,7 +9,6 @@ quickLock = "&a快速上锁成功."
 cantLock = "你无法对目标方块添加保护锁."
 manuRemove = "手动移除用户."
 cantRemove = "你无法手动移除用户."
-cantRemoveLine = "此行无法手动移除."
 
 noAccess = "你没有这么做的权限."
 noOwnerAccess = "你不是目标方块的所有者."

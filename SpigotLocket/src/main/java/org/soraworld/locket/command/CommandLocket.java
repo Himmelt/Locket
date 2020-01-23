@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.Sign;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -60,7 +61,7 @@ public class CommandLocket {
             name = args.get(1);
         }
 
-        Block target = LocketManager.getAttached(selected);
+        Block target = Helper.getAttached((Sign) selected.getState());
 
         if (!manager.bypassPerm(player)) {
             if (!manager.hasPermission(player, "locket.lock")) {
@@ -122,27 +123,31 @@ public class CommandLocket {
     public final SubExecutor<Player> remove = (cmd, player, args) -> {
         Location selected = manager.getSelected(player);
         if (selected != null) {
-            Block target = LocketManager.getAttached(selected.getBlock());
-            if (args.empty()) {
-                if (manager.bypassPerm(player) || manager.tryAccess(player, target, true) == Result.SIGN_OWNER) {
-                    manager.unLockSign(selected, 0);
-                } else {
-                    manager.sendHint(player, "noOwnerAccess");
-                }
-            } else if (args.size() >= 1) {
-                try {
-                    int line = Integer.parseInt(args.first());
-                    if (manager.bypassPerm(player)) {
-                        manager.unLockSign(selected, line);
-                    } else if ((line == 2 || line == 3) && manager.tryAccess(player, target, true) == Result.SIGN_OWNER) {
-                        manager.unLockSign(selected, line);
-                        manager.sendHint(player, "manuRemove");
+            Block select = selected.getBlock();
+            if (manager.isWallSign(select.getType())) {
+                Block target = Helper.getAttached((Sign) select.getState());
+                if (args.empty()) {
+                    if (manager.bypassPerm(player) || manager.tryAccess(player, target, true) == Result.SIGN_OWNER) {
+                        manager.unLockSign(select, 0);
                     } else {
-                        manager.sendHint(player, "cantRemove");
+                        manager.sendHint(player, "noOwnerAccess");
                     }
-                } catch (Throwable ignored) {
-                    manager.sendHint(player, "invalidInt");
+                } else if (args.size() >= 1) {
+                    try {
+                        int line = Integer.parseInt(args.first());
+                        if (manager.bypassPerm(player) || manager.tryAccess(player, target, true) == Result.SIGN_OWNER) {
+                            manager.unLockSign(select, line);
+                            manager.sendHint(player, "manuRemove");
+                        } else {
+                            manager.sendHint(player, "cantRemove");
+                        }
+                    } catch (Throwable ignored) {
+                        manager.sendHint(player, "invalidInt");
+                    }
                 }
+            } else {
+                manager.sendHint(player, "selectFirst");
+                manager.clearSelected(player.getUniqueId());
             }
         } else {
             manager.sendHint(player, "selectFirst");
@@ -203,7 +208,7 @@ public class CommandLocket {
             manager.sendKey(sender, "nullBlockType");
             return;
         }
-        if (type == Material.AIR || manager.isSign(type) || manager.isWallSign(type) || "SIGN_POST".equalsIgnoreCase(type.name())) {
+        if (type == Material.AIR || manager.isSign(type) ) {
             manager.sendKey(sender, "illegalType");
             return;
         }

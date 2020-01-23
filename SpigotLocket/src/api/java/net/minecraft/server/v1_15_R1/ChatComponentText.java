@@ -20,7 +20,7 @@ public class ChatComponentText implements IChatBaseComponent {
      * @return the string
      */
     @Override
-    public String e() {
+    public String getLegacyString() {
         return "";
     }
 }

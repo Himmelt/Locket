@@ -25,7 +25,7 @@ import org.spongepowered.api.event.item.inventory.ChangeInventoryEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
 import org.spongepowered.api.event.world.ExplosionEvent;
 import org.spongepowered.api.event.world.chunk.LoadChunkEvent;
-import org.spongepowered.api.item.ItemTypes;
+import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.inventory.BlockCarrier;
 import org.spongepowered.api.item.inventory.Carrier;
 import org.spongepowered.api.item.inventory.Inventory;
@@ -102,14 +102,14 @@ public class LocketListener {
                 return;
             }
             BlockType type = location.getBlockType();
-            switch (manager.tryAccess(player, type == BlockTypes.WALL_SIGN ? LocketManager.getAttached(location) : location, false)) {
+            switch (manager.tryAccess(player, manager.isWallSign(type) ? LocketManager.getAttached(location) : location, false)) {
                 case SIGN_USER:
-                    if (event instanceof InteractBlockEvent.Primary || type == BlockTypes.WALL_SIGN) {
+                    if (event instanceof InteractBlockEvent.Primary || manager.isWallSign(type)) {
                         event.setCancelled(true);
                     }
                     break;
                 case SIGN_OWNER:
-                    if (event instanceof InteractBlockEvent.Primary && type != BlockTypes.WALL_SIGN && player.gameMode().get().equals(GameModes.CREATIVE)) {
+                    if (event instanceof InteractBlockEvent.Primary && !manager.isWallSign(type) && player.gameMode().get().equals(GameModes.CREATIVE)) {
                         event.setCancelled(true);
                     }
                     break;
@@ -167,7 +167,11 @@ public class LocketListener {
     @Listener(order = Order.LAST)
     public void onPlayerLockBlock(InteractBlockEvent.Secondary event, @First Player player) {
         ItemStack stack = player.getItemInHand(event.getHandType()).orElse(null);
-        if (stack == null || stack.getType() != ItemTypes.SIGN) {
+        if (stack == null) {
+            return;
+        }
+        ItemType signType = stack.getType();
+        if (!manager.isSign(signType)) {
             return;
         }
         if (player.get(Keys.IS_SNEAKING).orElse(false)) {
@@ -201,7 +205,7 @@ public class LocketListener {
         switch (manager.tryAccess(player, block, true)) {
             case SIGN_OWNER:
             case NOT_LOCKED:
-                manager.placeLock(player, block, face, event.getHandType());
+                manager.placeLock(player, block, face, event.getHandType(), signType);
                 return;
             case MULTI_OWNERS:
                 manager.sendHint(player, "multiOwners");
@@ -266,7 +270,7 @@ public class LocketListener {
     @Listener(order = Order.POST)
     public void onPlayerSelectSign(InteractBlockEvent.Secondary event, @First Player player) {
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
-        if (block != null && block.getBlockType() == BlockTypes.WALL_SIGN) {
+        if (block != null && manager.isWallSign(block.getBlockType())) {
             manager.setSelected(player, block);
             block.getTileEntity().ifPresent(sign -> manager.asyncUpdateSign((Sign) sign));
             manager.sendHint(player, "selectSign");

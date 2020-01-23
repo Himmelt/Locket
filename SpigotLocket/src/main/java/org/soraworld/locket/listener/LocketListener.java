@@ -130,7 +130,7 @@ public class LocketListener implements Listener {
                 return;
             }
             Material type = block.getType();
-            switch (manager.tryAccess(player, manager.isWallSign(type) ? LocketManager.getAttached(block) : block, false)) {
+            switch (manager.tryAccess(player, manager.isWallSign(type) ? Helper.getAttached((Sign) block.getState()) : block, false)) {
                 case SIGN_USER:
                     if (action == Action.LEFT_CLICK_BLOCK || manager.isWallSign(type)) {
                         event.setCancelled(true);
@@ -261,7 +261,7 @@ public class LocketListener implements Listener {
                 }
             }
             if (!manager.bypassPerm(player)) {
-                Block block = LocketManager.getAttached(event.getBlock());
+                Block block = Helper.getAttached((Sign) event.getBlock().getState());
                 if (!manager.isLockable(block)) {
                     manager.sendHint(player, "notLockable");
                     event.setCancelled(true);

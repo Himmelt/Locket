@@ -23,6 +23,7 @@ import static org.soraworld.violet.nms.Version.*;
 /**
  * @author Himmelt
  */
+@Inject
 public class Helper {
 
     @Inject
@@ -40,7 +41,7 @@ public class Helper {
         try {
             org.bukkit.craftbukkit.v1_15_R1.CraftWorld.class.getName();
             net.minecraft.server.v1_15_R1.WorldServer.class.getName();
-            v1_14_r1 = true;
+            v1_15_r1 = true;
         } catch (Throwable ignored) {
         }
         v1_14_R1 = v1_14_r1;
@@ -188,161 +189,161 @@ public class Helper {
 
     private static SignData getSignData(Object tile) {
         SignData data = new SignData();
-        if (tile instanceof net.minecraft.server.v1_7_R4.TileEntitySign) {
+        if (v1_7_R4) {
             net.minecraft.server.v1_7_R4.TileEntitySign sign = (net.minecraft.server.v1_7_R4.TileEntitySign) tile;
             data.lines[0] = sign.lines[0];
             data.lines[1] = sign.lines[1];
             data.lines[2] = sign.lines[2];
             data.lines[3] = sign.lines[3];
-        } else if (tile instanceof net.minecraft.server.v1_8_R1.TileEntitySign) {
+        } else if (v1_8_R1) {
             net.minecraft.server.v1_8_R1.TileEntitySign sign = (net.minecraft.server.v1_8_R1.TileEntitySign) tile;
             data.lines[0] = sign.lines[0].c();
             data.lines[1] = sign.lines[1].c();
             data.lines[2] = sign.lines[2].c();
             data.lines[3] = sign.lines[3].c();
-        } else if (tile instanceof net.minecraft.server.v1_8_R3.TileEntitySign) {
+        } else if (v1_8_R3) {
             net.minecraft.server.v1_8_R3.TileEntitySign sign = (net.minecraft.server.v1_8_R3.TileEntitySign) tile;
             data.lines[0] = sign.lines[0].c();
             data.lines[1] = sign.lines[1].c();
             data.lines[2] = sign.lines[2].c();
             data.lines[3] = sign.lines[3].c();
-        } else if (tile instanceof net.minecraft.server.v1_9_R1.TileEntitySign) {
+        } else if (v1_9_R1) {
             net.minecraft.server.v1_9_R1.TileEntitySign sign = (net.minecraft.server.v1_9_R1.TileEntitySign) tile;
             data.lines[0] = sign.lines[0].toPlainText();
             data.lines[1] = sign.lines[1].toPlainText();
             data.lines[2] = sign.lines[2].toPlainText();
             data.lines[3] = sign.lines[3].toPlainText();
-        } else if (tile instanceof net.minecraft.server.v1_9_R2.TileEntitySign) {
+        } else if (v1_9_R2) {
             net.minecraft.server.v1_9_R2.TileEntitySign sign = (net.minecraft.server.v1_9_R2.TileEntitySign) tile;
             data.lines[0] = sign.lines[0].toPlainText();
             data.lines[1] = sign.lines[1].toPlainText();
             data.lines[2] = sign.lines[2].toPlainText();
             data.lines[3] = sign.lines[3].toPlainText();
-        } else if (tile instanceof net.minecraft.server.v1_10_R1.TileEntitySign) {
+        } else if (v1_10_R1) {
             net.minecraft.server.v1_10_R1.TileEntitySign sign = (net.minecraft.server.v1_10_R1.TileEntitySign) tile;
             data.lines[0] = sign.lines[0].toPlainText();
             data.lines[1] = sign.lines[1].toPlainText();
             data.lines[2] = sign.lines[2].toPlainText();
             data.lines[3] = sign.lines[3].toPlainText();
-        } else if (tile instanceof net.minecraft.server.v1_11_R1.TileEntitySign) {
+        } else if (v1_11_R1) {
             net.minecraft.server.v1_11_R1.TileEntitySign sign = (net.minecraft.server.v1_11_R1.TileEntitySign) tile;
             data.lines[0] = sign.lines[0].toPlainText();
             data.lines[1] = sign.lines[1].toPlainText();
             data.lines[2] = sign.lines[2].toPlainText();
             data.lines[3] = sign.lines[3].toPlainText();
-        } else if (tile instanceof net.minecraft.server.v1_12_R1.TileEntitySign) {
+        } else if (v1_12_R1) {
             net.minecraft.server.v1_12_R1.TileEntitySign sign = (net.minecraft.server.v1_12_R1.TileEntitySign) tile;
             data.lines[0] = sign.lines[0].toPlainText();
             data.lines[1] = sign.lines[1].toPlainText();
             data.lines[2] = sign.lines[2].toPlainText();
             data.lines[3] = sign.lines[3].toPlainText();
-        } else if (tile instanceof net.minecraft.server.v1_13_R1.TileEntitySign) {
+        } else if (v1_13_R1) {
             net.minecraft.server.v1_13_R1.TileEntitySign sign = (net.minecraft.server.v1_13_R1.TileEntitySign) tile;
             data.lines[0] = sign.lines[0].c();
             data.lines[1] = sign.lines[1].c();
             data.lines[2] = sign.lines[2].c();
             data.lines[3] = sign.lines[3].c();
-        } else if (tile instanceof net.minecraft.server.v1_13_R2.TileEntitySign) {
+        } else if (v1_13_R2) {
             net.minecraft.server.v1_13_R2.TileEntitySign sign = (net.minecraft.server.v1_13_R2.TileEntitySign) tile;
             data.lines[0] = sign.lines[0].e();
             data.lines[1] = sign.lines[1].e();
             data.lines[2] = sign.lines[2].e();
             data.lines[3] = sign.lines[3].e();
-        } else if (tile instanceof net.minecraft.server.v1_14_R1.TileEntitySign) {
+        } else if (v1_14_R1) {
             net.minecraft.server.v1_14_R1.TileEntitySign sign = (net.minecraft.server.v1_14_R1.TileEntitySign) tile;
             data.lines[0] = sign.lines[0].e();
             data.lines[1] = sign.lines[1].e();
             data.lines[2] = sign.lines[2].e();
             data.lines[3] = sign.lines[3].e();
-        } else if (tile instanceof net.minecraft.server.v1_15_R1.TileEntitySign) {
+        } else if (v1_15_R1) {
             net.minecraft.server.v1_15_R1.TileEntitySign sign = (net.minecraft.server.v1_15_R1.TileEntitySign) tile;
-            data.lines[0] = sign.lines[0].e();
-            data.lines[1] = sign.lines[1].e();
-            data.lines[2] = sign.lines[2].e();
-            data.lines[3] = sign.lines[3].e();
+            data.lines[0] = sign.lines[0].getLegacyString();
+            data.lines[1] = sign.lines[1].getLegacyString();
+            data.lines[2] = sign.lines[2].getLegacyString();
+            data.lines[3] = sign.lines[3].getLegacyString();
         }
         return data;
     }
 
     private static void updateSignData(Object tile, SignData data) {
-        if (tile instanceof net.minecraft.server.v1_7_R4.TileEntitySign) {
+        if (v1_7_R4) {
             net.minecraft.server.v1_7_R4.TileEntitySign sign = (net.minecraft.server.v1_7_R4.TileEntitySign) tile;
             sign.lines[0] = data.lines[0];
             sign.lines[1] = data.lines[1];
             sign.lines[2] = data.lines[2];
             sign.lines[3] = data.lines[3];
             ((net.minecraft.server.v1_7_R4.WorldServer) sign.getWorld()).getPlayerChunkMap().flagDirty(sign.x, sign.y, sign.z);
-        } else if (tile instanceof net.minecraft.server.v1_8_R1.TileEntitySign) {
+        } else if (v1_8_R1) {
             net.minecraft.server.v1_8_R1.TileEntitySign sign = (net.minecraft.server.v1_8_R1.TileEntitySign) tile;
             sign.lines[0] = new net.minecraft.server.v1_8_R1.ChatComponentText(data.lines[0]);
             sign.lines[1] = new net.minecraft.server.v1_8_R1.ChatComponentText(data.lines[1]);
             sign.lines[2] = new net.minecraft.server.v1_8_R1.ChatComponentText(data.lines[2]);
             sign.lines[3] = new net.minecraft.server.v1_8_R1.ChatComponentText(data.lines[3]);
             ((net.minecraft.server.v1_8_R1.WorldServer) sign.getWorld()).getPlayerChunkMap().flagDirty(sign.getPosition());
-        } else if (tile instanceof net.minecraft.server.v1_8_R3.TileEntitySign) {
+        } else if (v1_8_R3) {
             net.minecraft.server.v1_8_R3.TileEntitySign sign = (net.minecraft.server.v1_8_R3.TileEntitySign) tile;
             sign.lines[0] = new net.minecraft.server.v1_8_R3.ChatComponentText(data.lines[0]);
             sign.lines[1] = new net.minecraft.server.v1_8_R3.ChatComponentText(data.lines[1]);
             sign.lines[2] = new net.minecraft.server.v1_8_R3.ChatComponentText(data.lines[2]);
             sign.lines[3] = new net.minecraft.server.v1_8_R3.ChatComponentText(data.lines[3]);
             ((net.minecraft.server.v1_8_R3.WorldServer) sign.getWorld()).getPlayerChunkMap().flagDirty(sign.getPosition());
-        } else if (tile instanceof net.minecraft.server.v1_9_R1.TileEntitySign) {
+        } else if (v1_9_R1) {
             net.minecraft.server.v1_9_R1.TileEntitySign sign = (net.minecraft.server.v1_9_R1.TileEntitySign) tile;
             sign.lines[0] = new net.minecraft.server.v1_9_R1.ChatComponentText(data.lines[0]);
             sign.lines[1] = new net.minecraft.server.v1_9_R1.ChatComponentText(data.lines[1]);
             sign.lines[2] = new net.minecraft.server.v1_9_R1.ChatComponentText(data.lines[2]);
             sign.lines[3] = new net.minecraft.server.v1_9_R1.ChatComponentText(data.lines[3]);
             ((net.minecraft.server.v1_9_R1.WorldServer) sign.getWorld()).getPlayerChunkMap().flagDirty(sign.getPosition());
-        } else if (tile instanceof net.minecraft.server.v1_9_R2.TileEntitySign) {
+        } else if (v1_9_R2) {
             net.minecraft.server.v1_9_R2.TileEntitySign sign = (net.minecraft.server.v1_9_R2.TileEntitySign) tile;
             sign.lines[0] = new net.minecraft.server.v1_9_R2.ChatComponentText(data.lines[0]);
             sign.lines[1] = new net.minecraft.server.v1_9_R2.ChatComponentText(data.lines[1]);
             sign.lines[2] = new net.minecraft.server.v1_9_R2.ChatComponentText(data.lines[2]);
             sign.lines[3] = new net.minecraft.server.v1_9_R2.ChatComponentText(data.lines[3]);
             ((net.minecraft.server.v1_9_R2.WorldServer) sign.getWorld()).getPlayerChunkMap().flagDirty(sign.getPosition());
-        } else if (tile instanceof net.minecraft.server.v1_10_R1.TileEntitySign) {
+        } else if (v1_10_R1) {
             net.minecraft.server.v1_10_R1.TileEntitySign sign = (net.minecraft.server.v1_10_R1.TileEntitySign) tile;
             sign.lines[0] = new net.minecraft.server.v1_10_R1.ChatComponentText(data.lines[0]);
             sign.lines[1] = new net.minecraft.server.v1_10_R1.ChatComponentText(data.lines[1]);
             sign.lines[2] = new net.minecraft.server.v1_10_R1.ChatComponentText(data.lines[2]);
             sign.lines[3] = new net.minecraft.server.v1_10_R1.ChatComponentText(data.lines[3]);
             ((net.minecraft.server.v1_10_R1.WorldServer) sign.getWorld()).getPlayerChunkMap().flagDirty(sign.getPosition());
-        } else if (tile instanceof net.minecraft.server.v1_11_R1.TileEntitySign) {
+        } else if (v1_11_R1) {
             net.minecraft.server.v1_11_R1.TileEntitySign sign = (net.minecraft.server.v1_11_R1.TileEntitySign) tile;
             sign.lines[0] = new net.minecraft.server.v1_11_R1.ChatComponentText(data.lines[0]);
             sign.lines[1] = new net.minecraft.server.v1_11_R1.ChatComponentText(data.lines[1]);
             sign.lines[2] = new net.minecraft.server.v1_11_R1.ChatComponentText(data.lines[2]);
             sign.lines[3] = new net.minecraft.server.v1_11_R1.ChatComponentText(data.lines[3]);
             ((net.minecraft.server.v1_11_R1.WorldServer) sign.getWorld()).getPlayerChunkMap().flagDirty(sign.getPosition());
-        } else if (tile instanceof net.minecraft.server.v1_12_R1.TileEntitySign) {
+        } else if (v1_12_R1) {
             net.minecraft.server.v1_12_R1.TileEntitySign sign = (net.minecraft.server.v1_12_R1.TileEntitySign) tile;
             sign.lines[0] = new net.minecraft.server.v1_12_R1.ChatComponentText(data.lines[0]);
             sign.lines[1] = new net.minecraft.server.v1_12_R1.ChatComponentText(data.lines[1]);
             sign.lines[2] = new net.minecraft.server.v1_12_R1.ChatComponentText(data.lines[2]);
             sign.lines[3] = new net.minecraft.server.v1_12_R1.ChatComponentText(data.lines[3]);
             ((net.minecraft.server.v1_12_R1.WorldServer) sign.getWorld()).getPlayerChunkMap().flagDirty(sign.getPosition());
-        } else if (tile instanceof net.minecraft.server.v1_13_R1.TileEntitySign) {
+        } else if (v1_13_R1) {
             net.minecraft.server.v1_13_R1.TileEntitySign sign = (net.minecraft.server.v1_13_R1.TileEntitySign) tile;
             sign.lines[0] = new net.minecraft.server.v1_13_R1.ChatComponentText(data.lines[0]);
             sign.lines[1] = new net.minecraft.server.v1_13_R1.ChatComponentText(data.lines[1]);
             sign.lines[2] = new net.minecraft.server.v1_13_R1.ChatComponentText(data.lines[2]);
             sign.lines[3] = new net.minecraft.server.v1_13_R1.ChatComponentText(data.lines[3]);
             ((net.minecraft.server.v1_13_R1.WorldServer) sign.getWorld()).getPlayerChunkMap().flagDirty(sign.getPosition());
-        } else if (tile instanceof net.minecraft.server.v1_13_R2.TileEntitySign) {
+        } else if (v1_13_R2) {
             net.minecraft.server.v1_13_R2.TileEntitySign sign = (net.minecraft.server.v1_13_R2.TileEntitySign) tile;
             sign.lines[0] = new net.minecraft.server.v1_13_R2.ChatComponentText(data.lines[0]);
             sign.lines[1] = new net.minecraft.server.v1_13_R2.ChatComponentText(data.lines[1]);
             sign.lines[2] = new net.minecraft.server.v1_13_R2.ChatComponentText(data.lines[2]);
             sign.lines[3] = new net.minecraft.server.v1_13_R2.ChatComponentText(data.lines[3]);
             ((net.minecraft.server.v1_13_R2.WorldServer) sign.getWorld()).getPlayerChunkMap().flagDirty(sign.getPosition());
-        } else if (tile instanceof net.minecraft.server.v1_14_R1.TileEntitySign) {
+        } else if (v1_14_R1) {
             net.minecraft.server.v1_14_R1.TileEntitySign sign = (net.minecraft.server.v1_14_R1.TileEntitySign) tile;
             sign.lines[0] = new net.minecraft.server.v1_14_R1.ChatComponentText(data.lines[0]);
             sign.lines[1] = new net.minecraft.server.v1_14_R1.ChatComponentText(data.lines[1]);
             sign.lines[2] = new net.minecraft.server.v1_14_R1.ChatComponentText(data.lines[2]);
             sign.lines[3] = new net.minecraft.server.v1_14_R1.ChatComponentText(data.lines[3]);
             ((net.minecraft.server.v1_14_R1.WorldServer) sign.getWorld()).getChunkProvider().flagDirty(sign.getPosition());
-        } else if (tile instanceof net.minecraft.server.v1_15_R1.TileEntitySign) {
+        } else if (v1_15_R1) {
             net.minecraft.server.v1_15_R1.TileEntitySign sign = (net.minecraft.server.v1_15_R1.TileEntitySign) tile;
             sign.lines[0] = new net.minecraft.server.v1_15_R1.ChatComponentText(data.lines[0]);
             sign.lines[1] = new net.minecraft.server.v1_15_R1.ChatComponentText(data.lines[1]);
@@ -363,5 +364,15 @@ public class Helper {
             sign.setData(signData);
         }
         sign.update();
+    }
+
+    public static Block getAttached(@NotNull Sign sign) {
+        BlockFace face;
+        if (v1_14_R1 || v1_15_R1) {
+            face = ((WallSign) sign.getBlockData()).getFacing().getOppositeFace();
+        } else {
+            face = ((org.bukkit.material.Sign) sign.getData()).getAttachedFace();
+        }
+        return sign.getBlock().getRelative(face);
     }
 }

@@ -9,7 +9,6 @@ quickLock = "&aQuick lock success."
 cantLock = "You can't lock the target block."
 manuRemove = "Manual remove user success."
 cantRemove = "You can't remove the user manually."
-cantRemoveLine = "This line can't be removed."
 
 noAccess = "You have no access."
 noOwnerAccess = "You are not the owner of the block(s)."
@@ -19,7 +18,7 @@ multiBlocks = "Target blocks are in a multi-blocks state, this is not allowed, c
 otherProtect = "Target block is being protected by another plugin, you have no access."
 
 selectSign = "Chosen a sign."
-selectFirst = "Please right click to chose a sign first."
+selectFirst = "Please right click to chose a wall-sign first."
 
 typeAdd = "Block [&7%s&r] has been added to protect list."
 typeRemove = "Block [&7%s&r] has been removed from protect list."
