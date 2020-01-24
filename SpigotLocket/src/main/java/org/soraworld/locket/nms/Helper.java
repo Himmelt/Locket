@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
+import org.bukkit.block.data.type.Door;
 import org.bukkit.block.data.type.WallSign;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
@@ -374,5 +375,20 @@ public class Helper {
             face = ((org.bukkit.material.Sign) sign.getData()).getAttachedFace();
         }
         return sign.getBlock().getRelative(face);
+    }
+
+    public static BlockFace getDoorFace(Block block) {
+        if (v1_14_R1 || v1_15_R1) {
+            return ((Door) block.getBlockData()).getFacing();
+        }
+        return ((org.bukkit.material.Door) block.getState().getData()).getFacing();
+    }
+
+    public static BlockFace getAttachedFace(@NotNull Sign sign) {
+        if (v1_14_R1 || v1_15_R1) {
+            return ((WallSign) sign.getBlockData()).getFacing().getOppositeFace();
+        } else {
+            return ((org.bukkit.material.Sign) sign.getData()).getAttachedFace();
+        }
     }
 }

@@ -251,13 +251,13 @@ public class LocketManager extends VManager {
         selected.remove(uuid);
     }
 
-    public Result tryAccess(@NotNull Player player, @NotNull Block location, boolean needEdit) {
+    public Result tryAccess(@NotNull Player player, @NotNull Block block, boolean needEdit) {
 
-        if (needEdit && !canEditOther(player, location)) {
+        if (needEdit && !canEditOther(player, block)) {
             return Result.OTHER_PROTECT;
         }
 
-        Material type = location.getType();
+        Material type = block.getType();
         boolean isDBlock = doubleBlocks.contains(type);
         int count = 0;
         Block link = null;
@@ -265,18 +265,18 @@ public class LocketManager extends VManager {
 
         // 自身也将参与检查
         if (isWallSign(type)) {
-            signs.add(location);
+            signs.add(block);
         }
 
         // 检查4个方向是否是 WALL_SIGN 或 DChest
         for (BlockFace face : FACES) {
-            Block relative = location.getRelative(face);
+            Block relative = block.getRelative(face);
             if (isDBlock && relative.getType() == type) {
                 link = relative;
                 if (++count >= 2) {
                     return Result.MULTI_BLOCKS;
                 }
-            } else if (isWallSign(relative.getType()) && getSignFace(relative).getOppositeFace() == face) {
+            } else if (isWallSign(relative.getType()) && Helper.getAttachedFace((Sign) relative.getState()) == face) {
                 signs.add(relative);
             }
         }
@@ -289,17 +289,17 @@ public class LocketManager extends VManager {
                 if (relative.getType() == type && ++count >= 2) {
                     return Result.MULTI_BLOCKS;
                 }
-                if (isWallSign(relative.getType()) && getSignFace(relative).getOppositeFace() == face) {
+                if (isWallSign(relative.getType()) && Helper.getAttachedFace((Sign) relative.getState()) == face) {
                     signs.add(relative);
                 }
             }
         }
 
         // 检查相连的门
-        for (Block door : getDoors(location)) {
+        for (Block door : getDoors(block)) {
             for (BlockFace face : FACES) {
                 Block relative = door.getRelative(face);
-                if (isWallSign(relative.getType()) && getSignFace(relative).getOppositeFace() == face) {
+                if (isWallSign(relative.getType()) && Helper.getAttachedFace((Sign) relative.getState()) == face) {
                     signs.add(relative);
                 }
             }
@@ -439,7 +439,7 @@ public class LocketManager extends VManager {
                 if (++count >= 2) {
                     return State.MULTI_BLOCKS;
                 }
-            } else if (isWallSign(relative.getType()) && getSignFace(relative).getOppositeFace() == face) {
+            } else if (isWallSign(relative.getType()) && Helper.getAttachedFace((Sign) relative.getState()) == face) {
                 signs.add(relative);
             }
         }
@@ -452,7 +452,7 @@ public class LocketManager extends VManager {
                 if (relative.getType() == type && ++count >= 2) {
                     return State.MULTI_BLOCKS;
                 }
-                if (isWallSign(relative.getType()) && getSignFace(relative).getOppositeFace() == face) {
+                if (isWallSign(relative.getType()) && Helper.getAttachedFace((Sign) relative.getState()) == face) {
                     signs.add(relative);
                 }
             }
@@ -462,7 +462,7 @@ public class LocketManager extends VManager {
         for (Block door : getDoors(block)) {
             for (BlockFace face : FACES) {
                 Block relative = door.getRelative(face);
-                if (isWallSign(relative.getType()) && getSignFace(relative).getOppositeFace() == face) {
+                if (isWallSign(relative.getType()) && Helper.getAttachedFace((Sign) relative.getState()) == face) {
                     signs.add(relative);
                 }
             }
@@ -491,14 +491,6 @@ public class LocketManager extends VManager {
         } else {
             Helper.setItemInHand(inv, hand, null);
         }
-    }
-
-    private static BlockFace getDoorFace(Block block) {
-        return ((org.bukkit.material.Door) block.getState().getData()).getFacing();
-    }
-
-    private static BlockFace getSignFace(Block block) {
-        return ((org.bukkit.material.Sign) block.getState().getData()).getAttachedFace();
     }
 
     public boolean bypassPerm(CommandSender sender) {
