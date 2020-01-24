@@ -13,6 +13,9 @@ repositories {
     maven { url = 'https://maven.aliyun.com/repository/public/' }
     jcenter()
     maven { url = 'https://oss.jfrog.org/artifactory/oss-snapshot-local/' }
+    maven { url = 'https://hub.spigotmc.org/nexus/content/groups/public/' }
+    maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
+    maven { url 'https://soraworld-maven.pkg.coding.net/repository/minecraft/public/' }
 }
 
 subprojects {
@@ -32,8 +35,9 @@ subprojects {
         maven { url = 'https://maven.aliyun.com/repository/public/' }
         jcenter()
         maven { url = 'https://oss.jfrog.org/artifactory/oss-snapshot-local/' }
-        maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
         maven { url = 'https://hub.spigotmc.org/nexus/content/groups/public/' }
+        maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
+        maven { url 'https://soraworld-maven.pkg.coding.net/repository/minecraft/public/' }
     }
 
     configurations {
