@@ -7,12 +7,14 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -40,6 +42,12 @@ public class LocketListener implements Listener {
 
     @Inject
     private LocketManager manager;
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    public void onEntityChangeBlock(EntityChangeBlockEvent event) {
+        Entity entity = event.getEntity();
+        onChangeBlock(entity instanceof Player ? (Player) entity : null, event.getBlock(), event);
+    }
 
     @EventHandler
     public void onEntityExplode(EntityExplodeEvent event) {

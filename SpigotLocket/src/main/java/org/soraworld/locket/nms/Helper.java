@@ -386,9 +386,9 @@ public class Helper {
 
     public static BlockFace getAttachedFace(@NotNull Sign sign) {
         if (v1_14_R1 || v1_15_R1) {
-            return ((WallSign) sign.getBlockData()).getFacing().getOppositeFace();
+            return ((WallSign) sign.getBlockData()).getFacing();
         } else {
-            return ((org.bukkit.material.Sign) sign.getData()).getAttachedFace();
+            return ((org.bukkit.material.Sign) sign.getData()).getFacing();
         }
     }
 }
