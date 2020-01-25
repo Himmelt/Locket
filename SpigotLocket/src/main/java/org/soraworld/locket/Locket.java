@@ -16,7 +16,7 @@ import java.util.Optional;
 public final class Locket extends SpigotPlugin<LocketManager> {
     public static final String PLUGIN_ID = "locket";
     public static final String PLUGIN_NAME = "Locket";
-    public static final String PLUGIN_VERSION = "1.2.3";
+    public static final String PLUGIN_VERSION = "1.2.4";
 
     static {
         Helper.injectTile();

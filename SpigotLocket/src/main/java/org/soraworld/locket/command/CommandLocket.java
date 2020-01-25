@@ -194,11 +194,10 @@ public class CommandLocket {
 
     private void processType(@NotNull CommandSender sender, @NotNull Args args, @NotNull Consumer<Material> consumer, @NotNull String key) {
         Material type;
-        // TODO +/-/++/-- block look at
         if (args.notEmpty()) {
             if ("look".equals(args.first()) && sender instanceof Player) {
                 Player player = (Player) sender;
-                Block block = Helper.getLookAt(player, 6);
+                Block block = Helper.getLookAt(player, 25);
                 if (block != null) {
                     type = block.getType();
                 } else {

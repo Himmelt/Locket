@@ -197,11 +197,10 @@ public class CommandLocket {
 
     private void processType(@NotNull CommandSource sender, @NotNull Args args, @NotNull Consumer<BlockType> consumer, @NotNull String key) {
         BlockType type;
-        // TODO +/-/++/-- block look at
         if (args.notEmpty()) {
             if ("look".equals(args.first()) && sender instanceof Player) {
                 Player player = (Player) sender;
-                Location<World> block = Helper.getLookAt(player, 6);
+                Location<World> block = Helper.getLookAt(player, 25);
                 if (block != null) {
                     type = block.getBlockType();
                 } else {
@@ -213,7 +212,7 @@ public class CommandLocket {
             }
         } else if (sender instanceof Player) {
             ItemStack stack = ((Player) sender).getItemInHand(HandTypes.MAIN_HAND).orElse(null);
-            type = stack == null ? null : manager.getSignBlock(stack.getType());
+            type = stack == null ? null : manager.getSignBlockType(stack.getType());
         } else {
             manager.sendKey(sender, "emptyArgs");
             return;

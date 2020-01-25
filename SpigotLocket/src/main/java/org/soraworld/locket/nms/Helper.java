@@ -2,6 +2,8 @@ package org.soraworld.locket.nms;
 
 import org.bukkit.Bukkit;
 import org.bukkit.FluidCollisionMode;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
@@ -12,10 +14,13 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.util.RayTraceResult;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soraworld.locket.Locket;
+import org.soraworld.locket.manager.LocketManager;
 import org.soraworld.violet.inject.Inject;
+import org.soraworld.violet.util.ChatColor;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -32,6 +37,9 @@ public class Helper {
 
     @Inject
     private static Locket plugin;
+    @Inject
+    private static LocketManager manager;
+
     public static final boolean v1_14_R1, v1_15_R1;
 
     static {
@@ -119,7 +127,7 @@ public class Helper {
         if (v1_7_R4 || v1_8_R1 || v1_8_R3) {
             return HandType.MAIN_HAND;
         } else {
-            return event.getHand().toString().toLowerCase().contains("off") ? HandType.OFF_HAND : HandType.MAIN_HAND;
+            return String.valueOf(event.getHand()).toLowerCase().contains("off") ? HandType.OFF_HAND : HandType.MAIN_HAND;
         }
     }
 
@@ -165,7 +173,7 @@ public class Helper {
             } else if (v1_13_R1) {
                 sign = ((org.bukkit.craftbukkit.v1_13_R1.CraftWorld) block.getWorld()).getTileEntityAt(block.getX(), block.getY(), block.getZ());
             } else if (v1_13_R2) {
-                sign = ((org.bukkit.craftbukkit.v1_13_R2.CraftWorld) block.getWorld()).getTileEntityAt(block.getX(), block.getY(), block.getZ());
+                sign = ((org.bukkit.craftbukkit.v1_13_R2.CraftWorld) block.getWorld()).getHandle().getTileEntity(new net.minecraft.server.v1_13_R2.BlockPosition(block.getX(), block.getY(), block.getZ()));
             } else if (v1_14_R1) {
                 sign = ((org.bukkit.craftbukkit.v1_14_R1.CraftWorld) block.getWorld()).getHandle().getTileEntity(new net.minecraft.server.v1_14_R1.BlockPosition(block.getX(), block.getY(), block.getZ()));
             } else if (v1_15_R1) {
@@ -173,6 +181,10 @@ public class Helper {
             }
         } catch (Throwable e) {
             e.printStackTrace();
+        }
+        if (sign == null) {
+            manager.console(ChatColor.RED + "touch null sign error !!!");
+            return;
         }
 
         SignData data = getSignData(sign);
@@ -396,8 +408,98 @@ public class Helper {
     }
 
     @Nullable
-    public static Block getLookAt(Player player, double distance) {
-        RayTraceResult result = player.rayTraceBlocks(distance, FluidCollisionMode.NEVER);
-        return result == null ? null : result.getHitBlock();
+    public static Block rayTraceBlock(@NotNull Location start, @NotNull Vector direction, double maxDistance) {
+        World world = start.getWorld();
+        if (world != null) {
+            if (v1_7_R4) {
+                Vector dir = direction.clone().normalize().multiply(maxDistance);
+                net.minecraft.server.v1_7_R4.Vec3D startPos = new net.minecraft.server.v1_7_R4.Vec3D(start.getX(), start.getY(), start.getZ());
+                net.minecraft.server.v1_7_R4.Vec3D endPos = new net.minecraft.server.v1_7_R4.Vec3D(start.getX() + dir.getX(), start.getY() + dir.getY(), start.getZ() + dir.getZ());
+                net.minecraft.server.v1_7_R4.MovingObjectPosition result = ((org.bukkit.craftbukkit.v1_7_R4.CraftWorld) world).getHandle().rayTrace(startPos, endPos, false, true, false);
+                if (result != null) {
+                    return new Location(world, result.b, result.c, result.d).getBlock();
+                }
+            } else if (v1_8_R1) {
+                Vector dir = direction.clone().normalize().multiply(maxDistance);
+                net.minecraft.server.v1_8_R1.Vec3D startPos = new net.minecraft.server.v1_8_R1.Vec3D(start.getX(), start.getY(), start.getZ());
+                net.minecraft.server.v1_8_R1.Vec3D endPos = new net.minecraft.server.v1_8_R1.Vec3D(start.getX() + dir.getX(), start.getY() + dir.getY(), start.getZ() + dir.getZ());
+                net.minecraft.server.v1_8_R1.MovingObjectPosition result = ((org.bukkit.craftbukkit.v1_8_R1.CraftWorld) world).getHandle().rayTrace(startPos, endPos, false, true, false);
+                net.minecraft.server.v1_8_R1.BlockPosition pos;
+                if (result != null && (pos = result.a()) != null) {
+                    return new Location(world, pos.getX(), pos.getY(), pos.getZ()).getBlock();
+                }
+            } else if (v1_8_R3) {
+                Vector dir = direction.clone().normalize().multiply(maxDistance);
+                net.minecraft.server.v1_8_R3.Vec3D startPos = new net.minecraft.server.v1_8_R3.Vec3D(start.getX(), start.getY(), start.getZ());
+                net.minecraft.server.v1_8_R3.Vec3D endPos = new net.minecraft.server.v1_8_R3.Vec3D(start.getX() + dir.getX(), start.getY() + dir.getY(), start.getZ() + dir.getZ());
+                net.minecraft.server.v1_8_R3.MovingObjectPosition result = ((org.bukkit.craftbukkit.v1_8_R3.CraftWorld) world).getHandle().rayTrace(startPos, endPos, false, true, false);
+                net.minecraft.server.v1_8_R3.BlockPosition pos;
+                if (result != null && (pos = result.a()) != null) {
+                    return new Location(world, pos.getX(), pos.getY(), pos.getZ()).getBlock();
+                }
+            } else if (v1_9_R1) {
+                Vector dir = direction.clone().normalize().multiply(maxDistance);
+                net.minecraft.server.v1_9_R1.Vec3D startPos = new net.minecraft.server.v1_9_R1.Vec3D(start.getX(), start.getY(), start.getZ());
+                net.minecraft.server.v1_9_R1.Vec3D endPos = new net.minecraft.server.v1_9_R1.Vec3D(start.getX() + dir.getX(), start.getY() + dir.getY(), start.getZ() + dir.getZ());
+                net.minecraft.server.v1_9_R1.MovingObjectPosition result = ((org.bukkit.craftbukkit.v1_9_R1.CraftWorld) world).getHandle().rayTrace(startPos, endPos, false, true, false);
+                net.minecraft.server.v1_9_R1.BlockPosition pos;
+                if (result != null && (pos = result.a()) != null) {
+                    return new Location(world, pos.getX(), pos.getY(), pos.getZ()).getBlock();
+                }
+            } else if (v1_9_R2) {
+                Vector dir = direction.clone().normalize().multiply(maxDistance);
+                net.minecraft.server.v1_9_R2.Vec3D startPos = new net.minecraft.server.v1_9_R2.Vec3D(start.getX(), start.getY(), start.getZ());
+                net.minecraft.server.v1_9_R2.Vec3D endPos = new net.minecraft.server.v1_9_R2.Vec3D(start.getX() + dir.getX(), start.getY() + dir.getY(), start.getZ() + dir.getZ());
+                net.minecraft.server.v1_9_R2.MovingObjectPosition result = ((org.bukkit.craftbukkit.v1_9_R2.CraftWorld) world).getHandle().rayTrace(startPos, endPos, false, true, false);
+                net.minecraft.server.v1_9_R2.BlockPosition pos;
+                if (result != null && (pos = result.a()) != null) {
+                    return new Location(world, pos.getX(), pos.getY(), pos.getZ()).getBlock();
+                }
+            } else if (v1_10_R1) {
+                Vector dir = direction.clone().normalize().multiply(maxDistance);
+                net.minecraft.server.v1_10_R1.Vec3D startPos = new net.minecraft.server.v1_10_R1.Vec3D(start.getX(), start.getY(), start.getZ());
+                net.minecraft.server.v1_10_R1.Vec3D endPos = new net.minecraft.server.v1_10_R1.Vec3D(start.getX() + dir.getX(), start.getY() + dir.getY(), start.getZ() + dir.getZ());
+                net.minecraft.server.v1_10_R1.MovingObjectPosition result = ((org.bukkit.craftbukkit.v1_10_R1.CraftWorld) world).getHandle().rayTrace(startPos, endPos, false, true, false);
+                net.minecraft.server.v1_10_R1.BlockPosition pos;
+                if (result != null && (pos = result.a()) != null) {
+                    return new Location(world, pos.getX(), pos.getY(), pos.getZ()).getBlock();
+                }
+            } else if (v1_11_R1) {
+                Vector dir = direction.clone().normalize().multiply(maxDistance);
+                net.minecraft.server.v1_11_R1.Vec3D startPos = new net.minecraft.server.v1_11_R1.Vec3D(start.getX(), start.getY(), start.getZ());
+                net.minecraft.server.v1_11_R1.Vec3D endPos = new net.minecraft.server.v1_11_R1.Vec3D(start.getX() + dir.getX(), start.getY() + dir.getY(), start.getZ() + dir.getZ());
+                net.minecraft.server.v1_11_R1.MovingObjectPosition result = ((org.bukkit.craftbukkit.v1_11_R1.CraftWorld) world).getHandle().rayTrace(startPos, endPos, false, true, false);
+                net.minecraft.server.v1_11_R1.BlockPosition pos;
+                if (result != null && (pos = result.a()) != null) {
+                    return new Location(world, pos.getX(), pos.getY(), pos.getZ()).getBlock();
+                }
+            } else if (v1_12_R1) {
+                Vector dir = direction.clone().normalize().multiply(maxDistance);
+                net.minecraft.server.v1_12_R1.Vec3D startPos = new net.minecraft.server.v1_12_R1.Vec3D(start.getX(), start.getY(), start.getZ());
+                net.minecraft.server.v1_12_R1.Vec3D endPos = new net.minecraft.server.v1_12_R1.Vec3D(start.getX() + dir.getX(), start.getY() + dir.getY(), start.getZ() + dir.getZ());
+                net.minecraft.server.v1_12_R1.MovingObjectPosition result = ((org.bukkit.craftbukkit.v1_12_R1.CraftWorld) world).getHandle().rayTrace(startPos, endPos, false, true, false);
+                net.minecraft.server.v1_12_R1.BlockPosition pos;
+                if (result != null && (pos = result.a()) != null) {
+                    return new Location(world, pos.getX(), pos.getY(), pos.getZ()).getBlock();
+                }
+            } else if (v1_13_R1 || v1_13_R2 || v1_14_R1 || v1_15_R1) {
+                RayTraceResult result = world.rayTraceBlocks(start, direction, maxDistance);
+                return result != null ? result.getHitBlock() : null;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    public static Block getLookAt(@NotNull Player player, double distance) {
+        if (v1_7_R4 || v1_8_R1 || v1_8_R3 || v1_9_R1 || v1_9_R2 || v1_10_R1 || v1_11_R1 || v1_12_R1) {
+            Location eyeLocation = player.getEyeLocation();
+            Vector direction = eyeLocation.getDirection();
+            return rayTraceBlock(eyeLocation, direction, distance);
+        } else if (v1_13_R1 || v1_13_R2 || v1_14_R1 || v1_15_R1) {
+            RayTraceResult result = player.rayTraceBlocks(distance, FluidCollisionMode.NEVER);
+            return result == null ? null : result.getHitBlock();
+        }
+        return null;
     }
 }

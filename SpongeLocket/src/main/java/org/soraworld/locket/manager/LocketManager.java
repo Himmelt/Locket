@@ -452,7 +452,7 @@ public class LocketManager extends VManager {
 
     public void placeLock(Player player, Location<World> loc, Direction face, HandType hand, ItemType itemType) {
         Location<World> side = loc.getRelative(face);
-        side.setBlockType(getSignBlock(itemType), BlockChangeFlags.NONE);
+        side.setBlockType(getSignBlockType(itemType), BlockChangeFlags.NONE);
         BlockState state = side.getBlockType().getDefaultState();
         side.setBlock(state.with(Keys.DIRECTION, face).orElse(state), BlockChangeFlags.NONE);
         TileEntity tile = side.getTileEntity().orElse(null);
@@ -607,7 +607,7 @@ public class LocketManager extends VManager {
         }, 100, TimeUnit.MILLISECONDS);
     }
 
-    public BlockType getSignBlock(ItemType itemType) {
+    public BlockType getSignBlockType(ItemType itemType) {
         return signTypeMap.get(itemType);
     }
 

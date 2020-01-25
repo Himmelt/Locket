@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.v1_7_R4;
 
 import net.minecraft.server.v1_7_R4.TileEntity;
+import net.minecraft.server.v1_7_R4.WorldServer;
 
 /**
  * The type Craft world.
@@ -8,6 +9,13 @@ import net.minecraft.server.v1_7_R4.TileEntity;
  * @author Himmelt
  */
 public abstract class CraftWorld {
+    /**
+     * Gets handle.
+     *
+     * @return the handle
+     */
+    public abstract WorldServer getHandle();
+
     /**
      * Gets tile entity at.
      *

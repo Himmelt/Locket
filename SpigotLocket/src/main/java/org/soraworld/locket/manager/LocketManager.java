@@ -121,8 +121,12 @@ public class LocketManager extends VManager {
         try {
             itemSignTypes.add(Material.valueOf("SIGN"));
             wallSignTypes.add(Material.valueOf("WALL_SIGN"));
-            postSignTypes.add(Material.valueOf("SIGN_POST"));
             signTypeMap.put(Material.valueOf("SIGN"), Material.valueOf("WALL_SIGN"));
+        } catch (Throwable e) {
+            debug(e);
+        }
+        try {
+            postSignTypes.add(Material.valueOf("SIGN_POST"));
         } catch (Throwable e) {
             debug(e);
         }
@@ -388,7 +392,7 @@ public class LocketManager extends VManager {
 
     public void placeLock(Player player, Block loc, BlockFace face, HandType hand, Material itemType) {
         Block side = loc.getRelative(face);
-        side.setType(getSignBlock(itemType));
+        side.setType(getSignBlockType(itemType));
         BlockState tile = side.getState();
         if (tile instanceof Sign) {
             Helper.setSignRotation((Sign) tile, face);
@@ -517,7 +521,7 @@ public class LocketManager extends VManager {
         });
     }
 
-    public Material getSignBlock(Material itemType) {
+    public Material getSignBlockType(Material itemType) {
         return signTypeMap.get(itemType);
     }
 
