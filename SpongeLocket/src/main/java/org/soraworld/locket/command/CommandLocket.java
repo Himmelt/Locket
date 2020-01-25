@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.soraworld.locket.Locket;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.manager.LocketManager;
+import org.soraworld.locket.util.Helper;
 import org.soraworld.locket.util.Util;
 import org.soraworld.violet.command.*;
 import org.soraworld.violet.inject.Command;
@@ -182,23 +183,34 @@ public class CommandLocket {
     @Sub(perm = "admin", virtual = true, usage = "usage.type")
     public final SubExecutor<CommandSource> type = null;
 
-    @Sub(path = "type.+", perm = "admin")
+    @Sub(path = "type.+", perm = "admin", tabs = {"look"})
     public final SubExecutor<CommandSource> type_plus = (cmd, sender, args) -> processType(sender, args, manager::addType, "typeAdd");
 
-    @Sub(path = "type.-", perm = "admin")
+    @Sub(path = "type.-", perm = "admin", tabs = {"look"})
     public final SubExecutor<CommandSource> type_minus = (cmd, sender, args) -> processType(sender, args, manager::removeType, "typeRemove");
 
-    @Sub(path = "type.++", perm = "admin")
+    @Sub(path = "type.++", perm = "admin", tabs = {"look"})
     public final SubExecutor<CommandSource> type_dplus = (cmd, sender, args) -> processType(sender, args, manager::addDType, "dTypeAdd");
 
-    @Sub(path = "type.--", perm = "admin")
+    @Sub(path = "type.--", perm = "admin", tabs = {"look"})
     public final SubExecutor<CommandSource> type_dminus = (cmd, sender, args) -> processType(sender, args, manager::removeDType, "dTypeRemove");
 
     private void processType(@NotNull CommandSource sender, @NotNull Args args, @NotNull Consumer<BlockType> consumer, @NotNull String key) {
         BlockType type;
         // TODO +/-/++/-- block look at
         if (args.notEmpty()) {
-            type = Sponge.getRegistry().getType(BlockType.class, args.first()).orElse(null);
+            if ("look".equals(args.first()) && sender instanceof Player) {
+                Player player = (Player) sender;
+                Location<World> block = Helper.getLookAt(player, 6);
+                if (block != null) {
+                    type = block.getBlockType();
+                } else {
+                    manager.sendKey(player, "notLookBlock");
+                    return;
+                }
+            } else {
+                type = Sponge.getRegistry().getType(BlockType.class, args.first()).orElse(null);
+            }
         } else if (sender instanceof Player) {
             ItemStack stack = ((Player) sender).getItemInHand(HandTypes.MAIN_HAND).orElse(null);
             type = stack == null ? null : manager.getSignBlock(stack.getType());

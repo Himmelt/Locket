@@ -30,6 +30,7 @@ illegalType = "&6This block type is illegal, like AIR or SIGN."
 notSignTile = "&cSelected sign doesn't exist, please select one again."
 invalidUsername = "&cInvalid username, target-player %s need to be online."
 storageServiceInvalid = "&cUser storage service is invalid !"
+notLookBlock = "You didn't look at a valid block !"
 
 comment {
   protectTile = "Whether protect all tileentities."

@@ -1,14 +1,17 @@
 package org.soraworld.locket.nms;
 
 import org.bukkit.Bukkit;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
 import org.bukkit.block.data.type.Door;
 import org.bukkit.block.data.type.WallSign;
+import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.util.RayTraceResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soraworld.locket.Locket;
@@ -390,5 +393,11 @@ public class Helper {
         } else {
             return ((org.bukkit.material.Sign) sign.getData()).getFacing();
         }
+    }
+
+    @Nullable
+    public static Block getLookAt(Player player, double distance) {
+        RayTraceResult result = player.rayTraceBlocks(distance, FluidCollisionMode.NEVER);
+        return result == null ? null : result.getHitBlock();
     }
 }

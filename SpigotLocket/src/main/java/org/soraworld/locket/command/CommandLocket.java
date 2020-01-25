@@ -180,23 +180,34 @@ public class CommandLocket {
     @Sub(perm = "admin", virtual = true, usage = "usage.type")
     public final SubExecutor<CommandSender> type = null;
 
-    @Sub(path = "type.+", perm = "admin")
+    @Sub(path = "type.+", perm = "admin", tabs = {"look"})
     public final SubExecutor<CommandSender> type_plus = (cmd, sender, args) -> processType(sender, args, manager::addType, "typeAdd");
 
-    @Sub(path = "type.-", perm = "admin")
+    @Sub(path = "type.-", perm = "admin", tabs = {"look"})
     public final SubExecutor<CommandSender> type_minus = (cmd, sender, args) -> processType(sender, args, manager::removeType, "typeRemove");
 
-    @Sub(path = "type.++", perm = "admin")
+    @Sub(path = "type.++", perm = "admin", tabs = {"look"})
     public final SubExecutor<CommandSender> type_dplus = (cmd, sender, args) -> processType(sender, args, manager::addDType, "dTypeAdd");
 
-    @Sub(path = "type.--", perm = "admin")
+    @Sub(path = "type.--", perm = "admin", tabs = {"look"})
     public final SubExecutor<CommandSender> type_dminus = (cmd, sender, args) -> processType(sender, args, manager::removeDType, "dTypeRemove");
 
     private void processType(@NotNull CommandSender sender, @NotNull Args args, @NotNull Consumer<Material> consumer, @NotNull String key) {
         Material type;
         // TODO +/-/++/-- block look at
         if (args.notEmpty()) {
-            type = Material.getMaterial(args.first());
+            if ("look".equals(args.first()) && sender instanceof Player) {
+                Player player = (Player) sender;
+                Block block = Helper.getLookAt(player, 6);
+                if (block != null) {
+                    type = block.getType();
+                } else {
+                    manager.sendKey(player, "notLookBlock");
+                    return;
+                }
+            } else {
+                type = Material.getMaterial(args.first());
+            }
         } else if (sender instanceof Player) {
             ItemStack stack = Helper.getItemInHand(((Player) sender).getInventory(), HandType.MAIN_HAND);
             type = stack == null ? null : stack.getType();
@@ -208,7 +219,7 @@ public class CommandLocket {
             manager.sendKey(sender, "nullBlockType");
             return;
         }
-        if (type == Material.AIR || manager.isSign(type) ) {
+        if (type == Material.AIR || manager.isSign(type)) {
             manager.sendKey(sender, "illegalType");
             return;
         }

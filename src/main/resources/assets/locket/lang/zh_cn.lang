@@ -30,6 +30,7 @@ illegalType = "&6此方块为空气或告示牌等非法类型."
 notSignTile = "&c所选告示牌已不存在, 请重新选择."
 invalidUsername = "&c无效的所有者，目标玩家 %s 必须在线方可设置."
 storageServiceInvalid = "&c用户账户存储服务不可用 !"
+notLookBlock = "你没有看着一个有效方块 !"
 
 comment {
   protectTile = "是否保护所有的实体方块(TileEntity)."
