@@ -7,6 +7,8 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.type.Door;
 import org.bukkit.block.data.type.WallSign;
 import org.bukkit.entity.Player;
@@ -370,10 +372,10 @@ public class Helper {
     }
 
     public static void setSignRotation(Sign sign, BlockFace face) {
-        if (v1_14_R1 || v1_15_R1) {
-            org.bukkit.block.data.type.WallSign signData = (WallSign) sign.getBlockData();
-            signData.setFacing(face);
-            sign.setBlockData(signData);
+        if (v1_13_R2 || v1_14_R1 || v1_15_R1) {
+            BlockData data = sign.getBlockData();
+            ((Directional) data).setFacing(face);
+            sign.setBlockData(data);
         } else {
             org.bukkit.material.Sign signData = (org.bukkit.material.Sign) sign.getData();
             signData.setFacingDirection(face);
@@ -384,7 +386,7 @@ public class Helper {
 
     public static Block getAttached(@NotNull Sign sign) {
         BlockFace face;
-        if (v1_14_R1 || v1_15_R1) {
+        if (v1_13_R2 || v1_14_R1 || v1_15_R1) {
             face = ((WallSign) sign.getBlockData()).getFacing().getOppositeFace();
         } else {
             face = ((org.bukkit.material.Sign) sign.getData()).getAttachedFace();
@@ -392,19 +394,19 @@ public class Helper {
         return sign.getBlock().getRelative(face);
     }
 
-    public static BlockFace getDoorFace(Block block) {
-        if (v1_14_R1 || v1_15_R1) {
-            return ((Door) block.getBlockData()).getFacing();
-        }
-        return ((org.bukkit.material.Door) block.getState().getData()).getFacing();
-    }
-
     public static BlockFace getAttachedFace(@NotNull Sign sign) {
-        if (v1_14_R1 || v1_15_R1) {
+        if (v1_13_R2 || v1_14_R1 || v1_15_R1) {
             return ((WallSign) sign.getBlockData()).getFacing();
         } else {
             return ((org.bukkit.material.Sign) sign.getData()).getFacing();
         }
+    }
+
+    public static BlockFace getDoorFace(Block block) {
+        if (v1_13_R2 || v1_14_R1 || v1_15_R1) {
+            return ((Door) block.getBlockData()).getFacing();
+        }
+        return ((org.bukkit.material.Door) block.getState().getData()).getFacing();
     }
 
     @Nullable
