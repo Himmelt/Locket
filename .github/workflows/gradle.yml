@@ -1,4 +1,4 @@
-name: Gradle_CI
+name: Locket
 
 on: [push]
 
