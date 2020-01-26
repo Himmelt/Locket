@@ -415,8 +415,8 @@ public class Helper {
         if (world != null) {
             if (v1_7_R4) {
                 Vector dir = direction.clone().normalize().multiply(maxDistance);
-                net.minecraft.server.v1_7_R4.Vec3D startPos = new net.minecraft.server.v1_7_R4.Vec3D(start.getX(), start.getY(), start.getZ());
-                net.minecraft.server.v1_7_R4.Vec3D endPos = new net.minecraft.server.v1_7_R4.Vec3D(start.getX() + dir.getX(), start.getY() + dir.getY(), start.getZ() + dir.getZ());
+                net.minecraft.server.v1_7_R4.Vec3D startPos = net.minecraft.server.v1_7_R4.Vec3D.a(start.getX(), start.getY(), start.getZ());
+                net.minecraft.server.v1_7_R4.Vec3D endPos = net.minecraft.server.v1_7_R4.Vec3D.a(start.getX() + dir.getX(), start.getY() + dir.getY(), start.getZ() + dir.getZ());
                 net.minecraft.server.v1_7_R4.MovingObjectPosition result = ((org.bukkit.craftbukkit.v1_7_R4.CraftWorld) world).getHandle().rayTrace(startPos, endPos, false, true, false);
                 if (result != null) {
                     return new Location(world, result.b, result.c, result.d).getBlock();

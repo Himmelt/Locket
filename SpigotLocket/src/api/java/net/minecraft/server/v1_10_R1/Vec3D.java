@@ -4,13 +4,6 @@ package net.minecraft.server.v1_10_R1;
  * @author Himmelt
  */
 public class Vec3D {
-    public final double x;
-    public final double y;
-    public final double z;
-
-    public Vec3D(double xx, double yy, double zz) {
-        this.x = xx;
-        this.y = yy;
-        this.z = zz;
+    public Vec3D(double x, double y, double z) {
     }
 }
