@@ -1,6 +1,9 @@
 package org.soraworld.locket.manager;
 
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
@@ -14,57 +17,41 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soraworld.hocon.node.Setting;
 import org.soraworld.locket.Locket;
+import org.soraworld.locket.LocketPlugin;
 import org.soraworld.locket.data.LockData;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.data.State;
-import org.soraworld.locket.nms.HandType;
-import org.soraworld.locket.nms.Helper;
-import org.soraworld.locket.util.Util;
-import org.soraworld.violet.inject.MainManager;
-import org.soraworld.violet.manager.VManager;
-import org.soraworld.violet.plugin.SpigotPlugin;
-import org.soraworld.violet.util.ChatColor;
+import org.soraworld.locket.util.Helper;
+import org.soraworld.violet.api.ICommandSender;
+import org.soraworld.violet.api.IPlayer;
+import org.soraworld.violet.api.IUser;
+import org.soraworld.violet.command.Args;
+import org.soraworld.violet.inject.Config;
+import org.soraworld.violet.inject.Inject;
+import org.soraworld.violet.inventory.HandType;
+import org.soraworld.violet.text.ChatColor;
+import org.soraworld.violet.world.BlockPos;
+import org.soraworld.violet.wrapper.Wrapper;
 
-import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
-import static org.soraworld.violet.nms.Version.*;
+import static org.soraworld.violet.Violet.MC_VERSION;
+import static org.soraworld.violet.version.McVersion.v1_7_10;
 
 /**
  * @author Himmelt
  */
-@MainManager
-public class LocketManager extends VManager {
-
-    @Setting(comment = "comment.protectTile")
-    private boolean protectTile = false;
-    @Setting(comment = "comment.protectCarrier")
-    private boolean protectCarrier = true;
-    @Setting(comment = "comment.preventTransfer")
-    private boolean preventTransfer = true;
-    @Setting(comment = "comment.preventExplosion")
-    private boolean preventExplosion = true;
-    // TODO implementation
-    @Setting(comment = "comment.preventWorldEdit")
-    private boolean preventWorldEdit = false;
-    @Setting(comment = "comment.chatType")
-    private String chatType = "action_bar";
-    @Setting(comment = "comment.privateSign", trans = 0b1000)
-    private String privateSign = ChatColor.DARK_RED.toString() + ChatColor.BOLD + "[Private]";
-    @Setting(comment = "comment.ownerFormat", trans = 0b1000)
-    private String ownerFormat = ChatColor.GREEN + "{$owner}";
-    @Setting(comment = "comment.userFormat", trans = 0b1000)
-    private String userFormat = "" + ChatColor.DARK_GRAY + ChatColor.ITALIC + "{$user}";
-    @Setting(comment = "comment.acceptSigns", trans = 0b1000)
-    private Set<String> acceptSigns = new HashSet<>();
-    @Setting(comment = "comment.lockables")
+@Config(id = Locket.PLUGIN_ID)
+public class LocketManager extends IManager {
+    @Setting
     private Set<Material> lockables = new HashSet<>();
-    @Setting(comment = "comment.doubleBlocks")
+    @Setting
     private Set<Material> doubleBlocks = new HashSet<>();
-    @Setting(comment = "comment.highDoors")
+    @Setting
     private Set<Material> highDoors = new HashSet<>();
 
-    private final HashMap<UUID, Location> selected = new HashMap<>();
     private final HashSet<Material> itemSignTypes = new HashSet<>();
     private final HashSet<Material> wallSignTypes = new HashSet<>();
     private final HashSet<Material> postSignTypes = new HashSet<>();
@@ -72,15 +59,8 @@ public class LocketManager extends VManager {
 
     private static final BlockFace[] FACES = new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
 
-    public LocketManager(SpigotPlugin plugin, Path path) {
-        super(plugin, path);
-    }
-
-    @Override
-    @NotNull
-    public ChatColor defChatColor() {
-        return ChatColor.YELLOW;
-    }
+    @Inject
+    private static LocketPlugin plugin;
 
     @Override
     public void afterLoad() {
@@ -101,9 +81,9 @@ public class LocketManager extends VManager {
         try {
             highDoors.add(Material.valueOf("WOODEN_DOOR"));
         } catch (Throwable e) {
-            debug(e);
+            plugin.debug(e);
         }
-        if (!v1_7_R4) {
+        if (MC_VERSION.higher(v1_7_10)) {
             highDoors.add(Material.BIRCH_DOOR);
             highDoors.add(Material.ACACIA_DOOR);
             highDoors.add(Material.JUNGLE_DOOR);
@@ -112,7 +92,7 @@ public class LocketManager extends VManager {
             try {
                 highDoors.add(Material.valueOf("OAK_DOOR"));
             } catch (Throwable e) {
-                debug(e);
+                plugin.debug(e);
             }
         }
         highDoors.add(Material.IRON_DOOR);
@@ -123,12 +103,12 @@ public class LocketManager extends VManager {
             wallSignTypes.add(Material.valueOf("WALL_SIGN"));
             signTypeMap.put(Material.valueOf("SIGN"), Material.valueOf("WALL_SIGN"));
         } catch (Throwable e) {
-            debug(e);
+            plugin.debug(e);
         }
         try {
             postSignTypes.add(Material.valueOf("SIGN_POST"));
         } catch (Throwable e) {
-            debug(e);
+            plugin.debug(e);
         }
         try {
             itemSignTypes.add(Material.OAK_SIGN);
@@ -156,8 +136,58 @@ public class LocketManager extends VManager {
             wallSignTypes.add(Material.SPRUCE_WALL_SIGN);
             signTypeMap.put(Material.SPRUCE_SIGN, Material.SPRUCE_WALL_SIGN);
         } catch (Throwable e) {
-            debug(e);
+            plugin.debug(e);
         }
+    }
+
+    public final boolean bypassPerm(@NotNull Player player) {
+        return player.hasPermission(plugin.id() + ".bypass");
+    }
+
+    public void sendHint(@NotNull Player player, @NotNull String key, Object... args) {
+        plugin.sendMessageKey(player, chatType, key, args);
+    }
+
+    @Override
+    public List<String> getMatchedPlayers(@NotNull String prefix) {
+        prefix = prefix.toLowerCase();
+        List<String> names = new ArrayList<>();
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (player.getName().toLowerCase().startsWith(prefix)) {
+                names.add(player.getName());
+            }
+        }
+        return names;
+    }
+
+    @Override
+    public void touchSign(Object block, @Nullable Predicate<String[]> sync, @Nullable Predicate<String[]> async) {
+        if (block instanceof Block) {
+            Helper.touchSign((Block) block, sync, async);
+        }
+    }
+
+    @Override
+    public void processType(@NotNull ICommandSender sender, @NotNull Args args, @NotNull String key) {
+        switch (key) {
+            case "typeAdd":
+                processType(sender.getHandle(CommandSender.class), args, this::addType, key);
+                break;
+            case "typeRemove":
+                processType(sender.getHandle(CommandSender.class), args, this::removeType, key);
+                break;
+            case "dTypeAdd":
+                processType(sender.getHandle(CommandSender.class), args, this::addDType, key);
+                break;
+            case "dTypeRemove":
+                processType(sender.getHandle(CommandSender.class), args, this::removeDType, key);
+                break;
+            default:
+        }
+    }
+
+    @Override
+    public void beforeSave() {
     }
 
     public boolean isLockable(@NotNull Block block) {
@@ -186,14 +216,6 @@ public class LocketManager extends VManager {
         return protectTile && tile != null || protectCarrier && tile instanceof InventoryHolder;
     }
 
-    public boolean isPreventTransfer() {
-        return preventTransfer;
-    }
-
-    public boolean isPreventExplosion() {
-        return preventExplosion;
-    }
-
     public void addType(@NotNull Material type) {
         lockables.add(type);
     }
@@ -210,49 +232,8 @@ public class LocketManager extends VManager {
         doubleBlocks.remove(type);
     }
 
-    public void sendHint(Player player, String key, Object... args) {
-        if (!v1_7_R4 && !v1_8_R1 && !v1_8_R3 && "action_bar".equalsIgnoreCase(chatType)) {
-            sendActionKey(player, key, args);
-        } else {
-            sendKey(player, key, args);
-        }
-    }
-
-    public boolean isPrivate(@NotNull String line) {
-        return acceptSigns.contains(ChatColor.stripAllColor(line).replace(ChatColor.TRUE_COLOR_STRING, "").trim());
-    }
-
-    public String getPrivateText() {
-        return privateSign;
-    }
-
-    public String getOwnerText(@NotNull OfflinePlayer owner) {
-        return ownerFormat.replace("{$owner}", owner.getName() + Util.hideUuid(owner.getUniqueId()));
-    }
-
-    public String getUserText(@NotNull OfflinePlayer user) {
-        return userFormat.replace("{$user}", user.getName() + Util.hideUuid(user.getUniqueId()));
-    }
-
-    public String getUserText(String name) {
-        return name == null || name.isEmpty() ? "" : userFormat.replace("{$user}", name);
-    }
-
     public boolean isDBlock(@NotNull Material type) {
         return doubleBlocks.contains(type);
-    }
-
-    @Nullable
-    public Location getSelected(@NotNull Player player) {
-        return selected.get(player.getUniqueId());
-    }
-
-    public void setSelected(@NotNull Player player, Location location) {
-        selected.put(player.getUniqueId(), location);
-    }
-
-    public void clearSelected(@NotNull UUID uuid) {
-        selected.remove(uuid);
     }
 
     public Result tryAccess(@NotNull Player player, @NotNull Block block, boolean needEdit) {
@@ -265,11 +246,11 @@ public class LocketManager extends VManager {
         boolean isDBlock = doubleBlocks.contains(type);
         int count = 0;
         Block link = null;
-        HashSet<Block> signs = new HashSet<>();
+        HashSet<BlockPos> signs = new HashSet<>();
 
         // 自身也将参与检查
         if (isWallSign(type)) {
-            signs.add(block);
+            signs.add(Wrapper.wrapper(block));
         }
 
         // 检查4个方向是否是 WALL_SIGN 或 DChest
@@ -281,7 +262,7 @@ public class LocketManager extends VManager {
                     return Result.MULTI_BLOCKS;
                 }
             } else if (isWallSign(relative.getType()) && Helper.getAttachedFace((Sign) relative.getState()) == face) {
-                signs.add(relative);
+                signs.add(Wrapper.wrapper(relative));
             }
         }
 
@@ -294,7 +275,7 @@ public class LocketManager extends VManager {
                     return Result.MULTI_BLOCKS;
                 }
                 if (isWallSign(relative.getType()) && Helper.getAttachedFace((Sign) relative.getState()) == face) {
-                    signs.add(relative);
+                    signs.add(Wrapper.wrapper(relative));
                 }
             }
         }
@@ -304,7 +285,7 @@ public class LocketManager extends VManager {
             for (BlockFace face : FACES) {
                 Block relative = door.getRelative(face);
                 if (isWallSign(relative.getType()) && Helper.getAttachedFace((Sign) relative.getState()) == face) {
-                    signs.add(relative);
+                    signs.add(Wrapper.wrapper(relative));
                 }
             }
         }
@@ -345,15 +326,15 @@ public class LocketManager extends VManager {
         return false;
     }
 
-    public void lockSign(Player player, Block block, int line, String name) {
+    public void lockSign(@NotNull IPlayer player, Block block, int line, String name) {
         if (block.getState() instanceof Sign) {
-            Player owner = player;
+            IPlayer owner = player;
             if (line == 1 && bypassPerm(player) && name != null && !name.equals(player.getName()) && !name.isEmpty()) {
-                Player user = Bukkit.getPlayer(name);
+                IPlayer user = Wrapper.wrapper(name);
                 if (user != null) {
                     owner = user;
                 } else {
-                    sendKey(player, "invalidUsername", name);
+                    plugin.sendMessageKey(player, "invalidUsername", name);
                     return;
                 }
             }
@@ -368,7 +349,7 @@ public class LocketManager extends VManager {
                 return true;
             }, data -> {
                 if ((line == 2 || line == 3)) {
-                    Locket.parseUser(data.lines[line]).ifPresent(user -> data.lines[line] = getUserText(user));
+                    LocketPlugin.parseUser(data.lines[line]).ifPresent(user -> data.lines[line] = getUserText(user));
                     return true;
                 }
                 return false;
@@ -390,7 +371,11 @@ public class LocketManager extends VManager {
         }, null);
     }
 
-    public void placeLock(Player player, Block loc, BlockFace face, HandType hand, Material itemType) {
+    public String getOwnerText(@NotNull OfflinePlayer owner) {
+        return ownerFormat.replace("{$owner}", owner.getName() + Locket.hideUuid(owner.getUniqueId()));
+    }
+
+    public void placeLock(@NotNull Player player, Block loc, BlockFace face, HandType hand, Material itemType) {
         Block side = loc.getRelative(face);
         side.setType(getSignBlockType(itemType));
         BlockState tile = side.getState();
@@ -403,12 +388,12 @@ public class LocketManager extends VManager {
             }, null);
         }
         removeOneItem(player, hand);
-        if (v1_7_R4) {
+        if (MC_VERSION.matchCraft(1, 7, 4)) {
             player.playSound(loc.getLocation(), "random.wood_click", 1.0F, 0F);
         } else {
             player.playSound(loc.getLocation(), "block.wood.break", 1.0F, 0F);
         }
-        sendHint(player, "quickLock");
+        sendHint(Wrapper.wrapper(player), "quickLock");
     }
 
     public boolean isLocked(@NotNull Block block) {
@@ -428,11 +413,11 @@ public class LocketManager extends VManager {
         boolean isDBlock = doubleBlocks.contains(type);
         int count = 0;
         Block link = null;
-        HashSet<Block> signs = new HashSet<>();
+        HashSet<BlockPos> signs = new HashSet<>();
 
         // 自身也将参与检查
         if (isWallSign(type)) {
-            signs.add(block);
+            signs.add(Wrapper.wrapper(block));
         }
 
         // 检查4个方向是否是 WALL_SIGN 或 DChest
@@ -444,7 +429,7 @@ public class LocketManager extends VManager {
                     return State.MULTI_BLOCKS;
                 }
             } else if (isWallSign(relative.getType()) && Helper.getAttachedFace((Sign) relative.getState()) == face) {
-                signs.add(relative);
+                signs.add(Wrapper.wrapper(relative));
             }
         }
 
@@ -457,7 +442,7 @@ public class LocketManager extends VManager {
                     return State.MULTI_BLOCKS;
                 }
                 if (isWallSign(relative.getType()) && Helper.getAttachedFace((Sign) relative.getState()) == face) {
-                    signs.add(relative);
+                    signs.add(Wrapper.wrapper(relative));
                 }
             }
         }
@@ -467,7 +452,7 @@ public class LocketManager extends VManager {
             for (BlockFace face : FACES) {
                 Block relative = door.getRelative(face);
                 if (isWallSign(relative.getType()) && Helper.getAttachedFace((Sign) relative.getState()) == face) {
-                    signs.add(relative);
+                    signs.add(Wrapper.wrapper(relative));
                 }
             }
         }
@@ -475,7 +460,7 @@ public class LocketManager extends VManager {
         return new LockData(signs).getState();
     }
 
-    private Result analyzeSign(@NotNull Player player, HashSet<Block> signs) {
+    private Result analyzeSign(@NotNull Player player, HashSet<BlockPos> signs) {
         if (signs.isEmpty()) {
             return Result.NOT_LOCKED;
         }
@@ -497,10 +482,6 @@ public class LocketManager extends VManager {
         }
     }
 
-    public boolean bypassPerm(CommandSender sender) {
-        return hasPermission(sender, plugin.getId() + ".bypass");
-    }
-
     public boolean canPlaceLock(@NotNull Material type) {
         String typeName = type.name();
         return type == Material.AIR || type == Material.GRASS || type == Material.SNOW
@@ -512,9 +493,9 @@ public class LocketManager extends VManager {
         Helper.touchSign(block, null, data -> {
             if (isPrivate(data.lines[0])) {
                 data.lines[0] = getPrivateText();
-                Locket.parseUser(data.lines[1]).ifPresent(owner -> data.lines[1] = getOwnerText(owner));
-                Locket.parseUser(data.lines[2]).ifPresent(user -> data.lines[2] = getUserText(user));
-                Locket.parseUser(data.lines[3]).ifPresent(user -> data.lines[3] = getUserText(user));
+                LocketPlugin.parseUser(data.lines[1]).ifPresent(owner -> data.lines[1] = getOwnerText(owner));
+                LocketPlugin.parseUser(data.lines[2]).ifPresent(user -> data.lines[2] = getUserText(user));
+                LocketPlugin.parseUser(data.lines[3]).ifPresent(user -> data.lines[3] = getUserText(user));
                 return true;
             }
             return false;
@@ -532,4 +513,47 @@ public class LocketManager extends VManager {
     public boolean isWallSign(Material type) {
         return wallSignTypes.contains(type);
     }
+
+    private void processType(@NotNull CommandSender sender, @NotNull Args args, @NotNull Consumer<Material> consumer, @NotNull String key) {
+        Material type;
+        if (args.notEmpty()) {
+            if ("look".equals(args.first()) && sender instanceof Player) {
+                Player player = (Player) sender;
+                Block block = org.soraworld.violet.util.Helper.getLookAt(player, 25);
+                if (block != null) {
+                    type = block.getType();
+                } else {
+                    plugin.sendMessageKey(player, "notLookBlock");
+                    return;
+                }
+            } else {
+                type = Material.getMaterial(args.first());
+            }
+        } else if (sender instanceof Player) {
+            ItemStack stack = Helper.getItemInHand(((Player) sender).getInventory(), HandType.MAIN_HAND);
+            type = stack == null ? null : stack.getType();
+        } else {
+            plugin.sendMessageKey(sender, "emptyArgs");
+            return;
+        }
+        if (type == null) {
+            plugin.sendMessageKey(sender, "nullBlockType");
+            return;
+        }
+        if (type == Material.AIR || isSign(type)) {
+            plugin.sendMessageKey(sender, "illegalType");
+            return;
+        }
+        consumer.accept(type);
+        plugin.sendMessageKey(sender, key, type.name());
+        // TODO manager.asyncSave(null);
+    }
+
+    public static Optional<IUser> parseUser(String text) {
+        if (text == null || text.isEmpty()) {
+            return Optional.empty();
+        }
+        return Locket.parseUuid(text).map(value -> Optional.of(Wrapper.wrapper(Bukkit.getOfflinePlayer(value)))).orElseGet(() -> Optional.of(Wrapper.wrapper(Bukkit.getOfflinePlayer(ChatColor.stripAllColor(text).trim()))));
+    }
+
 }

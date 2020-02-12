@@ -5,7 +5,7 @@ sourceSets {
 }
 
 dependencies {
-    compile 'org.soraworld:violet-spigot:2.4.2-SNAPSHOT'
+    compile 'org.soraworld:violet-spigot:2.5.0-SNAPSHOT'
     compileOnly 'org.spigotmc:spigot-api:1.15.2-R0.1-SNAPSHOT'
     // compile files('lib/spigot-nms-all.jar')
     compileOnly sourceSets.api.output
@@ -16,7 +16,7 @@ processResources {
     inputs.property "version", project.version
     from(sourceSets.main.resources.srcDirs) {
         include 'plugin.yml'
-        expand 'version': project.version
+        expand 'version': project.version.replaceAll("-SNAPSHOT", "")
     }
 }
 

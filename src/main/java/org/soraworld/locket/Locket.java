@@ -1,4 +1,4 @@
-package org.soraworld.locket.util;
+package org.soraworld.locket;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -8,11 +8,14 @@ import java.util.regex.Pattern;
 /**
  * @author Himmelt
  */
-public final class Util {
+public final class Locket {
+    public static final String PLUGIN_ID = "locket";
+    public static final String PLUGIN_NAME = "Locket";
+    public static final String PLUGIN_VERSION = "1.3.0";
 
+    public static final Pattern HIDE_UUID = Pattern.compile("(\u00A7[0-9a-f]){32}");
     private static final char TRUE_COLOR_CHAR = '\u00A7';
     private static final String TRUE_COLOR_STRING = "\u00A7";
-    public static final Pattern HIDE_UUID = Pattern.compile("(\u00A7[0-9a-f]){32}");
 
     public static Optional<UUID> parseUuid(String text) {
         Matcher matcher = HIDE_UUID.matcher(text);

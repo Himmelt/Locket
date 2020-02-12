@@ -1,9 +1,13 @@
 apply plugin: 'java'
 
-version = '1.2.4'
+version = '1.3.0-SNAPSHOT'
 group = 'org.soraworld'
 
 sourceCompatibility = targetCompatibility = 1.8
+
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
 
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
@@ -18,6 +22,10 @@ repositories {
     maven { url 'https://soraworld-maven.pkg.coding.net/repository/minecraft/public/' }
 }
 
+dependencies {
+    compileOnly 'org.soraworld:violet-api:2.5.0-SNAPSHOT'
+}
+
 subprojects {
     apply plugin: 'java'
     apply plugin: "maven-publish"
@@ -26,6 +34,10 @@ subprojects {
     version rootProject.version
 
     sourceCompatibility = targetCompatibility = 1.8
+
+    configurations.all {
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    }
 
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'

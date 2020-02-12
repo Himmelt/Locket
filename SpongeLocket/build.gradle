@@ -16,7 +16,7 @@ sourceSets {
 
 dependencies {
     compile 'org.spongepowered:spongeapi:7.2.0-SNAPSHOT'
-    compile 'org.soraworld:violet-sponge:2.4.2-SNAPSHOT'
+    compile 'org.soraworld:violet-sponge:2.5.0-SNAPSHOT'
     compileOnly sourceSets.api.output
     apiCompileOnly 'org.spongepowered:spongeapi:7.1.0-SNAPSHOT'
 }

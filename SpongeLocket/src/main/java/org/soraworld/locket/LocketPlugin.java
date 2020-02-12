@@ -1,10 +1,16 @@
 package org.soraworld.locket;
 
-import org.soraworld.locket.manager.LocketManager;
+import org.jetbrains.annotations.NotNull;
 import org.soraworld.violet.Violet;
 import org.soraworld.violet.plugin.SpongePlugin;
+import org.soraworld.violet.text.ChatColor;
+import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.plugin.Dependency;
 import org.spongepowered.api.plugin.Plugin;
+import org.spongepowered.api.plugin.PluginContainer;
+
+import javax.inject.Inject;
+import java.nio.file.Path;
 
 /**
  * @author Himmelt
@@ -31,8 +37,25 @@ import org.spongepowered.api.plugin.Plugin;
                 )
         }
 )
-public final class Locket extends SpongePlugin<LocketManager> {
-    public static final String PLUGIN_ID = "locket";
-    public static final String PLUGIN_NAME = "Locket";
-    public static final String PLUGIN_VERSION = "1.2.4";
+public final class LocketPlugin extends SpongePlugin {
+
+    @Inject
+    public LocketPlugin(@ConfigDir(sharedRoot = false) Path path, PluginContainer container) {
+        super(path, container);
+    }
+
+    @Override
+    public String bStatsId() {
+        return "6471";
+    }
+
+    @Override
+    public String violetVersion() {
+        return "2.5.0";
+    }
+
+    @Override
+    public @NotNull ChatColor chatColor() {
+        return ChatColor.YELLOW;
+    }
 }

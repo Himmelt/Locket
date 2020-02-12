@@ -1,10 +1,13 @@
 package org.soraworld.locket.listener;
 
+import org.soraworld.locket.LocketPlugin;
 import org.soraworld.locket.data.State;
 import org.soraworld.locket.manager.LocketManager;
-import org.soraworld.violet.inject.EventListener;
+import org.soraworld.violet.api.IPlayer;
+import org.soraworld.violet.gamemode.GameMode;
 import org.soraworld.violet.inject.Inject;
-import org.spongepowered.api.Sponge;
+import org.soraworld.violet.inject.InjectListener;
+import org.soraworld.violet.wrapper.Wrapper;
 import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
@@ -13,7 +16,6 @@ import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
 import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.entity.living.player.gamemode.GameModes;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
@@ -40,11 +42,13 @@ import org.spongepowered.api.world.World;
 /**
  * @author Himmelt
  */
-@EventListener
-public class LocketListener {
+@InjectListener
+public final class LocketListener {
 
     @Inject
-    private LocketManager manager;
+    private static LocketPlugin plugin;
+    @Inject
+    private static LocketManager manager;
 
     @Listener(order = Order.PRE, beforeModifications = true)
     public void onChangeBlock(ChangeBlockEvent event) {
@@ -74,19 +78,19 @@ public class LocketListener {
 
     @Listener(order = Order.FIRST, beforeModifications = true)
     public void onChangeBlockPre(ChangeBlockEvent.Pre event) {
-        Player player = event.getCause().first(Player.class).orElse(null);
+        Player source = event.getCause().first(Player.class).orElse(null);
         for (Location<World> location : event.getLocations()) {
             if (location != null) {
-                if (player == null) {
+                if (source == null) {
                     if (manager.isLocked(location)) {
                         event.setCancelled(true);
                         return;
                     }
                 } else {
-                    if (manager.bypassPerm(player)) {
+                    if (manager.bypassPerm(Wrapper.wrapper(source))) {
                         return;
                     }
-                    if (!manager.tryAccess(player, location, true).canEdit()) {
+                    if (!manager.tryAccess(source, location, true).canEdit()) {
                         event.setCancelled(true);
                         return;
                     }
@@ -96,20 +100,21 @@ public class LocketListener {
     }
 
     @Listener(order = Order.FIRST, beforeModifications = true)
-    public void onPlayerInteractBlock(InteractBlockEvent event, @First Player player) {
+    public void onPlayerInteractBlock(InteractBlockEvent event, @First Player source) {
+        IPlayer player = Wrapper.wrapper(source);
         event.getTargetBlock().getLocation().ifPresent(location -> {
             if (manager.bypassPerm(player)) {
                 return;
             }
             BlockType type = location.getBlockType();
-            switch (manager.tryAccess(player, manager.isWallSign(type) ? LocketManager.getAttached(location) : location, false)) {
+            switch (manager.tryAccess(source, manager.isWallSign(type) ? LocketManager.getAttached(location) : location, false)) {
                 case SIGN_USER:
                     if (event instanceof InteractBlockEvent.Primary || manager.isWallSign(type)) {
                         event.setCancelled(true);
                     }
                     break;
                 case SIGN_OWNER:
-                    if (event instanceof InteractBlockEvent.Primary && !manager.isWallSign(type) && player.gameMode().get().equals(GameModes.CREATIVE)) {
+                    if (event instanceof InteractBlockEvent.Primary && !manager.isWallSign(type) && player.gameMode() == GameMode.CREATIVE) {
                         event.setCancelled(true);
                     }
                     break;
@@ -190,10 +195,9 @@ public class LocketListener {
         }
 
         event.setCancelled(true);
-
         if (!manager.bypassPerm(player)) {
-            if (!manager.hasPermission(player, "locket.lock")) {
-                manager.sendHint(player, "needPerm", manager.mappingPerm("locket.lock"));
+            if (!player.hasPermission("locket.lock")) {
+                manager.sendHint(player, "needPerm", "locket.lock");
                 return;
             }
             if (manager.otherProtected(player, block)) {
@@ -222,20 +226,21 @@ public class LocketListener {
     }
 
     @Listener(order = Order.LAST)
-    public void onPlayerChangeSign(ChangeSignEvent event, @First Player player) {
+    public void onPlayerChangeSign(ChangeSignEvent event, @First Player source) {
+        IPlayer player = Wrapper.wrapper(source);
         SignData data = event.getText();
         ListValue<Text> lines = data.lines();
-        Player owner = player;
+        IPlayer owner = player;
         if (manager.isPrivate(lines.get(0).toPlain())) {
             String line1 = lines.get(1).toPlain().trim();
             if (!line1.isEmpty() && !line1.equals(player.getName()) && manager.bypassPerm(player)) {
-                Player user = Sponge.getServer().getPlayer(line1).orElse(null);
+                IPlayer user = Wrapper.wrapper(line1);
                 if (user != null) {
                     owner = user;
                 } else {
                     data.setElement(0, Text.EMPTY);
                     data.setElement(1, Text.EMPTY);
-                    manager.sendKey(player, "invalidUsername", line1);
+                    plugin.sendMessageKey(player, "invalidUsername", line1);
                     return;
                 }
             }
@@ -246,22 +251,22 @@ public class LocketListener {
                     event.setCancelled(true);
                     return;
                 }
-                if (!manager.hasPermission(player, "locket.lock")) {
-                    manager.sendHint(player, "needPerm", manager.mappingPerm("locket.lock"));
+                if (!player.hasPermission("locket.lock")) {
+                    manager.sendHint(player, "needPerm", "locket.lock");
                     event.setCancelled(true);
                     return;
                 }
-                if (manager.otherProtected(player, block)) {
+                if (manager.otherProtected(source, block)) {
                     manager.sendHint(player, "otherProtect");
                     event.setCancelled(true);
                     return;
                 }
             }
 
-            data.setElement(0, manager.getPrivateText());
-            data.setElement(1, manager.getOwnerText(owner));
-            data.setElement(2, manager.getUserText(lines.get(2).toPlain().trim()));
-            data.setElement(3, manager.getUserText(lines.get(3).toPlain().trim()));
+            data.setElement(0, Text.of(manager.getPrivateText()));
+            data.setElement(1, Text.of(manager.getOwnerText(owner)));
+            data.setElement(2, Text.of(manager.getUserText(lines.get(2).toPlain().trim())));
+            data.setElement(3, Text.of(manager.getUserText(lines.get(3).toPlain().trim())));
             manager.sendHint(player, "manuLock");
             manager.asyncUpdateSign(event.getTargetTile());
         }
@@ -271,7 +276,7 @@ public class LocketListener {
     public void onPlayerSelectSign(InteractBlockEvent.Secondary event, @First Player player) {
         Location<World> block = event.getTargetBlock().getLocation().orElse(null);
         if (block != null && manager.isWallSign(block.getBlockType())) {
-            manager.setSelected(player, block);
+            manager.setSelected(player.getUniqueId(), Wrapper.wrapper(block));
             block.getTileEntity().ifPresent(sign -> manager.asyncUpdateSign((Sign) sign));
             manager.sendHint(player, "selectSign");
         }

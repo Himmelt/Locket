@@ -5,16 +5,19 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.soraworld.locket.manager.LocketManager;
-import org.soraworld.violet.inject.EventListener;
 import org.soraworld.violet.inject.Inject;
+import org.soraworld.violet.inject.InjectListener;
+import org.soraworld.violet.inject.McVer;
 
 /**
  * @author Himmelt
  */
-@EventListener
-public class BlockExplodeListener implements Listener {
+@InjectListener
+@McVer("[1.8.0,9.9.9]")
+public final class BlockExplodeListener implements Listener {
+
     @Inject
-    private LocketManager manager;
+    private static LocketManager manager;
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onExplosion(BlockExplodeEvent event) {

@@ -1,10 +1,10 @@
 name: Locket
 version: ${version}
 author: Himmelt
-main: org.soraworld.locket.Locket
+main: org.soraworld.locket.LocketPlugin
 website: https://github.com/Himmelt/Locket
-description: Locket Plugin.
-api-version: '1.13'
+description: Locket Spigot Plugin.
+api-version: '1.15'
 depend:
   - Violet
 permissions:

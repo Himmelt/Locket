@@ -3,7 +3,7 @@
 
 Use the wall-sign to protect your blocks!
 
-[![Build Status](https://img.shields.io/github/workflow/status/Himmelt/Locket/Gradle_CI?style=flat-square)](https://github.com/Himmelt/Locket/actions)
+![Locket](https://github.com/Himmelt/Locket/workflows/Locket/badge.svg)
 
 ### [中文说明](README_CN.md)
 

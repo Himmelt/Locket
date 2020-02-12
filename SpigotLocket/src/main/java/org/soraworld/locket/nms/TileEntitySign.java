@@ -3,7 +3,7 @@ package org.soraworld.locket.nms;
 import net.minecraft.server.v1_7_R4.NBTTagCompound;
 import net.minecraft.server.v1_7_R4.Packet;
 import net.minecraft.server.v1_7_R4.PacketPlayOutUpdateSign;
-import org.soraworld.violet.util.ChatColor;
+import org.soraworld.violet.text.ChatColor;
 
 /**
  * @author Himmelt

@@ -8,16 +8,18 @@ import me.ryanhamshire.griefprevention.GriefPrevention;
 import me.ryanhamshire.griefprevention.api.claim.TrustType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.soraworld.hocon.exception.SerializerException;
 import org.soraworld.hocon.node.Setting;
+import org.soraworld.locket.Locket;
+import org.soraworld.locket.LocketPlugin;
 import org.soraworld.locket.data.LockData;
 import org.soraworld.locket.data.Result;
 import org.soraworld.locket.data.State;
-import org.soraworld.locket.serializers.BlockTypeSerializer;
-import org.soraworld.violet.inject.MainManager;
-import org.soraworld.violet.manager.VManager;
-import org.soraworld.violet.plugin.SpongePlugin;
-import org.soraworld.violet.util.ChatColor;
+import org.soraworld.violet.api.ICommandSender;
+import org.soraworld.violet.command.Args;
+import org.soraworld.violet.inject.Config;
+import org.soraworld.violet.inject.Inject;
+import org.soraworld.violet.text.ChatColor;
+import org.soraworld.violet.util.Helper;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
@@ -29,6 +31,7 @@ import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
 import org.spongepowered.api.data.type.HandType;
+import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.living.player.Player;
@@ -44,38 +47,17 @@ import org.spongepowered.api.world.BlockChangeFlags;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.spongepowered.api.block.BlockTypes.*;
 
-@MainManager
-public class LocketManager extends VManager {
+@Config(id = Locket.PLUGIN_ID)
+public final class LocketManager extends IManager {
 
-    @Setting(comment = "comment.protectTile")
-    private boolean protectTile = false;
-    @Setting(comment = "comment.protectCarrier")
-    private boolean protectCarrier = true;
-    @Setting(comment = "comment.preventTransfer")
-    private boolean preventTransfer = true;
-    @Setting(comment = "comment.preventExplosion")
-    private boolean preventExplosion = true;
-    // TODO implementation
-    @Setting(comment = "comment.preventWorldEdit")
-    private boolean preventWorldEdit = false;
-    @Setting(comment = "comment.chatType")
-    private String chatType = "action_bar";
-    @Setting(comment = "comment.privateSign", trans = 0b1000)
-    private String privateSign = ChatColor.DARK_RED.toString() + ChatColor.BOLD + "[Private]";
-    @Setting(comment = "comment.ownerFormat", trans = 0b1000)
-    private String ownerFormat = ChatColor.GREEN + "{$owner}";
-    @Setting(comment = "comment.userFormat", trans = 0b1000)
-    private String userFormat = "" + ChatColor.DARK_GRAY + ChatColor.ITALIC + "{$user}";
-    @Setting(comment = "comment.acceptSigns", trans = 0b1000)
-    private Set<String> acceptSigns = new HashSet<>();
     @Setting(comment = "comment.lockables")
     private Set<BlockType> lockables = new HashSet<>();
     @Setting(comment = "comment.doubleBlocks")
@@ -88,7 +70,6 @@ public class LocketManager extends VManager {
     private boolean usingGriefPrevention = false;
     private UserStorageService storageService = null;
 
-    private final HashMap<UUID, Location<World>> selected = new HashMap<>();
     private final HashSet<ItemType> itemSignTypes = new HashSet<>();
     private final HashSet<BlockType> wallSignTypes = new HashSet<>();
     private final HashSet<BlockType> postSignTypes = new HashSet<>();
@@ -97,36 +78,18 @@ public class LocketManager extends VManager {
     private static final Pattern HIDE_UUID = Pattern.compile("(\u00A7[0-9a-f]){32}");
     private static final Direction[] FACES = new Direction[]{Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
 
-    public LocketManager(SpongePlugin plugin, Path path) {
-        super(plugin, path);
-        try {
-            options.registerType(new BlockTypeSerializer());
-        } catch (SerializerException e) {
-            e.printStackTrace();
-        }
-    }
 
-    @Override
-    @NotNull
-    public ChatColor defChatColor() {
-        return ChatColor.YELLOW;
-    }
+    @Inject
+    private static LocketPlugin plugin;
 
     @Override
     public void afterLoad() {
         Sponge.getServiceManager().provide(UserStorageService.class).ifPresent(s -> storageService = s);
         if (storageService == null) {
-            consoleKey("storageServiceInvalid");
+            plugin.consoleKey("storageServiceInvalid");
         }
-        if (privateSign == null) {
-            privateSign = "[Private]";
-        }
+        super.afterLoad();
         privateSignText = Text.of(privateSign);
-        acceptSigns.add(privateSign);
-        HashSet<String> temp = new HashSet<>();
-        acceptSigns.forEach(sign -> temp.add(ChatColor.stripAllColor(sign)));
-        acceptSigns.clear();
-        acceptSigns.addAll(temp);
         lockables.add(BlockTypes.CHEST);
         lockables.add(BlockTypes.TRAPPED_CHEST);
         doubleBlocks.add(BlockTypes.CHEST);
@@ -178,6 +141,71 @@ public class LocketManager extends VManager {
         usingGriefPrevention = Sponge.getPluginManager().isLoaded("griefprevention");
     }
 
+    @Override
+    public void beforeSave() {
+    }
+
+    @Override
+    public List<String> getMatchedPlayers(String s) {
+        return null;
+    }
+
+    @Override
+    public void touchSign(Object block, @Nullable Predicate<String[]> sync, @Nullable Predicate<String[]> async) {
+        if (block instanceof Location<?>) {
+            Location<World> signBlock = (Location<World>) block;
+            signBlock.getTileEntity().ifPresent(tile -> {
+                if (tile instanceof Sign) {
+                    SignData signData = ((Sign) tile).getSignData();
+                    String[] lines = new String[4];
+                    lines[0] = signData.get(0).orElse(Text.EMPTY).toPlain();
+                    lines[1] = signData.get(1).orElse(Text.EMPTY).toPlain();
+                    lines[2] = signData.get(2).orElse(Text.EMPTY).toPlain();
+                    lines[3] = signData.get(3).orElse(Text.EMPTY).toPlain();
+                    if (sync != null && sync.test(lines)) {
+                        signData.setElement(0, Text.of(lines[0]));
+                        signData.setElement(1, Text.of(lines[1]));
+                        signData.setElement(2, Text.of(lines[2]));
+                        signData.setElement(3, Text.of(lines[3]));
+                        tile.offer(signData);
+                    }
+                    if (async != null) {
+                        plugin.runTaskAsync(() -> {
+                            if (async.test(lines)) {
+                                plugin.runTask(() -> {
+                                    signData.setElement(0, Text.of(lines[0]));
+                                    signData.setElement(1, Text.of(lines[1]));
+                                    signData.setElement(2, Text.of(lines[2]));
+                                    signData.setElement(3, Text.of(lines[3]));
+                                    tile.offer(signData);
+                                });
+                            }
+                        });
+                    }
+                }
+            });
+        }
+    }
+
+    @Override
+    public void processType(@NotNull ICommandSender sender, @NotNull Args args, @NotNull String key) {
+        switch (key) {
+            case "typeAdd":
+                processType(sender.getHandle(CommandSource.class), args, this::addType, key);
+                break;
+            case "typeRemove":
+                processType(sender.getHandle(CommandSource.class), args, this::removeType, key);
+                break;
+            case "dTypeAdd":
+                processType(sender.getHandle(CommandSource.class), args, this::addDType, key);
+                break;
+            case "dTypeRemove":
+                processType(sender.getHandle(CommandSource.class), args, this::removeDType, key);
+                break;
+            default:
+        }
+    }
+
     public boolean isLockable(@NotNull Location<World> location) {
         BlockType type = location.getBlockType();
         if (type == BlockTypes.AIR || isSign(type)) {
@@ -204,12 +232,12 @@ public class LocketManager extends VManager {
         return protectTile && tile != null || protectCarrier && tile instanceof TileEntityCarrier;
     }
 
-    public boolean isPreventTransfer() {
-        return preventTransfer;
+    public void sendHint(@NotNull Player player, @NotNull String key, Object... args) {
+        plugin.sendMessageKey(player, chatType, key, args);
     }
 
-    public boolean isPreventExplosion() {
-        return preventExplosion;
+    public final boolean bypassPerm(@NotNull Player player) {
+        return player.hasPermission(plugin.id() + ".bypass");
     }
 
     public void addType(@NotNull BlockType type) {
@@ -226,22 +254,6 @@ public class LocketManager extends VManager {
 
     public void removeDType(@NotNull BlockType type) {
         doubleBlocks.remove(type);
-    }
-
-    public void sendHint(Player player, String key, Object... args) {
-        if ("action_bar".equalsIgnoreCase(chatType)) {
-            sendActionKey(player, key, args);
-        } else {
-            sendKey(player, key, args);
-        }
-    }
-
-    public boolean isPrivate(@NotNull String line) {
-        return acceptSigns.contains(ChatColor.stripAllColor(line).trim());
-    }
-
-    public Text getPrivateText() {
-        return privateSignText;
     }
 
     private Optional<User> getUser(String name) {
@@ -272,25 +284,8 @@ public class LocketManager extends VManager {
         return Text.of(userFormat.replace("{$user}", user.getName()) + hideUuid(user.getUniqueId()));
     }
 
-    public Text getUserText(@NotNull String name) {
-        return Text.of(userFormat.replace("{$user}", name));
-    }
-
     public boolean isDBlock(@NotNull BlockType type) {
         return doubleBlocks.contains(type);
-    }
-
-    @Nullable
-    public Location<World> getSelected(@NotNull Player player) {
-        return selected.get(player.getUniqueId());
-    }
-
-    public void setSelected(@NotNull Player player, Location<World> location) {
-        selected.put(player.getUniqueId(), location);
-    }
-
-    public void clearSelected(@NotNull UUID uuid) {
-        selected.remove(uuid);
     }
 
     public Result tryAccess(@NotNull Player player, @NotNull Location<World> location, boolean needEdit) {
@@ -553,21 +548,8 @@ public class LocketManager extends VManager {
         return location.getRelative(location.getBlock().get(Keys.DIRECTION).orElse(Direction.NONE).getOpposite());
     }
 
-    public boolean bypassPerm(CommandSource sender) {
-        return hasPermission(sender, plugin.getId() + ".bypass");
-    }
-
     public boolean canPlaceLock(@NotNull BlockType type) {
         return type == AIR || type == GRASS || type == SNOW_LAYER || type == FLOWING_WATER || type == WATER || type == LAVA || type == FLOWING_LAVA;
-    }
-
-    private static String hideUuid(UUID uuid) {
-        String text = uuid.toString().replace("-", "");
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < text.length(); i++) {
-            builder.append(ChatColor.TRUE_COLOR_CHAR).append(text.charAt(i));
-        }
-        return builder.toString();
     }
 
     private Optional<User> parseUser(String text) {
@@ -589,7 +571,7 @@ public class LocketManager extends VManager {
     }
 
     public void asyncUpdateSign(@NotNull final Sign sign) {
-        Sponge.getScheduler().createAsyncExecutor(plugin).schedule(() -> {
+        plugin.runTaskLater(() -> {
             final SignData data = sign.getSignData();
             ListValue<Text> lines = data.lines();
             if (isPrivate(lines.get(0).toPlain())) {
@@ -597,14 +579,14 @@ public class LocketManager extends VManager {
                 String line2 = lines.get(2).toPlain().trim();
                 String line3 = lines.get(3).toPlain().trim();
 
-                data.setElement(0, getPrivateText());
+                data.setElement(0, Text.of(getPrivateText()));
                 parseUser(line1).ifPresent(owner -> data.setElement(1, getOwnerText(owner)));
                 parseUser(line2).ifPresent(user -> data.setElement(2, getUserText(user)));
                 parseUser(line3).ifPresent(user -> data.setElement(3, getUserText(user)));
 
-                Sponge.getScheduler().createSyncExecutor(plugin).execute(() -> sign.offer(data));
+                plugin.runTask(() -> sign.offer(data));
             }
-        }, 100, TimeUnit.MILLISECONDS);
+        }, 1);
     }
 
     public BlockType getSignBlockType(ItemType itemType) {
@@ -621,5 +603,42 @@ public class LocketManager extends VManager {
 
     public boolean isWallSign(BlockType type) {
         return wallSignTypes.contains(type);
+    }
+
+    private void processType(@NotNull CommandSource sender, @NotNull Args args, @NotNull Consumer<BlockType> consumer, @NotNull String key) {
+        BlockType type;
+        if (args.notEmpty()) {
+            if ("look".equals(args.first()) && sender instanceof Player) {
+                Player player = (Player) sender;
+                Location<World> block = Helper.getLookAt(player, 25);
+                if (block != null) {
+                    type = block.getBlockType();
+                } else {
+                    plugin.sendMessageKey(player, "notLookBlock");
+                    return;
+                }
+            } else {
+                type = Sponge.getRegistry().getType(BlockType.class, args.first()).orElse(null);
+            }
+        } else if (sender instanceof Player) {
+            ItemStack stack = ((Player) sender).getItemInHand(HandTypes.MAIN_HAND).orElse(null);
+            type = stack == null ? null : getSignBlockType(stack.getType());
+        } else {
+            plugin.sendMessageKey(sender, "emptyArgs");
+            return;
+        }
+        if (type == null) {
+            plugin.sendMessageKey(sender, "nullBlockType");
+            return;
+        }
+        if (type == BlockTypes.AIR || isSign(type)) {
+            plugin.sendMessageKey(sender, "illegalType");
+            return;
+        }
+        String typeName = type.getTranslation().get();
+        consumer.accept(type);
+        plugin.sendMessageKey(sender, key, typeName);
+        // TODO
+        manager.asyncSave(null);
     }
 }

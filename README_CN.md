@@ -1,7 +1,7 @@
 ## Locket Plugin for Sponge
 使用告示牌来保护你的方块吧！
 
-[![Build Status](https://img.shields.io/github/workflow/status/Himmelt/Locket/Gradle_CI?style=flat-square)](https://github.com/Himmelt/Locket/actions)
+![Locket](https://github.com/Himmelt/Locket/workflows/Locket/badge.svg)
 
 ## 命令
 1. 主命令名  `/locket `

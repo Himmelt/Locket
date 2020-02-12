@@ -1,11 +1,10 @@
 package org.soraworld.locket.data;
 
-import org.bukkit.block.Block;
 import org.jetbrains.annotations.NotNull;
-import org.soraworld.locket.manager.LocketManager;
-import org.soraworld.locket.nms.Helper;
-import org.soraworld.locket.util.Util;
+import org.soraworld.locket.Locket;
+import org.soraworld.locket.manager.IManager;
 import org.soraworld.violet.inject.Inject;
+import org.soraworld.violet.world.BlockPos;
 
 import java.util.HashSet;
 import java.util.UUID;
@@ -14,20 +13,20 @@ import java.util.UUID;
  * @author Himmelt
  */
 @Inject
-public class LockData {
+public final class LockData {
 
     private final HashSet<UUID> owners = new HashSet<>();
     private final HashSet<UUID> users = new HashSet<>();
 
     @Inject
-    private static LocketManager manager;
+    private static IManager manager;
 
-    public LockData(@NotNull HashSet<Block> signs) {
-        signs.forEach(sign -> Helper.touchSign(sign, data -> {
+    public LockData(@NotNull HashSet<BlockPos> signs) {
+        signs.forEach(sign -> manager.touchSign(sign, data -> {
             if (manager.isPrivate(data.lines[0])) {
-                Util.parseUuid(data.lines[1]).ifPresent(owners::add);
-                Util.parseUuid(data.lines[2]).ifPresent(users::add);
-                Util.parseUuid(data.lines[3]).ifPresent(users::add);
+                Locket.parseUuid(data.lines[1]).ifPresent(owners::add);
+                Locket.parseUuid(data.lines[2]).ifPresent(users::add);
+                Locket.parseUuid(data.lines[3]).ifPresent(users::add);
             }
             return false;
         }, null));
